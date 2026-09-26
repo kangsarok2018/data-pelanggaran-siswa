@@ -48,7 +48,6 @@
 </head>
 
 <body class="text-slate-800">
-  <!-- Header -->
   <header class="no-print sticky top-0 z-40 bg-white border-b border-slate-200">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
       <div class="flex items-center gap-3 min-w-0">
@@ -66,7 +65,6 @@
   </header>
 
   <div class="max-w-7xl mx-auto px-4 py-5 md:py-7">
-    <!-- Navigation -->
     <nav class="no-print flex gap-2 overflow-x-auto pb-2 mb-5">
       <button class="nav-btn active whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold" data-tab="dashboard">Dashboard</button>
       <button class="nav-btn whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold" data-tab="input">Input Pelanggaran</button>
@@ -74,7 +72,6 @@
       <button class="nav-btn whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold" data-tab="riwayat">Riwayat</button>
     </nav>
 
-    <!-- DASHBOARD -->
     <section id="tab-dashboard" class="tab-content">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-5">
         <div class="card p-4">
@@ -127,7 +124,6 @@
       </div>
     </section>
 
-    <!-- INPUT -->
     <section id="tab-input" class="tab-content hidden">
       <div class="card p-5 max-w-3xl mx-auto">
         <div class="mb-5">
@@ -188,7 +184,6 @@
       </div>
     </section>
 
-    <!-- REKAP -->
     <section id="tab-rekap" class="tab-content hidden">
       <div class="card p-5">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
@@ -224,7 +219,6 @@
       </div>
     </section>
 
-    <!-- RIWAYAT -->
     <section id="tab-riwayat" class="tab-content hidden">
       <div class="card p-5">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
@@ -259,8 +253,7 @@
 
 <script>
 /* =========================================================
-   STREAMING_CHUNK:Initializing application logic and configurations...
-   KONFIGURASI
+   STREAMING_CHUNK:Initializing configurations and global state...
    ========================================================= */
 
 const CONFIG = {
@@ -1170,7 +1163,7 @@ function buildSP4PDF() {
   y += 3;
   doc.setLineWidth(0.5);
   doc.line(left, y, right, y);
-  y += 11;
+  y += 12;
 
   doc.setFont("times", "bold");
   doc.setFontSize(13);
@@ -1197,7 +1190,7 @@ function buildSP4PDF() {
   doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 5;
   doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 5;
   doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y);
-  doc.text(totalPoin + " Poin", valueX, y); y += 7;
+  doc.text(totalPoin + " Poin", valueX, y); y += 6;
 
   doc.setFont("times", "bold");
   doc.text("Rincian Pelanggaran:", left, y);
@@ -1211,7 +1204,7 @@ function buildSP4PDF() {
   for (const line of detailLines) {
     y = drawWrapped(doc, line, left+4, y, 160, 4.5);
     y += 1;
-    if (y > 205) { doc.addPage(); y = 20; }
+    if (y > 210) { doc.addPage(); y = 20; }
   }
 
   y += 3;
@@ -1226,39 +1219,43 @@ function buildSP4PDF() {
   y += 5;
 
   doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
-  y += 8;
+  y += 6;
 
-  // Exact matching signature rows with proper comfortable vertical spacing
+  // Exact signature rows matching requested layout with "Materai Rp 10.000" right above the student name
   doc.text("Waka Kesiswaan,", left+10, y);
   doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
   y += 22;
+  
   doc.text("(...........................)", left+10, y);
+  doc.text("Materai Rp 10.000", 145, y - 6, {align:"center"});
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
-  y += 8;
+  y += 6;
 
   doc.text("Guru BK,", left+10, y);
   doc.text("Orang tua/Wali,", 145, y, {align:"center"});
-  y += 5;
-  doc.text("Materai Rp 10.000", 145, y + 12, {align:"center"});
   y += 22;
+  
   doc.text("(...........................)", left+10, y);
   doc.text("(...........................)", 145, y, {align:"center"});
-  y += 8;
+  y += 6;
 
   doc.text("Wali Kelas,", left+10, y);
   doc.text("Mengetahui, Kepala Sekolah", 145, y, {align:"center"});
   y += 22;
+  
   doc.text("(...........................)", left+10, y);
   
-  const kepalaSekolahNama = "( HENDRIADI, S.Pd.I., M.Pd.I )";
-  doc.setFont("times", "bold");
-  doc.text(kepalaSekolahNama, 145, y, {align:"center"});
+  const kepalaSekolahNama = "HENDRIADI, S.Pd.I., M.Pd.I";
   const nameWidth = doc.getTextWidth(kepalaSekolahNama);
-  doc.line(145 - (nameWidth / 2), y + 1.2, 145 + (nameWidth / 2), y + 1.2);
+  const headmasterCenterX = 145;
   
-  y += 6;
+  doc.setFont("times", "bold");
+  doc.text(kepalaSekolahNama, headmasterCenterX, y, {align:"center"});
+  doc.line(headmasterCenterX - (nameWidth / 2), y + 1.2, headmasterCenterX + (nameWidth / 2), y + 1.2);
+  
+  y += 5;
   doc.setFont("times", "normal");
-  doc.text("NIP. 198408072009041004", 145, y, {align:"center"});
+  doc.text("NIP. 198408072009041004", headmasterCenterX, y, {align:"center"});
 
   const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
   return {
@@ -1296,7 +1293,6 @@ function renderPDFOnCanvas(blob) {
         const ctx = canvas.getContext('2d');
         const container = canvas.parentElement;
         
-        // Compute scale based on container width
         const viewportUnscaled = page.getViewport({ scale: 1.5 });
         const scale = (container.clientWidth - 32) / viewportUnscaled.width;
         const viewport = page.getViewport({ scale: Math.max(scale, 1.0) });
