@@ -894,6 +894,8 @@ function buildSP1PDF() {
   let y = 18;
 
   drawLogos(doc);
+  // Reset drawing color after logo rendering; document lines must be black.
+  doc.setDrawColor(0, 0, 0);
 
   doc.setFont("times", "bold");
   doc.setFontSize(12);
@@ -996,6 +998,8 @@ function buildSP2PDF() {
   let y = 18;
 
   drawLogos(doc);
+  // Reset drawing color after logo rendering; document lines must be black.
+  doc.setDrawColor(0, 0, 0);
 
   doc.setFont("times", "bold");
   doc.setFontSize(12);
@@ -1108,6 +1112,8 @@ function buildSP3PDF() {
   let y = 18;
 
   drawLogos(doc);
+  // Reset drawing color after logo rendering; document lines must be black.
+  doc.setDrawColor(0, 0, 0);
 
   doc.setFont("times", "bold");
   doc.setFontSize(12);
@@ -1231,6 +1237,8 @@ function buildSP4PDF() {
   let y = 18;
 
   drawLogos(doc);
+  // Reset drawing color after logo rendering; document lines must be black.
+  doc.setDrawColor(0, 0, 0);
 
   doc.setFont("times", "bold");
   doc.setFontSize(12);
