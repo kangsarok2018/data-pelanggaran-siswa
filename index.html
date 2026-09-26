@@ -48,6 +48,7 @@
 </head>
 
 <body class="text-slate-800">
+  <!-- Header -->
   <header class="no-print sticky top-0 z-40 bg-white border-b border-slate-200">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
       <div class="flex items-center gap-3 min-w-0">
@@ -65,6 +66,7 @@
   </header>
 
   <div class="max-w-7xl mx-auto px-4 py-5 md:py-7">
+    <!-- Navigation -->
     <nav class="no-print flex gap-2 overflow-x-auto pb-2 mb-5">
       <button class="nav-btn active whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold" data-tab="dashboard">Dashboard</button>
       <button class="nav-btn whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold" data-tab="input">Input Pelanggaran</button>
@@ -72,6 +74,7 @@
       <button class="nav-btn whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold" data-tab="riwayat">Riwayat</button>
     </nav>
 
+    <!-- DASHBOARD -->
     <section id="tab-dashboard" class="tab-content">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-5">
         <div class="card p-4">
@@ -124,6 +127,7 @@
       </div>
     </section>
 
+    <!-- INPUT -->
     <section id="tab-input" class="tab-content hidden">
       <div class="card p-5 max-w-3xl mx-auto">
         <div class="mb-5">
@@ -184,6 +188,7 @@
       </div>
     </section>
 
+    <!-- REKAP -->
     <section id="tab-rekap" class="tab-content hidden">
       <div class="card p-5">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
@@ -219,6 +224,7 @@
       </div>
     </section>
 
+    <!-- RIWAYAT -->
     <section id="tab-riwayat" class="tab-content hidden">
       <div class="card p-5">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
@@ -253,7 +259,7 @@
 
 <script>
 /* =========================================================
-   STREAMING_CHUNK:Initializing configuration and core methods...
+   KONFIGURASI
    ========================================================= */
 
 const CONFIG = {
@@ -300,6 +306,7 @@ const VIOLATIONS = [
 let records = [];
 let students = [];
 
+/* ---------- Utilitas ---------- */
 function escapeHTML(value) {
   return String(value ?? "")
     .replaceAll("&","&amp;")
@@ -358,6 +365,7 @@ function detectSemester(dateString) {
   return (month >= 7 && month <= 12) ? "1" : "2";
 }
 
+/* ---------- Data ---------- */
 async function loadData() {
   if (!CONFIG.API_URL) {
     loadLocal();
@@ -454,6 +462,7 @@ async function saveRecord(record) {
   }
 }
 
+/* ---------- Form ---------- */
 function populateCategories() {
   const select = document.getElementById("category");
   const categories = [...new Set(VIOLATIONS.map(v => v.category))];
@@ -533,6 +542,7 @@ async function submitViolation(e) {
   }
 }
 
+/* ---------- Rekap ---------- */
 function getFilteredRecords(semester="Semua") {
   if (semester === "Semua") return [...records];
   return records.filter(r => String(r.semester) === String(semester));
@@ -778,6 +788,45 @@ function drawWrapped(doc, text, x, y, maxWidth, lineHeight=5) {
   return y + lines.length * lineHeight;
 }
 
+function drawHeaderKop(doc) {
+  const pageWidth = 210;
+  const left = 22;
+  const right = 188;
+  let y = 16;
+
+  // Placeholder Logo Merangin di Kiri
+  doc.setDrawColor(150, 150, 150);
+  doc.setFillColor(240, 240, 240);
+  doc.roundedRect(left, y - 2, 16, 16, 2, 2, 'FD');
+  doc.setFont("times", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(100, 100, 100);
+  doc.text("LOGOS", left + 8, y + 6, { align: "center" });
+  doc.text("MERANGIN", left + 8, y + 10, { align: "center" });
+
+  // Placeholder Logo Dinas di Kanan
+  doc.roundedRect(right - 16, y - 2, 16, 16, 2, 2, 'FD');
+  doc.text("LOGOS", right - 8, y + 6, { align: "center" });
+  doc.text("DINAS", right - 8, y + 10, { align: "center" });
+
+  // Teks Kop Surat di Tengah
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("times", "bold");
+  doc.setFontSize(12);
+  doc.text("PEMERINTAH KABUPATEN MERANGIN", pageWidth/2, y, {align:"center"}); y += 5;
+  doc.setFontSize(11);
+  doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", pageWidth/2, y, {align:"center"}); y += 5;
+  doc.setFontSize(14);
+  doc.text("SMP NEGERI 37 MERANGIN", pageWidth/2, y, {align:"center"}); y += 5;
+  doc.setFont("times", "normal");
+  doc.setFontSize(9);
+  doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", pageWidth/2, y, {align:"center"});
+  y += 4;
+  doc.setLineWidth(0.6);
+  doc.line(left, y, right, y);
+  return y + 10;
+}
+
 let currentSP1PDFBlob = null;
 let currentSP1PDFUrl = null;
 let currentSP1PDFFilename = "SP-I-Siswa.pdf";
@@ -801,30 +850,19 @@ function buildSP1PDF() {
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
-  const pageWidth = 210;
   const left = 22;
   const right = 188;
-  let y = 18;
+  
+  let y = drawHeaderKop(doc);
 
   doc.setFont("times", "bold");
   doc.setFontSize(12);
-  doc.text("PEMERINTAH KABUPATEN MERANGIN", pageWidth/2, y, {align:"center"}); y += 6;
-  doc.setFontSize(11);
-  doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", pageWidth/2, y, {align:"center"}); y += 6;
-  doc.setFontSize(14);
-  doc.text("SMP NEGERI 37 MERANGIN", pageWidth/2, y, {align:"center"}); y += 5;
-  doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", pageWidth/2, y, {align:"center"});
-  y += 3;
-  doc.setLineWidth(0.5);
-  doc.line(left, y, right, y);
-  y += 13;
-
-  doc.setFont("times", "bold");
-  doc.setFontSize(13);
-  doc.text("SURAT PERJANJIAN TINGKAT I", pageWidth/2, y, {align:"center"});
-  y += 8;
+  const titleText = "SURAT PERJANJIAN TINGKAT I";
+  doc.text(titleText, 105, y, {align:"center"});
+  const tWidth = doc.getTextWidth(titleText);
+  doc.setLineWidth(0.4);
+  doc.line(105 - (tWidth/2), y + 1.2, 105 + (tWidth/2), y + 1.2);
+  y += 10;
 
   doc.setFont("times", "normal");
   doc.setFontSize(11);
@@ -862,7 +900,7 @@ function buildSP1PDF() {
   y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 7;
 
   y = drawWrapped(doc, "Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.", left, y, 166, 5);
-  y += 13;
+  y += 12;
 
   doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
   y += 10;
@@ -870,11 +908,11 @@ function buildSP1PDF() {
   doc.text("Siswa yang bersangkutan,", 135, y, {align:"center"});
   y += 6;
   doc.text("Wali Kelas,", left+25, y);
-  y += 12;
-  doc.setTextColor(150, 150, 150);
+  y += 15;
+  doc.setTextColor(160, 160, 160);
   doc.text("Materai Rp 10.000", 135, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
-  y += 10;
+  y += 8;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 135, y, {align:"center"});
 
@@ -903,30 +941,19 @@ function buildSP2PDF() {
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
-  const pageWidth = 210;
   const left = 22;
   const right = 188;
-  let y = 18;
+  
+  let y = drawHeaderKop(doc);
 
   doc.setFont("times", "bold");
   doc.setFontSize(12);
-  doc.text("PEMERINTAH KABUPATEN MERANGIN", pageWidth/2, y, {align:"center"}); y += 6;
-  doc.setFontSize(11);
-  doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", pageWidth/2, y, {align:"center"}); y += 6;
-  doc.setFontSize(14);
-  doc.text("SMP NEGERI 37 MERANGIN", pageWidth/2, y, {align:"center"}); y += 5;
-  doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", pageWidth/2, y, {align:"center"});
-  y += 3;
-  doc.setLineWidth(0.5);
-  doc.line(left, y, right, y);
-  y += 13;
-
-  doc.setFont("times", "bold");
-  doc.setFontSize(13);
-  doc.text("SURAT PERJANJIAN TINGKAT II", pageWidth/2, y, {align:"center"});
-  y += 8;
+  const titleText = "SURAT PERJANJIAN TINGKAT II";
+  doc.text(titleText, 105, y, {align:"center"});
+  const tWidth = doc.getTextWidth(titleText);
+  doc.setLineWidth(0.4);
+  doc.line(105 - (tWidth/2), y + 1.2, 105 + (tWidth/2), y + 1.2);
+  y += 10;
 
   doc.setFont("times", "normal");
   doc.setFontSize(11);
@@ -970,7 +997,7 @@ function buildSP2PDF() {
   y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 7;
 
   y = drawWrapped(doc, "Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.", left, y, 166, 5);
-  y += 11;
+  y += 10;
 
   doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
   y += 10;
@@ -980,18 +1007,18 @@ function buildSP2PDF() {
   y += 6;
 
   doc.text("Guru BK,", left+25, y);
-  y += 12;
-  doc.setTextColor(150, 150, 150);
+  y += 15;
+  doc.setTextColor(160, 160, 160);
   doc.text("Materai Rp 10.000", 145, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
-  y += 10;
+  y += 8;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
-  y += 12;
+  y += 10;
 
   doc.text("Wali Kelas,", left+25, y);
   doc.text("Orang Tua/Wali,", 145, y, {align:"center"});
-  y += 21;
+  y += 20;
   doc.text("(...........................)", left+25, y);
   doc.text("(...........................)", 145, y, {align:"center"});
 
@@ -1020,30 +1047,19 @@ function buildSP3PDF() {
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
-  const pageWidth = 210;
   const left = 22;
   const right = 188;
-  let y = 18;
+  
+  let y = drawHeaderKop(doc);
 
   doc.setFont("times", "bold");
   doc.setFontSize(12);
-  doc.text("PEMERINTAH KABUPATEN MERANGIN", pageWidth/2, y, {align:"center"}); y += 6;
-  doc.setFontSize(11);
-  doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", pageWidth/2, y, {align:"center"}); y += 6;
-  doc.setFontSize(14);
-  doc.text("SMP NEGERI 37 MERANGIN", pageWidth/2, y, {align:"center"}); y += 5;
-  doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", pageWidth/2, y, {align:"center"});
-  y += 3;
-  doc.setLineWidth(0.5);
-  doc.line(left, y, right, y);
-  y += 13;
-
-  doc.setFont("times", "bold");
-  doc.setFontSize(13);
-  doc.text("SURAT PERJANJIAN TINGKAT III", pageWidth/2, y, {align:"center"});
-  y += 8;
+  const titleText = "SURAT PERJANJIAN TINGKAT III";
+  doc.text(titleText, 105, y, {align:"center"});
+  const tWidth = doc.getTextWidth(titleText);
+  doc.setLineWidth(0.4);
+  doc.line(105 - (tWidth/2), y + 1.2, 105 + (tWidth/2), y + 1.2);
+  y += 10;
 
   if (nomor) {
     doc.setFont("times", "normal");
@@ -1100,25 +1116,25 @@ function buildSP3PDF() {
 
   doc.text("Wali Kelas,", left+25, y);
   doc.text("Guru BK,", 145, y, {align:"center"});
-  y += 20;
+  y += 18;
   doc.text("(...........................)", left+25, y);
   doc.text("(...........................)", 145, y, {align:"center"});
-  y += 10;
+  y += 8;
 
   doc.text("Pembina OSIS,", left+25, y);
   doc.text("Waka Kesiswaan,", 145, y, {align:"center"});
-  y += 20;
+  y += 18;
   doc.text("(...........................)", left+25, y);
   doc.text("(...........................)", 145, y, {align:"center"});
-  y += 10;
+  y += 8;
 
   doc.text("Orang Tua/Wali,", left+25, y);
   doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
   y += 6;
-  doc.setTextColor(150, 150, 150);
-  doc.text("Materai Rp 10.000", 145, y, {align:"center"});
+  doc.setTextColor(160, 160, 160);
+  doc.text("Materai Rp 10.000", 145, y + 10, {align:"center"});
   doc.setTextColor(0, 0, 0);
-  y += 10;
+  y += 18;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
 
@@ -1147,30 +1163,19 @@ function buildSP4PDF() {
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
-  const pageWidth = 210;
   const left = 22;
   const right = 188;
-  let y = 18;
+  
+  let y = drawHeaderKop(doc);
 
   doc.setFont("times", "bold");
   doc.setFontSize(12);
-  doc.text("PEMERINTAH KABUPATEN MERANGIN", pageWidth/2, y, {align:"center"}); y += 6;
-  doc.setFontSize(11);
-  doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", pageWidth/2, y, {align:"center"}); y += 6;
-  doc.setFontSize(14);
-  doc.text("SMP NEGERI 37 MERANGIN", pageWidth/2, y, {align:"center"}); y += 5;
-  doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", pageWidth/2, y, {align:"center"});
-  y += 3;
-  doc.setLineWidth(0.5);
-  doc.line(left, y, right, y);
-  y += 13;
-
-  doc.setFont("times", "bold");
-  doc.setFontSize(13);
-  doc.text("SURAT PERJANJIAN TINGKAT IV", pageWidth/2, y, {align:"center"});
-  y += 8;
+  const titleText = "SURAT PERJANJIAN TINGKAT IV";
+  doc.text(titleText, 105, y, {align:"center"});
+  const tWidth = doc.getTextWidth(titleText);
+  doc.setLineWidth(0.4);
+  doc.line(105 - (tWidth/2), y + 1.2, 105 + (tWidth/2), y + 1.2);
+  y += 10;
 
   if (nomor) {
     doc.setFont("times", "normal");
@@ -1225,6 +1230,10 @@ function buildSP4PDF() {
 
   doc.text("Waka Kesiswaan,", left+25, y);
   doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
+  y += 6;
+  doc.setTextColor(160, 160, 160);
+  doc.text("Materai Rp 10.000", 145, y + 8, {align:"center"});
+  doc.setTextColor(0, 0, 0);
   y += 16;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
@@ -1232,11 +1241,7 @@ function buildSP4PDF() {
 
   doc.text("Guru BK,", left+25, y);
   doc.text("Orang Tua/Wali,", 145, y, {align:"center"});
-  y += 6;
-  doc.setTextColor(150, 150, 150);
-  doc.text("Materai Rp 10.000", 145, y, {align:"center"});
-  doc.setTextColor(0, 0, 0);
-  y += 10;
+  y += 16;
   doc.text("(...........................)", left+25, y);
   doc.text("(...........................)", 145, y, {align:"center"});
   y += 8;
@@ -1282,56 +1287,7 @@ function getCurrentSPPDF() {
   throw new Error("Jenis surat perjanjian tidak dikenal.");
 }
 
-/* =========================================================
-   STREAMING_CHUNK:Canvas PDF Previewer and UI Event Handlers...
-   ========================================================= */
-
-let pdfjsLib = null;
-
-async function ensurePdfJsLoaded() {
-  if (pdfjsLib) return pdfjsLib;
-  if (!window.pdfjsLib) {
-    await new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-      script.onload = () => {
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-        resolve(window.pdfjsLib);
-      };
-      script.onerror = () => reject(new Error("Gagal memuat library PDF viewer."));
-      document.head.appendChild(script);
-    });
-  }
-  pdfjsLib = window.pdfjsLib;
-  return pdfjsLib;
-}
-
-async function renderPdfToCanvas(pdfBlob, canvasElement) {
-  const lib = await ensurePdfJsLoaded();
-  const arrayBuffer = await pdfBlob.arrayBuffer();
-  const loadingTask = lib.getDocument({ data: arrayBuffer });
-  const pdfDoc = await loadingTask.promise;
-  const page = await pdfDoc.getPage(1);
-
-  const context = canvasElement.getContext("2d");
-  const container = canvasElement.parentElement;
-  const containerWidth = container.clientWidth - 24;
-  
-  const viewportUnscaled = page.getViewport({ scale: 1.0 });
-  const scale = containerWidth / viewportUnscaled.width;
-  const viewport = page.getViewport({ scale: Math.max(scale, 1.2) });
-
-  canvasElement.width = viewport.width;
-  canvasElement.height = viewport.height;
-
-  const renderContext = {
-    canvasContext: context,
-    viewport: viewport
-  };
-  await page.render(renderContext).promise;
-}
-
-async function previewSP1PDF() {
+function previewSP1PDF() {
   const btn = document.getElementById("spPreviewBtn");
   if (btn) {
     btn.disabled = true;
@@ -1340,16 +1296,20 @@ async function previewSP1PDF() {
 
   try {
     const pdf = getCurrentSPPDF();
+    if (currentSP1PDFUrl) URL.revokeObjectURL(currentSP1PDFUrl);
+
     currentSP1PDFBlob = pdf.blob;
     currentSP1PDFFilename = pdf.filename;
     currentSP1Saved = false;
+    currentSP1PDFUrl = URL.createObjectURL(pdf.blob);
+
+    const frame = document.getElementById("spPreviewFrame");
+    if (frame) frame.src = currentSP1PDFUrl;
 
     const title = document.getElementById("spPreviewTitle");
     if (title) title.textContent = "Preview " + pdf.filename;
 
     document.getElementById("spPreviewModal").classList.remove("hidden");
-    const canvas = document.getElementById("spPreviewCanvas");
-    await renderPdfToCanvas(pdf.blob, canvas);
   } catch (err) {
     console.error(err);
     toast("Preview PDF gagal: " + err.message, "error");
@@ -1363,6 +1323,8 @@ async function previewSP1PDF() {
 
 function closeSPPreview() {
   document.getElementById("spPreviewModal").classList.add("hidden");
+  const frame = document.getElementById("spPreviewFrame");
+  if (frame) frame.src = "about:blank";
 }
 
 function downloadSP1PDF() {
@@ -1511,6 +1473,7 @@ function renderAll() {
   populateStudentList();
 }
 
+/* ---------- Navigasi ---------- */
 function showTab(tab) {
   document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
   document.getElementById(`tab-${tab}`).classList.remove("hidden");
@@ -1520,6 +1483,7 @@ function showTab(tab) {
   });
 }
 
+/* ---------- PDF ---------- */
 function exportPDF() {
   if (!records.length) {
     toast("Belum ada data untuk dicetak.", "warning");
@@ -1551,6 +1515,7 @@ function exportPDF() {
   doc.save("Rekap-Poin-Siswa-SMPN37-Merangin.pdf");
 }
 
+/* ---------- Init ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   const today = new Date();
   document.getElementById("violationDate").valueAsDate = today;
@@ -1660,18 +1625,18 @@ document.addEventListener("DOMContentLoaded", () => {
   </div>
 </div>
 
-<!-- PREVIEW PDF SP (CANVAS) -->
+<!-- PREVIEW PDF SP -->
 <div id="spPreviewModal" class="hidden fixed inset-0 z-[80] bg-slate-900/80 p-3 md:p-6 no-print">
-  <div class="max-w-4xl mx-auto h-[calc(100vh-1.5rem)] md:h-[calc(100vh-3rem)] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+  <div class="max-w-6xl mx-auto h-[calc(100vh-1.5rem)] md:h-[calc(100vh-3rem)] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col">
     <div class="p-4 border-b flex items-center justify-between gap-3">
       <div class="min-w-0">
-        <p class="text-xs text-slate-500">Preview Dokumen (Canvas)</p>
+        <p class="text-xs text-slate-500">Preview Dokumen</p>
         <h3 id="spPreviewTitle" class="font-bold truncate">Preview SP</h3>
       </div>
       <button type="button" onclick="closeSPPreview()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Tutup</button>
     </div>
-    <div class="flex-1 bg-slate-200 p-2 md:p-4 min-h-0 overflow-auto flex items-center justify-center">
-      <canvas id="spPreviewCanvas" class="shadow-lg bg-white rounded-lg max-w-full"></canvas>
+    <div class="flex-1 bg-slate-200 p-2 md:p-4 min-h-0">
+      <iframe id="spPreviewFrame" title="Preview PDF SP" class="w-full h-full bg-white rounded-lg border" src="about:blank"></iframe>
     </div>
     <div class="p-3 border-t flex flex-col sm:flex-row justify-end gap-2">
       <button type="button" onclick="closeSPPreview()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Kembali</button>
