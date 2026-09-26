@@ -919,6 +919,132 @@ function buildSP1PDF() {
 }
 
 
+
+function buildSP3PDF() {
+  if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
+
+  const nama = document.getElementById("spNama").value.trim();
+  const nis = document.getElementById("spNIS").value.trim();
+  const nisn = document.getElementById("spNISN").value.trim();
+  const kelas = document.getElementById("spKelas").value.trim();
+  const totalPoin = normalizePoints(document.getElementById("spTotalPoin").value);
+  const nomor = document.getElementById("spNomor").value.trim();
+  const tanggal = document.getElementById("spTanggal").value;
+  const rincian = document.getElementById("spRincian").value.trim();
+
+  // Ketentuan aplikasi:
+  // SP III = 50–99 poin.
+  // Template Excel sumber menuliskan 50–79, tetapi aturan aplikasi
+  // yang telah ditetapkan adalah 50–99.
+  if (totalPoin < 50 || totalPoin > 99) {
+    throw new Error("PDF SP III hanya dapat dibuat untuk total poin 50–99.");
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+  const pageWidth = 210;
+  const left = 22;
+  const right = 188;
+  let y = 18;
+
+  // Kop surat sesuai template SP Tingkat III.
+  doc.setFont("times", "bold");
+  doc.setFontSize(12);
+  doc.text("PEMERINTAH KABUPATEN MERANGIN", pageWidth/2, y, {align:"center"}); y += 6;
+  doc.setFontSize(11);
+  doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", pageWidth/2, y, {align:"center"}); y += 6;
+  doc.setFontSize(14);
+  doc.text("SMP NEGERI 37 MERANGIN", pageWidth/2, y, {align:"center"}); y += 5;
+  doc.setFont("times", "normal");
+  doc.setFontSize(9);
+  doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", pageWidth/2, y, {align:"center"});
+  y += 3;
+  doc.setLineWidth(0.5);
+  doc.line(left, y, right, y);
+  y += 13;
+
+  doc.setFont("times", "bold");
+  doc.setFontSize(13);
+  doc.text("SURAT PERJANJIAN TINGKAT III", pageWidth/2, y, {align:"center"});
+  y += 8;
+
+  if (nomor) {
+    doc.setFont("times", "normal");
+    doc.setFontSize(11);
+    doc.text("Nomor: " + nomor, left, y);
+    y += 7;
+  }
+
+  doc.setFont("times", "normal");
+  doc.setFontSize(11);
+  doc.text("Yang bertanda tangan di bawah ini:", left, y);
+  y += 7;
+
+  const labelX = left;
+  const colonX = 67;
+  const valueX = 72;
+  doc.text("Nama Siswa", labelX, y); doc.text(":", colonX, y); doc.text(nama || "-", valueX, y); y += 6;
+  doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
+  doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
+  doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
+  doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y);
+  doc.text(totalPoin + " Poin (Batas SP: 50 - 99)", valueX, y); y += 8;
+
+  doc.setFont("times", "bold");
+  doc.text("Rincian Pelanggaran:", left, y);
+  y += 6;
+  doc.setFont("times", "normal");
+
+  const detailLines = rincian
+    ? rincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`)
+    : ["Tidak ada rincian pelanggaran."];
+
+  for (const line of detailLines) {
+    y = drawWrapped(doc, line, left+4, y, 160, 5);
+    y += 1;
+    if (y > 235) { doc.addPage(); y = 20; }
+  }
+
+  y += 5;
+  doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", left, y); y += 7;
+  y = drawWrapped(doc, "1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", left, y, 166, 5); y += 2;
+  y = drawWrapped(doc, "2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.", left, y, 166, 5); y += 2;
+  y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 7;
+
+  y = drawWrapped(doc, "Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.", left, y, 166, 5);
+  y += 10;
+
+  doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
+  y += 10;
+
+  // Susunan tanda tangan mengikuti template SP Tingkat III:
+  // Wali Kelas | Guru BK
+  // Pembina OSIS | Siswa yang bersangkutan
+  doc.text("Mengetahui,", left+25, y);
+  doc.text("Guru BK,", 115, y, {align:"center"});
+  y += 6;
+  doc.text("Wali Kelas,", left+25, y);
+  y += 21;
+  doc.text("(...........................)", left+25, y);
+  doc.text("(...........................)", 115, y, {align:"center"});
+  y += 9;
+
+  doc.text("Pembina OSIS,", left+25, y);
+  doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
+  y += 6;
+  y += 13;
+  doc.text("Materai Rp 10.000", 145, y, {align:"center"});
+  y += 10;
+  doc.text("(...........................)", left+25, y);
+  doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
+
+  const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
+  return {
+    blob: doc.output("blob"),
+    filename: `SP-III-${safeName}.pdf`
+  };
+}
+
 function buildSP2PDF() {
   if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
 
@@ -1042,13 +1168,16 @@ function buildSP2PDF() {
 
 function getCurrentSPPDF() {
   const level = document.getElementById("spJenis").value.trim();
+  if (level === "SP III") {
+    return buildSP3PDF();
+  }
   if (level === "SP II") {
     return buildSP2PDF();
   }
   if (level === "SP I") {
     return buildSP1PDF();
   }
-  throw new Error("Untuk sementara PDF yang tersedia adalah SP I dan SP II.");
+  throw new Error("Untuk sementara PDF yang tersedia adalah SP I, SP II, dan SP III.");
 }
 
 function previewSP1PDF() {
