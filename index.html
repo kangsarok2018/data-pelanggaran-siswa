@@ -980,23 +980,48 @@ function buildSP4PDF() {
   y=drawWrapped(doc,"3. Saya memahami bahwa pelanggaran berikutnya dapat dikenai tindakan sesuai ketentuan sekolah.",left,y,166,5)+7;
   y=drawWrapped(doc,"Demikian surat perjanjian ini dibuat dengan kesadaran dan tanpa paksaan.",left,y,166,5)+10;
 
-  doc.text("Pulau Rengas, "+formatTanggalIndonesia(tanggal),right,y,{align:"right"}); y+=10;
+  doc.text("Pulau Rengas, "+formatTanggalIndonesia(tanggal),right,y,{align:"right"}); y+=12;
 
-  doc.text("Mengetahui,",left+25,y);
-  doc.text("Mengetahui,",145,y,{align:"center"}); y+=6;
-  doc.text("Wali Kelas,",left+25,y);
-  doc.text("Guru BK,",145,y,{align:"center"}); y+=20;
-  doc.text("(...........................)",left+25,y);
-  doc.text("(...........................)",145,y,{align:"center"}); y+=10;
-  doc.text("Waka Kesiswaan,",left+25,y);
-  doc.text("Orang Tua/Wali,",145,y,{align:"center"}); y+=20;
-  doc.text("(...........................)",left+25,y);
-  doc.text("(...........................)",145,y,{align:"center"}); y+=10;
-  doc.text("Kepala Sekolah,",left+25,y);
-  doc.text("Siswa yang bersangkutan,",145,y,{align:"center"}); y+=6;
-  doc.text("Materai Rp 10.000",145,y+13,{align:"center"}); y+=23;
-  doc.text("(...........................)",left+25,y);
-  doc.text("( "+(nama||"...........................")+" )",145,y,{align:"center"});
+  // Tanda tangan SP IV (Akhir) sesuai layout yang ditetapkan:
+  // Baris 1: Waka Kesiswaan | Siswa yang Bersangkutan
+  // Baris 2: Guru BK | Orang Tua/Wali
+  // Baris 3: Wali Kelas (kiri)
+  // Baris 4: Mengetahui, Kepala Sekolah (tengah halaman)
+
+  const signLeftX = 58;
+  const signRightX = 152;
+  const signCenterX = pageWidth / 2;
+
+  // Baris 1
+  doc.text("Waka Kesiswaan,", signLeftX, y, {align:"center"});
+  doc.text("Siswa yang bersangkutan,", signRightX, y, {align:"center"});
+  y += 22;
+  doc.text("(...........................)", signLeftX, y, {align:"center"});
+  doc.text("( "+(nama||"...........................")+" )", signRightX, y, {align:"center"});
+  doc.text("Materai Rp 10.000", signRightX, y-10, {align:"center"});
+
+  // Baris 2
+  y += 12;
+  doc.text("Guru BK,", signLeftX, y, {align:"center"});
+  doc.text("Orang Tua/Wali,", signRightX, y, {align:"center"});
+  y += 22;
+  doc.text("(...........................)", signLeftX, y, {align:"center"});
+  doc.text("(...........................)", signRightX, y, {align:"center"});
+
+  // Baris 3 - Wali Kelas hanya di sisi kiri
+  y += 12;
+  doc.text("Wali Kelas,", signLeftX, y, {align:"center"});
+  y += 22;
+  doc.text("(...........................)", signLeftX, y, {align:"center"});
+
+  // Baris 4 - Kepala Sekolah tepat di tengah halaman,
+  // tidak sejajar dengan Wali Kelas.
+  y += 14;
+  doc.text("Mengetahui,", signCenterX, y, {align:"center"});
+  y += 6;
+  doc.text("Kepala Sekolah,", signCenterX, y, {align:"center"});
+  y += 22;
+  doc.text("(...........................)", signCenterX, y, {align:"center"});
 
   const safeName=(nama||"Siswa").replace(/[^a-z0-9_-]+/gi,"-");
   return {blob:doc.output("blob"),filename:`SP-IV-Akhir-${safeName}.pdf`};
