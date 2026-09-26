@@ -744,6 +744,7 @@ function openSPForm() {
   if (!level) return;
   const master = findMasterStudent(currentStudentDetail.nama, currentStudentDetail.kelas) || {};
   document.getElementById("spJenis").value = level;
+  document.getElementById("spModalTitle").textContent = "Surat Perjanjian " + (level === "SP IV (Akhir)" ? "TINGKAT IV (AKHIR)" : "TINGKAT " + level.replace("SP ", ""));
   document.getElementById("spNama").value = currentStudentDetail.nama;
   document.getElementById("spNIS").value = master.nis || "";
   document.getElementById("spNISN").value = master.nisn || "";
@@ -917,12 +918,141 @@ function buildSP1PDF() {
   };
 }
 
+
+function buildSP2PDF() {
+  if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
+
+  const nama = document.getElementById("spNama").value.trim();
+  const nis = document.getElementById("spNIS").value.trim();
+  const nisn = document.getElementById("spNISN").value.trim();
+  const kelas = document.getElementById("spKelas").value.trim();
+  const totalPoin = normalizePoints(document.getElementById("spTotalPoin").value);
+  const nomor = document.getElementById("spNomor").value.trim();
+  const tanggal = document.getElementById("spTanggal").value;
+  const rincian = document.getElementById("spRincian").value.trim();
+
+  // Ketentuan aplikasi yang telah ditetapkan:
+  // SP II = 31–49 poin.
+  if (totalPoin < 31 || totalPoin > 49) {
+    throw new Error("PDF SP II hanya dapat dibuat untuk total poin 31–49.");
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+  const pageWidth = 210;
+  const left = 22;
+  const right = 188;
+  let y = 18;
+
+  // Kop surat mengikuti template SP Tingkat II.
+  doc.setFont("times", "bold");
+  doc.setFontSize(12);
+  doc.text("PEMERINTAH KABUPATEN MERANGIN", pageWidth/2, y, {align:"center"}); y += 6;
+  doc.setFontSize(11);
+  doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", pageWidth/2, y, {align:"center"}); y += 6;
+  doc.setFontSize(14);
+  doc.text("SMP NEGERI 37 MERANGIN", pageWidth/2, y, {align:"center"}); y += 5;
+  doc.setFont("times", "normal");
+  doc.setFontSize(9);
+  doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", pageWidth/2, y, {align:"center"});
+  y += 3;
+  doc.setLineWidth(0.5);
+  doc.line(left, y, right, y);
+  y += 13;
+
+  doc.setFont("times", "bold");
+  doc.setFontSize(13);
+  doc.text("SURAT PERJANJIAN TINGKAT II", pageWidth/2, y, {align:"center"});
+  y += 8;
+
+  doc.setFont("times", "normal");
+  doc.setFontSize(11);
+  if (nomor) {
+    doc.text("Nomor: " + nomor, left, y);
+    y += 7;
+  }
+
+  doc.text("Yang bertanda tangan di bawah ini:", left, y);
+  y += 7;
+
+  const labelX = left;
+  const colonX = 67;
+  const valueX = 72;
+  doc.text("Nama Siswa", labelX, y); doc.text(":", colonX, y); doc.text(nama || "-", valueX, y); y += 6;
+  doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
+  doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
+  doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
+  doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y);
+  doc.text(totalPoin + " Poin (Batas SP: 31 - 49)", valueX, y); y += 8;
+
+  doc.setFont("times", "bold");
+  doc.text("Rincian Pelanggaran:", left, y);
+  y += 6;
+  doc.setFont("times", "normal");
+
+  const detailLines = rincian
+    ? rincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`)
+    : ["Tidak ada rincian pelanggaran."];
+
+  for (const line of detailLines) {
+    y = drawWrapped(doc, line, left+4, y, 160, 5);
+    y += 1;
+    if (y > 245) { doc.addPage(); y = 20; }
+  }
+
+  y += 5;
+  doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", left, y); y += 7;
+  y = drawWrapped(doc, "1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", left, y, 166, 5); y += 2;
+  y = drawWrapped(doc, "2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.", left, y, 166, 5); y += 2;
+  y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 7;
+
+  y = drawWrapped(doc, "Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.", left, y, 166, 5);
+  y += 11;
+
+  // Template SP II: Guru BK + siswa, lalu Wali Kelas + Orang Tua/Wali.
+  doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
+  y += 10;
+
+  doc.text("Mengetahui,", left+25, y);
+  doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
+  y += 6;
+
+  doc.text("Guru BK,", left+25, y);
+  y += 21;
+  doc.text("(...........................)", left+25, y);
+  doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
+  y += 9;
+
+  doc.setFont("times", "normal");
+  doc.text("Materai Rp 10.000", 145, y, {align:"center"});
+  y += 13;
+
+  doc.text("Wali Kelas,", left+25, y);
+  doc.text("Orang Tua/Wali,", 145, y, {align:"center"});
+  y += 21;
+  doc.text("(...........................)", left+25, y);
+  doc.text("(...........................)", 145, y, {align:"center"});
+
+  const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
+  return {
+    blob: doc.output("blob"),
+    filename: `SP-II-${safeName}.pdf`
+  };
+}
+
+function getCurrentSPPDF() {
+  const level = document.getElementById("spJenis").value;
+  if (level === "SP II") return buildSP2PDF();
+  if (level === "SP I") return buildSP1PDF();
+  throw new Error("Untuk sementara PDF yang tersedia adalah SP I dan SP II.");
+}
+
 function previewSP1PDF() {
   const btn = document.getElementById("spPreviewBtn");
   btn.disabled = true;
   btn.textContent = "Menyiapkan preview...";
   try {
-    const pdf = buildSP1PDF();
+    const pdf = getCurrentSPPDF();
     if (currentSP1PDFUrl) URL.revokeObjectURL(currentSP1PDFUrl);
     currentSP1PDFBlob = pdf.blob;
     currentSP1PDFFilename = pdf.filename;
@@ -976,11 +1106,13 @@ function blobToBase64_(blob) {
 
 async function saveAndDownloadSP1PDF() {
   const btn = document.getElementById("spSaveDownloadBtn");
+  const level = document.getElementById("spJenis").value;
   btn.disabled = true;
   btn.textContent = "Menyimpan PDF...";
+
   try {
     if (!currentSP1PDFBlob) {
-      const pdf = buildSP1PDF();
+      const pdf = getCurrentSPPDF();
       currentSP1PDFBlob = pdf.blob;
       currentSP1PDFFilename = pdf.filename;
     }
@@ -996,7 +1128,7 @@ async function saveAndDownloadSP1PDF() {
         nis: document.getElementById("spNIS").value.trim(),
         nisn: document.getElementById("spNISN").value.trim(),
         kelas: document.getElementById("spKelas").value.trim(),
-        jenisSP: document.getElementById("spJenis").value,
+        jenisSP: level,
         totalPoin: normalizePoints(document.getElementById("spTotalPoin").value),
         dasarPelanggaran: document.getElementById("spDasar").value.trim(),
         rincianPelanggaran: document.getElementById("spRincian").value.trim(),
@@ -1013,16 +1145,18 @@ async function saveAndDownloadSP1PDF() {
         body:JSON.stringify(payload)
       });
       if (!response.ok) throw new Error("HTTP " + response.status);
+
       const result = await response.json();
-      if (!result.success) throw new Error(result.message || "Gagal menyimpan PDF SP I");
+      if (!result.success) throw new Error(result.message || "Gagal menyimpan PDF " + level);
+
       currentSP1Saved = true;
     }
 
     downloadSP1PDF();
-    toast("SP I berhasil disimpan ke Surat_SP dan PDF diunduh.");
+    toast(level + " berhasil disimpan ke Surat_SP dan PDF diunduh.");
   } catch (err) {
     console.error(err);
-    toast("SP I gagal disimpan: " + err.message, "error");
+    toast(level + " gagal disimpan: " + err.message, "error");
   } finally {
     btn.disabled = false;
     btn.textContent = "Simpan & Download PDF";
@@ -1162,7 +1296,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <div class="p-5 border-b flex items-start justify-between gap-3">
       <div>
         <p class="text-xs text-slate-500">Dokumen Surat Peringatan</p>
-        <h3 class="text-xl font-bold">Surat Perjanjian Tingkat I</h3>
+        <h3 id="spModalTitle" class="text-xl font-bold">Surat Perjanjian Tingkat I</h3>
         <p class="text-sm text-slate-500 mt-1">Data akan diambil dari data siswa dan riwayat pelanggaran.</p>
       </div>
       <button type="button" onclick="closeSPForm()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Tutup</button>
