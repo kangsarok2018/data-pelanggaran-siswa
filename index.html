@@ -754,13 +754,6 @@ function openSPForm() {
   document.getElementById("spRincian").value = currentStudentDetail.data.map(r => `${r.tanggal} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`).join("\n");
   document.getElementById("spKeterangan").value = "";
   document.getElementById("spPetugas").value = "";
-  const pdfBtn = document.getElementById("spPdfBtn");
-  const isSP1 = level === "SP I";
-  pdfBtn.disabled = !isSP1;
-  pdfBtn.title = isSP1 ? "Buat PDF SP I" : "Fitur PDF sementara khusus SP I";
-  pdfBtn.classList.toggle("opacity-50", !isSP1);
-  pdfBtn.classList.toggle("cursor-not-allowed", !isSP1);
-  pdfBtn.textContent = isSP1 ? "Simpan & Buat PDF SP I" : "PDF tersedia untuk SP I";
   document.getElementById("spModal").classList.remove("hidden");
 }
 
