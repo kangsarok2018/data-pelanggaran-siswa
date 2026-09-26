@@ -244,12 +244,20 @@
                 <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm max-w-2xl">
                     <form id="pointForm" onsubmit="submitPoint(event)" class="space-y-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
+                            <!-- Custom Searchable Student Dropdown -->
+                            <div class="relative">
                                 <label class="block text-xs font-medium text-slate-600 mb-1">Nama Siswa (Pilih dari Data / Ketik Manual)</label>
-                                <input type="text" id="name" required list="studentListSuggestions" placeholder="Contoh: Budi Santoso" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                                <datalist id="studentListSuggestions">
+                                <div class="relative">
+                                    <input type="text" id="studentSearchInput" autocomplete="off" placeholder="Contoh: Budi Santoso" onfocus="openStudentDropdown()" oninput="filterStudentDropdown()" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                                    <input type="hidden" id="selectedStudentName">
+                                    <div class="absolute inset-y-0 right-0 flex items-center px-2.5 pointer-events-none text-slate-400">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+                                </div>
+                                <!-- Dropdown List Box -->
+                                <div id="studentDropdownList" class="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto hidden divide-y divide-slate-100">
                                     <!-- Populated dynamically -->
-                                </datalist>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">Kelas (VII - IX)</label>
@@ -558,6 +566,151 @@
         let rawDataCache = [];
         let studentsCache = [];
 
+        // ---------------------------------------------------------
+        // CORE RENDER & DASHBOARD FUNCTIONS
+        // ---------------------------------------------------------
+        function renderDashboard() {
+            const activeSem = document.getElementById('dashboardSemesterFilter').value;
+            const filteredRows = rawDataCache.filter(r => {
+                const semCol = r[5] || 'Semester 1';
+                return semCol.toLowerCase().includes(activeSem.toLowerCase());
+            });
+
+            document.getElementById('statTotalStudents').textContent = studentsCache.length || 0;
+            document.getElementById('statTotalViolations').textContent = filteredRows.length;
+
+            const studentTotals = {};
+            filteredRows.forEach(r => {
+                const name = r[1] || 'Tanpa Nama';
+                const pts = Math.abs(parseInt(r[3]) || 0);
+                studentTotals[name] = (studentTotals[name] || 0) + pts;
+            });
+
+            let spCount = 0;
+            Object.values(studentTotals).forEach(tot => {
+                if (tot >= 25) spCount++;
+            });
+            document.getElementById('statTotalSP').textContent = spCount;
+
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            const monthCases = filteredRows.filter(r => {
+                if (!r[0]) return false;
+                const d = new Date(r[0]);
+                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            }).length;
+            document.getElementById('statMonthCases').textContent = monthCases;
+
+            // Recent Table
+            const recentTbody = document.getElementById('dashboardRecentTable');
+            if (filteredRows.length === 0) {
+                recentTbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Belum ada catatan pelanggaran.</td></tr>`;
+            } else {
+                recentTbody.innerHTML = filteredRows.slice(-5).reverse().map(row => {
+                    let dateStr = row[0] || '-';
+                    if (!isNaN(Date.parse(dateStr))) {
+                        dateStr = new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                    }
+                    const nameParts = (row[1] || '').split(' (');
+                    const name = nameParts[0];
+                    const cls = nameParts[1] ? nameParts[1].replace(')', '') : '-';
+                    const fullNotes = row[4] || '-';
+                    let jenis = fullNotes;
+                    if (fullNotes.includes(' | ')) jenis = fullNotes.split(' | ')[0];
+                    const pts = Math.abs(parseInt(row[3]) || 0);
+
+                    return `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="py-3 text-slate-500 font-medium whitespace-nowrap">${dateStr}</td>
+                            <td class="py-3 font-semibold text-slate-800">${name}</td>
+                            <td class="py-3 text-slate-600"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold">${cls}</span></td>
+                            <td class="py-3 text-slate-700">${jenis}</td>
+                            <td class="py-3 text-right"><span class="bg-rose-100 text-rose-800 px-2.5 py-0.5 rounded-full text-xs font-bold">-${pts}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // Top Students Leaderboard
+            const topDiv = document.getElementById('dashboardTopStudents');
+            const sortedStudents = Object.keys(studentTotals).map(name => ({ name, total: studentTotals[name] })).sort((a,b) => b.total - a.total).slice(0, 5);
+
+            if (sortedStudents.length === 0) {
+                topDiv.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Belum ada pelanggaran tercatat.</p>`;
+            } else {
+                topDiv.innerHTML = sortedStudents.map((s, idx) => `
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <span class="w-6 h-6 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold text-xs">${idx + 1}</span>
+                            <div>
+                                <p class="font-semibold text-slate-800 text-xs">${s.name}</p>
+                                <p class="text-[10px] text-slate-500">Akumulasi Poin</p>
+                            </div>
+                        </div>
+                        <span class="bg-rose-100 text-rose-700 px-2.5 py-1 rounded-lg text-xs font-bold">${s.total} Poin</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderStudentsTable() {
+            const filterClass = document.getElementById('filterStudentClass').value.toLowerCase();
+            const kw = document.getElementById('searchStudentInput').value.toLowerCase();
+            const tbody = document.getElementById('studentsTableBody');
+
+            // Calculate student point totals from rawDataCache
+            const studentTotals = {};
+            rawDataCache.forEach(r => {
+                const name = (r[1] || '').split(' (')[0].trim();
+                const pts = Math.abs(parseInt(r[3]) || 0);
+                studentTotals[name] = (studentTotals[name] || 0) + pts;
+            });
+
+            const filtered = studentsCache.filter(s => {
+                const name = (s.nama || '').toLowerCase();
+                const cls = (s.kelas || '').toLowerCase();
+                const matchesKw = name.includes(kw) || (s.nis || '').toLowerCase().includes(kw);
+                const matchesClass = filterClass === '' || cls.includes(filterClass);
+                return matchesKw && matchesClass;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">Tidak ada data siswa ditemukan.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map((s, idx) => {
+                const name = s.nama || '-';
+                const totalPts = studentTotals[name] || 0;
+                let status = '<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-semibold text-[11px]">Aman</span>';
+                if (totalPts >= 100) status = '<span class="bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full font-bold text-[11px]">Skorsing / Keluar</span>';
+                else if (totalPts >= 75) status = '<span class="bg-purple-100 text-purple-800 px-2.5 py-1 rounded-full font-bold text-[11px]">SP III</span>';
+                else if (totalPts >= 50) status = '<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold text-[11px]">SP II</span>';
+                else if (totalPts >= 25) status = '<span class="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-bold text-[11px]">SP I</span>';
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-4 py-3 text-slate-500 font-medium">${idx + 1}</td>
+                        <td class="px-4 py-3 font-semibold text-slate-700">${s.nis || '-'}<br><span class="text-[10px] text-slate-400 font-normal">NISN: ${s.nisn || '-'}</span></td>
+                        <td class="px-4 py-3 font-bold text-slate-800">${name}</td>
+                        <td class="px-4 py-3 text-slate-600"><span class="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg font-semibold">${s.kelas || '-'}</span></td>
+                        <td class="px-4 py-3 text-slate-600">${s.orangTua || '-'}</td>
+                        <td class="px-4 py-3 text-center"><span class="bg-rose-50 text-rose-700 px-3 py-1 rounded-lg font-extrabold">${totalPts} Poin</span></td>
+                        <td class="px-4 py-3 text-center">${status}</td>
+                        <td class="px-4 py-3 text-center">
+                            <button onclick="quickAddViolationFor('${name}', '${s.kelas || ''}')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition">
+                                + Catat Kasus
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ---------------------------------------------------------
+        // INITIALIZATION & EVENT HANDLERS
+        // ---------------------------------------------------------
         window.onload = function() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('violationDate').value = today;
@@ -583,9 +736,70 @@
             populateMainCategories();
             populateRulesTable();
 
+            // Close custom dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('studentDropdownList');
+                const searchInput = document.getElementById('studentSearchInput');
+                if (dropdown && !dropdown.contains(e.target) && e.target !== searchInput) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+
             if (SCRIPT_URL) {
                 fetchAllData();
             }
+        }
+
+        // Custom searchable student dropdown functions
+        function openStudentDropdown() {
+            const dropdown = document.getElementById('studentDropdownList');
+            dropdown.classList.remove('hidden');
+            renderStudentDropdownItems(studentsCache);
+        }
+
+        function filterStudentDropdown() {
+            const keyword = document.getElementById('studentSearchInput').value.toLowerCase();
+            const filtered = studentsCache.filter(s => 
+                (s.nama || '').toLowerCase().includes(keyword) || 
+                (s.kelas || '').toLowerCase().includes(keyword) || 
+                (s.nis || '').toLowerCase().includes(keyword)
+            );
+            const dropdown = document.getElementById('studentDropdownList');
+            dropdown.classList.remove('hidden');
+            renderStudentDropdownItems(filtered);
+        }
+
+        function renderStudentDropdownItems(list) {
+            const dropdown = document.getElementById('studentDropdownList');
+            if (!list || list.length === 0) {
+                dropdown.innerHTML = `<div class="p-3 text-xs text-slate-400 text-center">Tidak ada siswa ditemukan.</div>`;
+                return;
+            }
+            dropdown.innerHTML = list.map(s => `
+                <div onclick="selectStudentFromDropdown('${s.nama}', '${s.kelas || ''}')" class="p-2.5 hover:bg-indigo-50 cursor-pointer transition flex justify-between items-center text-xs">
+                    <div>
+                        <p class="font-semibold text-slate-800">${s.nama}</p>
+                        <p class="text-[10px] text-slate-500">NIS: ${s.nis || '-'}</p>
+                    </div>
+                    <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium text-[11px]">${s.kelas || '-'}</span>
+                </div>
+            `).join('');
+        }
+
+        function selectStudentFromDropdown(name, classStr) {
+            document.getElementById('studentSearchInput').value = name + (classStr ? ` (${classStr})` : '');
+            document.getElementById('selectedStudentName').value = name;
+            
+            if (classStr) {
+                const parts = classStr.trim().split(' ');
+                if (parts.length >= 2) {
+                    document.getElementById('gradeLevel').value = parts[0].toUpperCase();
+                    document.getElementById('classParallel').value = parts[1].toUpperCase();
+                } else {
+                    document.getElementById('gradeLevel').value = classStr.toUpperCase();
+                }
+            }
+            document.getElementById('studentDropdownList').classList.add('hidden');
         }
 
         function switchTab(tabId) {
@@ -735,7 +949,7 @@
                 const jsonS = await resS.json();
                 if (jsonS.success && jsonS.data) {
                     studentsCache = jsonS.data;
-                    updateStudentDatalist();
+                    renderStudentDropdownItems(studentsCache);
                 }
 
                 renderDashboard();
@@ -746,19 +960,13 @@
             }
         }
 
-        function updateStudentDatalist() {
-            const dl = document.getElementById('studentListSuggestions');
-            if (!dl) return;
-            dl.innerHTML = studentsCache.map(s => `<option value="${s.nama}">${s.kelas ? 'Kelas: ' + s.kelas : ''}</option>`).join('');
-        }
-
         async function submitPoint(event) {
             event.preventDefault();
             const mainSelect = document.getElementById('mainCategorySelect');
             const subSelect = document.getElementById('subCategorySelect');
             const subOpt = subSelect.options[subSelect.selectedIndex];
 
-            const nameVal = document.getElementById('name').value.trim();
+            const nameVal = document.getElementById('selectedStudentName').value.trim() || document.getElementById('studentSearchInput').value.trim();
             const gradeVal = document.getElementById('gradeLevel').value;
             const parallelVal = document.getElementById('classParallel').value.trim().toUpperCase();
             const fullName = `${nameVal} (${gradeVal} ${parallelVal})`;
@@ -797,6 +1005,8 @@
 
             showToast(`Pelanggaran berhasil dicatat (${semesterVal})!`);
             document.getElementById('pointForm').reset();
+            document.getElementById('selectedStudentName').value = '';
+            document.getElementById('studentSearchInput').value = '';
             document.getElementById('classParallel').value = 'A';
             document.getElementById('violationDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('semesterSelect').value = semesterVal;
@@ -806,203 +1016,10 @@
             else renderDashboard();
         }
 
-        function renderDashboard() {
-            const sem = document.getElementById('dashboardSemesterFilter').value;
-            const rows = rawDataCache.filter(r => {
-                const semCol = r[5] || 'Semester 1';
-                return semCol.toLowerCase().includes(sem.toLowerCase());
-            });
-
-            const studentSet = new Set(studentsCache.map(s => s.nama));
-            rows.forEach(r => {
-                if (r[1]) studentSet.add(r[1].split(' (')[0]);
-            });
-            document.getElementById('statTotalStudents').textContent = studentsCache.length > 0 ? studentsCache.length : studentSet.size;
-            document.getElementById('statTotalViolations').textContent = rows.length;
-
-            const studentMap = {};
-            rows.forEach(r => {
-                const name = r[1] || 'Tanpa Nama';
-                const pts = Math.abs(parseInt(r[3]) || 0);
-                if (!studentMap[name]) studentMap[name] = { total: 0, count: 0 };
-                studentMap[name].total += pts;
-                studentMap[name].count += 1;
-            });
-
-            let spCount = 0;
-            Object.values(studentMap).forEach(s => {
-                if (s.total >= 25) spCount++;
-            });
-            document.getElementById('statTotalSP').textContent = spCount;
-
-            const currentMonthStr = new Date().toISOString().slice(0, 7);
-            const monthCases = rows.filter(r => (r[0] || '').startsWith(currentMonthStr)).length;
-            document.getElementById('statMonthCases').textContent = monthCases;
-
-            const recentTbody = document.getElementById('dashboardRecentTable');
-            if (rows.length === 0) {
-                recentTbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Belum ada catatan pelanggaran.</td></tr>`;
-            } else {
-                recentTbody.innerHTML = rows.slice(-5).reverse().map(r => {
-                    const dateStr = r[0] ? new Date(r[0]).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-';
-                    const nameFull = r[1] || '-';
-                    let nameOnly = nameFull;
-                    let classOnly = '-';
-                    if (nameFull.includes('(')) {
-                        const parts = nameFull.split('(');
-                        nameOnly = parts[0].trim();
-                        classOnly = parts[1].replace(')', '').trim();
-                    }
-                    const fullNotes = r[4] || '-';
-                    const desc = fullNotes.split(' | ')[0];
-                    const pts = Math.abs(parseInt(r[3]) || 0);
-                    return `
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="py-3 font-medium text-slate-500">${dateStr}</td>
-                            <td class="py-3 font-semibold text-slate-800">${nameOnly}</td>
-                            <td class="py-3 text-slate-600">${classOnly}</td>
-                            <td class="py-3 text-slate-600 truncate max-w-xs">${desc}</td>
-                            <td class="py-3 text-right font-bold text-rose-600">-${pts}</td>
-                        </tr>
-                    `;
-                }).join('');
-            }
-
-            const topDiv = document.getElementById('dashboardTopStudents');
-            const sortedStudents = Object.keys(studentMap).map(name => ({
-                name, total: studentMap[name].total, count: studentMap[name].count
-            })).sort((a, b) => b.total - a.total).slice(0, 4);
-
-            if (sortedStudents.length === 0) {
-                topDiv.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Belum ada pelanggaran tercatat.</p>`;
-            } else {
-                topDiv.innerHTML = sortedStudents.map((s, idx) => `
-                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                        <div class="flex items-center gap-3">
-                            <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center">${idx + 1}</span>
-                            <div>
-                                <h4 class="font-semibold text-slate-800 text-xs">${s.name}</h4>
-                                <p class="text-[10px] text-slate-500">${s.count} kali pelanggaran</p>
-                            </div>
-                        </div>
-                        <span class="bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full text-xs font-bold">${s.total} Poin</span>
-                    </div>
-                `).join('');
-            }
-        }
-
-        function renderStudentsTable() {
-            const tbody = document.getElementById('studentsTableBody');
-            const keyword = (document.getElementById('searchStudentInput').value || '').toLowerCase();
-            const classFilter = document.getElementById('filterStudentClass').value.toLowerCase();
-            const sem = document.getElementById('dashboardSemesterFilter').value || 'Semester 1';
-            const rows = rawDataCache.filter(r => {
-                const semCol = r[5] || 'Semester 1';
-                return semCol.toLowerCase().includes(sem.toLowerCase());
-            });
-
-            const filtered = studentsCache.filter(st => {
-                const name = (st.nama || '').toLowerCase();
-                const nis = (st.nis || '').toLowerCase();
-                const kelas = (st.kelas || '').toLowerCase();
-                const matchesKeyword = name.includes(keyword) || nis.includes(keyword) || kelas.includes(keyword);
-                const matchesClass = classFilter === '' || kelas.includes(classFilter);
-                return matchesKeyword && matchesClass;
-            });
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">Tidak ada data siswa ditemukan di Google Sheets.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = filtered.map((st, idx) => {
-                let totalPts = 0;
-                rows.forEach(r => {
-                    if ((r[1] || '').toLowerCase().includes(st.nama.toLowerCase())) {
-                        totalPts += Math.abs(parseInt(r[3]) || 0);
-                    }
-                });
-
-                let spBadge = `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-[11px] font-semibold">Aman</span>`;
-                if (totalPts >= 100) spBadge = `<span class="bg-red-900 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">Skorsing / Keluar</span>`;
-                else if (totalPts >= 75) spBadge = `<span class="bg-rose-100 text-rose-800 px-2.5 py-0.5 rounded-full text-[11px] font-bold">SP III</span>`;
-                else if (totalPts >= 50) spBadge = `<span class="bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full text-[11px] font-bold">SP II</span>`;
-                else if (totalPts >= 25) spBadge = `<span class="bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full text-[11px] font-bold">SP I</span>`;
-
-                return `
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="px-4 py-3 text-slate-500 font-medium">${idx + 1}</td>
-                        <td class="px-4 py-3 text-slate-600 font-mono">${st.nis || '-'}<br><span class="text-[10px] text-slate-400">${st.nisn || ''}</span></td>
-                        <td class="px-4 py-3 font-semibold text-slate-800">${st.nama}</td>
-                        <td class="px-4 py-3 text-slate-600">${st.kelas || '-'}</td>
-                        <td class="px-4 py-3 text-slate-600">${st.orangTua || '-'}</td>
-                        <td class="px-4 py-3 text-center"><span class="bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full text-xs font-bold">${totalPts} Poin</span></td>
-                        <td class="px-4 py-3 text-center">${spBadge}</td>
-                        <td class="px-4 py-3 text-center">
-                            <button onclick="quickAddViolationFor('${st.nama}', '${st.kelas}')" class="text-indigo-600 hover:text-indigo-800 font-medium text-xs bg-indigo-50 px-2.5 py-1 rounded-lg">Catat Kasus</button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function openAddStudentModal() {
-            document.getElementById('addStudentModal').classList.remove('hidden');
-            document.getElementById('addStudentModal').classList.add('flex');
-        }
-
-        function closeAddStudentModal() {
-            document.getElementById('addStudentModal').classList.remove('flex');
-            document.getElementById('addStudentModal').classList.add('hidden');
-        }
-
-        async function saveNewStudent() {
-            const nis = document.getElementById('newStudentNis').value.trim();
-            const nisn = document.getElementById('newStudentNisn').value.trim();
-            const nama = document.getElementById('newStudentName').value.trim();
-            const kelas = document.getElementById('newStudentClass').value.trim().toUpperCase();
-            const orangTua = document.getElementById('newStudentParent').value.trim();
-
-            if (!nama) { showToast('Nama siswa wajib diisi!', 'error'); return; }
-
-            const payload = {
-                action: "addSiswa",
-                nis: nis,
-                nisn: nisn,
-                nama: nama,
-                kelas: kelas,
-                orangTua: orangTua
-            };
-
-            if (SCRIPT_URL) {
-                try {
-                    await fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                } catch (e) { console.error(e); }
-            }
-
-            studentsCache.push({ id: 'SIS-' + Date.now(), nis, nisn, nama, kelas, orangTua });
-            updateStudentDatalist();
-            closeAddStudentModal();
-            showToast('Siswa berhasil ditambahkan ke Google Sheets!');
-            renderStudentsTable();
-
-            document.getElementById('newStudentNis').value = '';
-            document.getElementById('newStudentNisn').value = '';
-            document.getElementById('newStudentName').value = '';
-            document.getElementById('newStudentClass').value = '';
-            document.getElementById('newStudentParent').value = '';
-
-            if (SCRIPT_URL) setTimeout(fetchAllData, 1000);
-        }
-
         function quickAddViolationFor(name, classStr) {
             switchTab('input');
-            document.getElementById('name').value = name;
+            document.getElementById('studentSearchInput').value = name + (classStr ? ` (${classStr})` : '');
+            document.getElementById('selectedStudentName').value = name;
             if (classStr) {
                 const parts = classStr.split(' ');
                 if (parts.length >= 2) {
@@ -1084,6 +1101,56 @@
             renderHistoryTable(filtered);
         }
 
+        // Student Modal Functions
+        function openAddStudentModal() {
+            document.getElementById('addStudentModal').classList.remove('hidden');
+            document.getElementById('addStudentModal').classList.add('flex');
+        }
+
+        function closeAddStudentModal() {
+            document.getElementById('addStudentModal').classList.add('hidden');
+            document.getElementById('addStudentModal').classList.remove('flex');
+        }
+
+        async function saveNewStudent() {
+            const nis = document.getElementById('newStudentNis').value.trim();
+            const nisn = document.getElementById('newStudentNisn').value.trim();
+            const nama = document.getElementById('newStudentName').value.trim();
+            const kelas = document.getElementById('newStudentClass').value.trim().toUpperCase();
+            const orangTua = document.getElementById('newStudentParent').value.trim();
+
+            if (!nama || !kelas) {
+                showToast('Nama siswa dan kelas wajib diisi!', 'error');
+                return;
+            }
+
+            const payload = {
+                action: "addSiswa",
+                nis: nis,
+                nisn: nisn,
+                nama: nama,
+                kelas: kelas,
+                orangTua: orangTua
+            };
+
+            if (SCRIPT_URL) {
+                try {
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                } catch (e) { console.error(e); }
+            }
+
+            studentsCache.push({ nis, nisn, nama, kelas, orangTua });
+            showToast('Siswa berhasil ditambahkan!');
+            closeAddStudentModal();
+            renderStudentsTable();
+            renderStudentDropdownItems(studentsCache);
+        }
+
         function triggerBackup() {
             const backupData = {
                 students: studentsCache,
@@ -1110,7 +1177,7 @@
                     const parsed = JSON.parse(e.target.result);
                     if (parsed.students) {
                         studentsCache = parsed.students;
-                        updateStudentDatalist();
+                        renderStudentDropdownItems(studentsCache);
                     }
                     if (parsed.records) {
                         rawDataCache = parsed.records;
