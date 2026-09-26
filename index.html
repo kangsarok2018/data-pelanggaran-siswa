@@ -961,10 +961,23 @@ function downloadSP1PDF() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function blobToBase64_(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      const comma = result.indexOf(",");
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.onerror = () => reject(new Error("PDF tidak dapat diproses."));
+    reader.readAsDataURL(blob);
+  });
+}
+
 async function saveAndDownloadSP1PDF() {
   const btn = document.getElementById("spSaveDownloadBtn");
   btn.disabled = true;
-  btn.textContent = "Menyimpan...";
+  btn.textContent = "Menyimpan PDF...";
   try {
     if (!currentSP1PDFBlob) {
       const pdf = buildSP1PDF();
@@ -973,8 +986,9 @@ async function saveAndDownloadSP1PDF() {
     }
 
     if (!currentSP1Saved) {
+      const pdfBase64 = await blobToBase64_(currentSP1PDFBlob);
       const payload = {
-        action: "addSuratSP",
+        action: "publishSuratSP",
         id: "",
         nomorSurat: document.getElementById("spNomor").value.trim(),
         tanggalSurat: document.getElementById("spTanggal").value,
@@ -988,18 +1002,24 @@ async function saveAndDownloadSP1PDF() {
         rincianPelanggaran: document.getElementById("spRincian").value.trim(),
         keterangan: document.getElementById("spKeterangan").value.trim(),
         petugas: document.getElementById("spPetugas").value.trim(),
-        status: "PDF Dibuat",
-        filePDF: ""
+        status: "Diterbitkan",
+        fileName: currentSP1PDFFilename,
+        pdfBase64: pdfBase64
       };
-      const response = await fetch(CONFIG.API_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload) });
+
+      const response = await fetch(CONFIG.API_URL, {
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify(payload)
+      });
       if (!response.ok) throw new Error("HTTP " + response.status);
       const result = await response.json();
-      if (!result.success) throw new Error(result.message || "Gagal menyimpan surat SP");
+      if (!result.success) throw new Error(result.message || "Gagal menyimpan PDF SP I");
       currentSP1Saved = true;
     }
 
     downloadSP1PDF();
-    toast("SP I berhasil disimpan dan diunduh.");
+    toast("SP I berhasil disimpan ke Surat_SP dan PDF diunduh.");
   } catch (err) {
     console.error(err);
     toast("SP I gagal disimpan: " + err.message, "error");
