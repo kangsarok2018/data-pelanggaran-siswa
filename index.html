@@ -1017,24 +1017,33 @@ function buildSP3PDF() {
   doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
   y += 10;
 
-  // Susunan tanda tangan mengikuti template SP Tingkat III:
-  // Wali Kelas | Guru BK
-  // Pembina OSIS | Siswa yang bersangkutan
+  // Susunan tanda tangan SP Tingkat III:
+  // Baris 1: Wali Kelas | Guru BK
+  // Baris 2: Pembina OSIS | Waka Kesiswaan
+  // Baris 3: Orang Tua/Wali | Siswa yang bersangkutan
   doc.text("Mengetahui,", left+25, y);
-  doc.text("Guru BK,", 115, y, {align:"center"});
+  doc.text("Mengetahui,", 145, y, {align:"center"});
   y += 6;
+
   doc.text("Wali Kelas,", left+25, y);
-  y += 21;
+  doc.text("Guru BK,", 145, y, {align:"center"});
+  y += 20;
   doc.text("(...........................)", left+25, y);
-  doc.text("(...........................)", 115, y, {align:"center"});
-  y += 9;
+  doc.text("(...........................)", 145, y, {align:"center"});
+  y += 10;
 
   doc.text("Pembina OSIS,", left+25, y);
+  doc.text("Waka Kesiswaan,", 145, y, {align:"center"});
+  y += 20;
+  doc.text("(...........................)", left+25, y);
+  doc.text("(...........................)", 145, y, {align:"center"});
+  y += 10;
+
+  doc.text("Orang Tua/Wali,", left+25, y);
   doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
   y += 6;
-  y += 13;
-  doc.text("Materai Rp 10.000", 145, y, {align:"center"});
-  y += 10;
+  doc.text("Materai Rp 10.000", 145, y + 13, {align:"center"});
+  y += 23;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
 
