@@ -347,9 +347,9 @@ function normalizePoints(value) {
 
 function statusFromPoints(points) {
   const p = normalizePoints(points);
-  if (p >= 100) return { label:"SP Akhir", cls:"bg-red-100 text-red-800" };
+  if (p >= 100) return { label:"SP IV (Akhir)", cls:"bg-red-100 text-red-800" };
   if (p >= 50) return { label:"SP III", cls:"bg-red-100 text-red-700" };
-  if (p >= 35) return { label:"SP II", cls:"bg-orange-100 text-orange-700" };
+  if (p >= 31) return { label:"SP II", cls:"bg-orange-100 text-orange-700" };
   if (p >= 20) return { label:"SP I", cls:"bg-yellow-100 text-yellow-700" };
   return { label:"Aman", cls:"bg-green-100 text-green-700" };
 }
@@ -671,6 +671,7 @@ function showStudentDetail(nama, kelas, semester="Semua") {
 
   const totalPoints = data.reduce((sum, r) => sum + normalizePoints(r.poin), 0);
   const status = statusFromPoints(totalPoints);
+  currentStudentDetail = { nama, kelas, semester, data, totalPoints };
 
   document.getElementById("detailStudentName").textContent = nama;
   document.getElementById("detailStudentClass").textContent = `Kelas ${kelas}`;
@@ -678,6 +679,7 @@ function showStudentDetail(nama, kelas, semester="Semua") {
   document.getElementById("detailTotalPoints").textContent = totalPoints;
   document.getElementById("detailSemester").textContent = semester === "Semua" ? "Semua Semester" : `Semester ${semester}`;
   document.getElementById("detailStatus").innerHTML = `<span class="px-3 py-1 rounded-full text-xs font-semibold ${status.cls}">${escapeHTML(status.label)}</span>`;
+  prepareSPButton(totalPoints);
 
   const body = document.getElementById("detailHistoryBody");
   if (!data.length) {
@@ -696,6 +698,105 @@ function showStudentDetail(nama, kelas, semester="Semua") {
 
   document.getElementById("studentDetailModal").classList.remove("hidden");
   document.body.classList.add("overflow-hidden");
+}
+
+let currentStudentDetail = null;
+
+function getSPLevel(points) {
+  const p = normalizePoints(points);
+  if (p >= 100) return "SP IV (Akhir)";
+  if (p >= 50) return "SP III";
+  if (p >= 31) return "SP II";
+  if (p >= 20) return "SP I";
+  return "";
+}
+
+function findMasterStudent(nama, kelas) {
+  const nk = String(nama).trim().toLowerCase();
+  const kk = String(kelas).trim().toLowerCase();
+  return students.find(s => String(s.nama).trim().toLowerCase() === nk && String(s.kelas).trim().toLowerCase() === kk) ||
+         students.find(s => String(s.nama).trim().toLowerCase() === nk) || null;
+}
+
+function prepareSPButton(totalPoints) {
+  const btn = document.getElementById("btnBuatSP");
+  const info = document.getElementById("detailSpInfo");
+  const level = getSPLevel(totalPoints);
+  if (level) {
+    btn.disabled = false;
+    btn.textContent = "Buat " + level;
+    info.textContent = "Total poin memenuhi ketentuan " + level + ".";
+  } else {
+    btn.disabled = true;
+    btn.textContent = "Belum Memenuhi SP";
+    info.textContent = "SP mulai diterbitkan pada 20 poin.";
+  }
+}
+
+function openSPForm() {
+  if (!currentStudentDetail) return;
+  const level = getSPLevel(currentStudentDetail.totalPoints);
+  if (!level) return;
+  const master = findMasterStudent(currentStudentDetail.nama, currentStudentDetail.kelas) || {};
+  document.getElementById("spJenis").value = level;
+  document.getElementById("spNama").value = currentStudentDetail.nama;
+  document.getElementById("spNIS").value = master.nis || "";
+  document.getElementById("spNISN").value = master.nisn || "";
+  document.getElementById("spKelas").value = currentStudentDetail.kelas;
+  document.getElementById("spTotalPoin").value = currentStudentDetail.totalPoints;
+  document.getElementById("spTanggal").value = new Date().toISOString().slice(0,10);
+  document.getElementById("spDasar").value = "Berdasarkan akumulasi poin pelanggaran tata tertib siswa.";
+  document.getElementById("spRincian").value = currentStudentDetail.data.map(r => `${r.tanggal} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`).join("\n");
+  document.getElementById("spKeterangan").value = "";
+  document.getElementById("spPetugas").value = "";
+  document.getElementById("spModal").classList.remove("hidden");
+}
+
+function closeSPForm() {
+  document.getElementById("spModal").classList.add("hidden");
+}
+
+async function submitSPForm(event) {
+  event.preventDefault();
+  const btn = document.getElementById("spSubmitBtn");
+  btn.disabled = true;
+  btn.textContent = "Menyimpan...";
+  const payload = {
+    action: "addSuratSP",
+    id: "",
+    nomorSurat: document.getElementById("spNomor").value.trim(),
+    tanggalSurat: document.getElementById("spTanggal").value,
+    namaSiswa: document.getElementById("spNama").value.trim(),
+    nis: document.getElementById("spNIS").value.trim(),
+    nisn: document.getElementById("spNISN").value.trim(),
+    kelas: document.getElementById("spKelas").value.trim(),
+    jenisSP: document.getElementById("spJenis").value,
+    totalPoin: normalizePoints(document.getElementById("spTotalPoin").value),
+    dasarPelanggaran: document.getElementById("spDasar").value.trim(),
+    rincianPelanggaran: document.getElementById("spRincian").value.trim(),
+    keterangan: document.getElementById("spKeterangan").value.trim(),
+    petugas: document.getElementById("spPetugas").value.trim(),
+    status: "Draft",
+    filePDF: ""
+  };
+  try {
+    const response = await fetch(CONFIG.API_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload) });
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message || "Gagal menyimpan surat SP");
+    toast("Surat SP berhasil disimpan sebagai Draft.");
+    closeSPForm();
+  } catch (err) {
+    console.error(err);
+    toast("Surat SP gagal disimpan: " + err.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Simpan Draft SP";
+  }
+}
+
+function closeSPFormOnBackdrop(event) {
+  if (event.target.id === "spModal") closeSPForm();
 }
 
 function closeStudentDetail(event) {
@@ -850,6 +951,14 @@ document.addEventListener("DOMContentLoaded", () => {
           <p class="text-xs text-slate-500">Status</p>
           <div id="detailStatus" class="mt-2">-</div>
         </div>
+      </div>
+
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <div>
+          <h4 class="font-bold">Surat Peringatan (SP)</h4>
+          <p id="detailSpInfo" class="text-xs text-slate-500 mt-1">-</p>
+        </div>
+        <button id="btnBuatSP" type="button" onclick="openSPForm()" class="btn bg-blue-600 hover:bg-blue-700 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed">Buat Surat SP</button>
       </div>
 
       <div class="flex items-center justify-between gap-3 mb-3">
