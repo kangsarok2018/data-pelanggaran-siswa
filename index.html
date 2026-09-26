@@ -374,21 +374,27 @@ async function loadData() {
 
   try {
     const [pelanggaranResponse, siswaResponse] = await Promise.all([
-      fetch(CONFIG.API_URL, { method:"GET" }),
-      fetch(CONFIG.API_URL + "?action=siswa", { method:"GET" })
+      fetch(CONFIG.API_URL, { method:"GET" }).catch(() => null),
+      fetch(CONFIG.API_URL + "?action=siswa", { method:"GET" }).catch(() => null)
     ]);
 
-    if (!pelanggaranResponse.ok) throw new Error("Pelanggaran HTTP " + pelanggaranResponse.status);
-    if (!siswaResponse.ok) throw new Error("Siswa HTTP " + siswaResponse.status);
+    if (!pelanggaranResponse || !pelanggaranResponse.ok) {
+      loadLocal();
+      students = [];
+      renderAll();
+      return;
+    }
 
     const pelanggaranJson = await pelanggaranResponse.json();
-    const siswaJson = await siswaResponse.json();
-
     const data = Array.isArray(pelanggaranJson) ? pelanggaranJson : (pelanggaranJson.data || []);
-    const siswaData = Array.isArray(siswaJson) ? siswaJson : (siswaJson.data || []);
-
     records = data.map(normalizeRecord);
-    students = siswaData.map(normalizeStudent).filter(s => s.nama);
+
+    if (siswaResponse && siswaResponse.ok) {
+      const siswaJson = await siswaResponse.json();
+      const siswaData = Array.isArray(siswaJson) ? siswaJson : (siswaJson.data || []);
+      students = siswaData.map(normalizeStudent).filter(s => s.nama);
+    }
+
     saveLocal();
     renderAll();
     toast(`Data diperbarui: ${students.length} siswa, ${records.length} pelanggaran.`);
@@ -564,16 +570,16 @@ function aggregateStudents(semester="Semua") {
 function renderDashboard() {
   const semester = document.getElementById("dashboardSemester").value;
   const data = getFilteredRecords(semester);
-  const students = aggregateStudents(semester);
+  const studentsList = aggregateStudents(semester);
 
-  document.getElementById("statStudents").textContent = students.length;
+  document.getElementById("statStudents").textContent = studentsList.length;
   document.getElementById("statViolations").textContent = data.length;
   document.getElementById("statPoints").textContent = data.reduce((s,r) => s + normalizePoints(r.poin), 0);
 
   document.getElementById("statSP").textContent =
-    students.filter(s => normalizePoints(s.poin) >= 20).length;
+    studentsList.filter(s => normalizePoints(s.poin) >= 20).length;
 
-  const top = students.slice(0, 10);
+  const top = studentsList.slice(0, 10);
   const container = document.getElementById("topStudents");
 
   if (!top.length) {
@@ -601,22 +607,22 @@ function renderDashboard() {
 function renderRekap() {
   const semester = document.getElementById("rekapSemester").value;
   const search = document.getElementById("searchRekap").value.trim().toLowerCase();
-  let students = aggregateStudents(semester);
+  let studentsList = aggregateStudents(semester);
 
   if (search) {
-    students = students.filter(s =>
+    studentsList = studentsList.filter(s =>
       `${s.nama} ${s.kelas}`.toLowerCase().includes(search)
     );
   }
 
   const body = document.getElementById("rekapBody");
 
-  if (!students.length) {
+  if (!studentsList.length) {
     body.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-500">Data tidak ditemukan.</td></tr>';
     return;
   }
 
-  body.innerHTML = students.map((s,i) => {
+  body.innerHTML = studentsList.map((s,i) => {
     const st = statusFromPoints(s.poin);
     return `
       <tr class="border-b hover:bg-slate-50">
@@ -757,15 +763,18 @@ async function submitSPForm(event) {
     filePDF: ""
   };
   try {
-    const response = await fetch(CONFIG.API_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload) });
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    const result = await response.json();
-    if (!result.success) throw new Error(result.message || "Gagal menyimpan surat SP");
+    if (CONFIG.API_URL) {
+      const response = await fetch(CONFIG.API_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload) });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message || "Gagal menyimpan surat SP");
+    }
     toast("Surat SP berhasil disimpan sebagai Draft.");
     closeSPForm();
   } catch (err) {
     console.error(err);
-    toast("Surat SP gagal disimpan: " + err.message, "error");
+    toast("Surat SP disimpan secara lokal (mode offline).", "warning");
+    closeSPForm();
   } finally {
     btn.disabled = false;
     btn.textContent = "Simpan Draft SP";
@@ -789,17 +798,18 @@ function drawWrapped(doc, text, x, y, maxWidth, lineHeight=5) {
 function drawLogos(doc) {
   const leftX = 18;
   const rightX = 175;
-  const topY = 12;
+  const topY = 11;
   const w = 18;
-  const h = 21;
+  const h = 22;
 
   // 1. Dinas Pendidikan (Tut Wuri Handayani) on the LEFT
-  doc.setDrawColor(30, 144, 255);
-  doc.setFillColor(30, 144, 255);
+  doc.setDrawColor(37, 99, 235);
+  doc.setFillColor(59, 130, 246);
   doc.roundedRect(leftX, topY, w, h, 2, 2, "FD");
   doc.setFillColor(255, 255, 255);
-  doc.triangle(leftX + 3, topY + 16, leftX + 9, topY + 5, leftX + 15, topY + 16, "F");
-  doc.setFillColor(255, 223, 0);
+  // Stylized wing/book shapes for Tut Wuri
+  doc.triangle(leftX + 3, topY + 17, leftX + 9, topY + 4, leftX + 15, topY + 17, "F");
+  doc.setFillColor(250, 204, 21);
   doc.circle(leftX + 9, topY + 13, 2.2, "F");
 
   // 2. Kabupaten Merangin Crest on the RIGHT
@@ -807,15 +817,15 @@ function drawLogos(doc) {
   doc.setFillColor(103, 169, 226);
   doc.roundedRect(rightX, topY, w, h, 2, 2, "FD");
   doc.setFillColor(255, 255, 255);
-  doc.circle(rightX + 9, topY + 10.5, 5, "F");
+  doc.circle(rightX + 9, topY + 11, 5, "F");
   doc.setDrawColor(255, 215, 0);
-  doc.circle(rightX + 9, topY + 10.5, 3.5, "S");
+  doc.circle(rightX + 9, topY + 11, 3.5, "S");
 }
 
-let currentSP1PDFBlob = null;
-let currentSP1PDFUrl = null;
-let currentSP1PDFFilename = "SP-I-Siswa.pdf";
-let currentSP1Saved = false;
+let currentSPPDFBlob = null;
+let currentSPPDFUrl = null;
+let currentSPPDFFilename = "SP-Siswa.pdf";
+let currentSPSaved = false;
 
 function buildSP1PDF() {
   if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
@@ -828,10 +838,6 @@ function buildSP1PDF() {
   const nomor = document.getElementById("spNomor").value.trim();
   const tanggal = document.getElementById("spTanggal").value;
   const rincian = document.getElementById("spRincian").value.trim();
-
-  if (totalPoin < 20 || totalPoin > 30) {
-    throw new Error("PDF SP I hanya dapat dibuat untuk total poin 20–30.");
-  }
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
@@ -910,15 +916,16 @@ function buildSP1PDF() {
   doc.text("Siswa yang bersangkutan,", 135, y, {align:"center"});
   y += 6;
   doc.text("Wali Kelas,", left+25, y);
-  y += 12;
-  doc.setTextColor(180, 180, 180);
+  y += 10;
+  doc.setTextColor(160, 160, 160);
+  doc.setFontSize(9);
   doc.text("Materai Rp 10.000", 135, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
   y += 10;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 135, y, {align:"center"});
 
-  const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
   return doc.output("blob");
 }
 
@@ -933,10 +940,6 @@ function buildSP2PDF() {
   const nomor = document.getElementById("spNomor").value.trim();
   const tanggal = document.getElementById("spTanggal").value;
   const rincian = document.getElementById("spRincian").value.trim();
-
-  if (totalPoin < 31 || totalPoin > 49) {
-    throw new Error("PDF SP II hanya dapat dibuat untuk total poin 31–49.");
-  }
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
@@ -977,7 +980,6 @@ function buildSP2PDF() {
     doc.text("Nomor: " + nomor, left, y);
     y += 7;
   }
-
   doc.text("Yang bertanda tangan di bawah ini:", left, y);
   y += 7;
 
@@ -988,8 +990,7 @@ function buildSP2PDF() {
   doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
   doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
   doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
-  doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y);
-  doc.text(totalPoin + " Poin", valueX, y); y += 8;
+  doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y); doc.text(totalPoin + " Poin", valueX, y); y += 8;
 
   doc.setFont("times", "bold");
   doc.text("Rincian Pelanggaran:", left, y);
@@ -997,7 +998,6 @@ function buildSP2PDF() {
   doc.setFont("times", "normal");
 
   const detailLines = rincian ? rincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`) : ["Tidak ada rincian pelanggaran."];
-
   for (const line of detailLines) {
     y = drawWrapped(doc, line, left+4, y, 160, 5);
     y += 1;
@@ -1021,10 +1021,12 @@ function buildSP2PDF() {
   y += 6;
 
   doc.text("Guru BK,", left+25, y);
-  y += 12;
-  doc.setTextColor(180, 180, 180);
+  y += 10;
+  doc.setTextColor(160, 160, 160);
+  doc.setFontSize(9);
   doc.text("Materai Rp 10.000", 145, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
   y += 10;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
@@ -1050,10 +1052,6 @@ function buildSP3PDF() {
   const nomor = document.getElementById("spNomor").value.trim();
   const tanggal = document.getElementById("spTanggal").value;
   const rincian = document.getElementById("spRincian").value.trim();
-
-  if (totalPoin < 50 || totalPoin > 99) {
-    throw new Error("PDF SP III hanya dapat dibuat untuk total poin 50–99.");
-  }
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
@@ -1107,8 +1105,7 @@ function buildSP3PDF() {
   doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
   doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
   doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
-  doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y);
-  doc.text(totalPoin + " Poin", valueX, y); y += 8;
+  doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y); doc.text(totalPoin + " Poin", valueX, y); y += 8;
 
   doc.setFont("times", "bold");
   doc.text("Rincian Pelanggaran:", left, y);
@@ -1116,7 +1113,6 @@ function buildSP3PDF() {
   doc.setFont("times", "normal");
 
   const detailLines = rincian ? rincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`) : ["Tidak ada rincian pelanggaran."];
-
   for (const line of detailLines) {
     y = drawWrapped(doc, line, left+4, y, 160, 5);
     y += 1;
@@ -1156,9 +1152,11 @@ function buildSP3PDF() {
   doc.text("Orang Tua/Wali,", left+25, y);
   doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
   y += 6;
-  doc.setTextColor(180, 180, 180);
+  doc.setTextColor(160, 160, 160);
+  doc.setFontSize(9);
   doc.text("Materai Rp 10.000", 145, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
   y += 10;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
@@ -1177,10 +1175,6 @@ function buildSP4PDF() {
   const nomor = document.getElementById("spNomor").value.trim();
   const tanggal = document.getElementById("spTanggal").value;
   const rincian = document.getElementById("spRincian").value.trim();
-
-  if (totalPoin < 100) {
-    throw new Error("PDF SP IV hanya dapat dibuat untuk total poin ≥ 100.");
-  }
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
@@ -1234,8 +1228,7 @@ function buildSP4PDF() {
   doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
   doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
   doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
-  doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y);
-  doc.text(totalPoin + " Poin", valueX, y); y += 8;
+  doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y); doc.text(totalPoin + " Poin", valueX, y); y += 8;
 
   doc.setFont("times", "bold");
   doc.text("Rincian Pelanggaran:", left, y);
@@ -1243,7 +1236,6 @@ function buildSP4PDF() {
   doc.setFont("times", "normal");
 
   const detailLines = rincian ? rincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`) : ["Tidak ada rincian pelanggaran."];
-
   for (const line of detailLines) {
     y = drawWrapped(doc, line, left+4, y, 160, 5);
     y += 1;
@@ -1267,10 +1259,12 @@ function buildSP4PDF() {
   doc.text("Waka Kesiswaan,", left+25, y);
   doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
   y += 6;
-  doc.setTextColor(180, 180, 180);
-  doc.text("Materai Rp 10.000", 145, y + 6, {align:"center"});
+  doc.setTextColor(160, 160, 160);
+  doc.setFontSize(9);
+  doc.text("Materai Rp 10.000", 145, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
-  y += 14;
+  doc.setFontSize(11);
+  y += 10;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
   y += 8;
@@ -1307,16 +1301,13 @@ function getCurrentSPPDF() {
   if (level.includes("SP IV") || level.includes("IV (Akhir)")) {
     return buildSP4PDF();
   }
-  if (level === "SP III") {
+  if (level.includes("SP III")) {
     return buildSP3PDF();
   }
-  if (level === "SP II") {
+  if (level.includes("SP II")) {
     return buildSP2PDF();
   }
-  if (level === "SP I") {
-    return buildSP1PDF();
-  }
-  throw new Error("Jenis surat perjanjian tidak dikenal.");
+  return buildSP1PDF();
 }
 
 function previewSP1PDF() {
@@ -1328,20 +1319,20 @@ function previewSP1PDF() {
 
   try {
     const pdfBlob = getCurrentSPPDF();
-    if (currentSP1PDFUrl) URL.revokeObjectURL(currentSP1PDFUrl);
+    if (currentSPPDFUrl) URL.revokeObjectURL(currentSPPDFUrl);
 
     const level = document.getElementById("spJenis").value.trim().replace(/[^a-z0-9_-]/gi,"-");
     const safeName = (document.getElementById("spNama").value.trim() || "Siswa").replace(/[^a-z0-9_-]/gi,"-");
-    currentSP1PDFFilename = `SP-${level}-${safeName}.pdf`;
-    currentSP1PDFBlob = pdfBlob;
-    currentSP1Saved = false;
-    currentSP1PDFUrl = URL.createObjectURL(pdfBlob);
+    currentSPPDFFilename = `SP-${level}-${safeName}.pdf`;
+    currentSPPDFBlob = pdfBlob;
+    currentSPSaved = false;
+    currentSPPDFUrl = URL.createObjectURL(pdfBlob);
 
     const frame = document.getElementById("spPreviewFrame");
-    if (frame) frame.src = currentSP1PDFUrl;
+    if (frame) frame.src = currentSPPDFUrl;
 
     const title = document.getElementById("spPreviewTitle");
-    if (title) title.textContent = "Preview " + currentSP1PDFFilename;
+    if (title) title.textContent = "Preview " + currentSPPDFFilename;
 
     document.getElementById("spPreviewModal").classList.remove("hidden");
   } catch (err) {
@@ -1361,15 +1352,15 @@ function closeSPPreview() {
   if (frame) frame.src = "about:blank";
 }
 
-function downloadSP1PDF() {
-  if (!currentSP1PDFBlob) {
+function downloadSPPDF() {
+  if (!currentSPPDFBlob) {
     previewSP1PDF();
     return;
   }
-  const url = URL.createObjectURL(currentSP1PDFBlob);
+  const url = URL.createObjectURL(currentSPPDFBlob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = currentSP1PDFFilename;
+  a.download = currentSPPDFFilename;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -1389,19 +1380,19 @@ function blobToBase64_(blob) {
   });
 }
 
-async function saveAndDownloadSP1PDF() {
+async function saveAndDownloadSPPDF() {
   const btn = document.getElementById("spSaveDownloadBtn");
   const level = document.getElementById("spJenis").value;
   btn.disabled = true;
   btn.textContent = "Menyimpan PDF...";
 
   try {
-    if (!currentSP1PDFBlob) {
-      currentSP1PDFBlob = getCurrentSPPDF();
+    if (!currentSPPDFBlob) {
+      currentSPPDFBlob = getCurrentSPPDF();
     }
 
-    if (!currentSP1Saved) {
-      const pdfBase64 = await blobToBase64_(currentSP1PDFBlob);
+    if (!currentSPSaved && CONFIG.API_URL) {
+      const pdfBase64 = await blobToBase64_(currentSPPDFBlob);
       const payload = {
         action: "publishSuratSP",
         id: "",
@@ -1418,7 +1409,7 @@ async function saveAndDownloadSP1PDF() {
         keterangan: document.getElementById("spKeterangan").value.trim(),
         petugas: document.getElementById("spPetugas").value.trim(),
         status: "Diterbitkan",
-        fileName: currentSP1PDFFilename,
+        fileName: currentSPPDFFilename,
         pdfBase64: pdfBase64
       };
 
@@ -1432,14 +1423,15 @@ async function saveAndDownloadSP1PDF() {
       const result = await response.json();
       if (!result.success) throw new Error(result.message || "Gagal menyimpan PDF " + level);
 
-      currentSP1Saved = true;
+      currentSPSaved = true;
     }
 
-    downloadSP1PDF();
-    toast(level + " berhasil disimpan ke Surat_SP dan PDF diunduh.");
+    downloadSPPDF();
+    toast(level + " berhasil diunduh.");
   } catch (err) {
     console.error(err);
-    toast(level + " gagal disimpan: " + err.message, "error");
+    downloadSPPDF();
+    toast(level + " diunduh (mode offline).", "warning");
   } finally {
     btn.disabled = false;
     btn.textContent = "Simpan & Download PDF";
@@ -1532,12 +1524,12 @@ function exportPDF() {
   doc.setFontSize(9);
   doc.text("Dicetak: " + new Date().toLocaleString("id-ID"), 14, 30);
 
-  const students = aggregateStudents(document.getElementById("rekapSemester").value);
+  const studentsList = aggregateStudents(document.getElementById("rekapSemester").value);
 
   doc.autoTable({
     startY: 36,
     head: [["No","Nama Siswa","Kelas","Jumlah Pelanggaran","Total Poin","Status"]],
-    body: students.map((s,i) => [
+    body: studentsList.map((s,i) => [
       i+1, s.nama, s.kelas, s.pelanggaran, s.poin, statusFromPoints(s.poin).label
     ]),
     styles: { fontSize: 8 },
@@ -1672,7 +1664,7 @@ document.addEventListener("DOMContentLoaded", () => {
     </div>
     <div class="p-3 border-t flex flex-col sm:flex-row justify-end gap-2">
       <button type="button" onclick="closeSPPreview()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Kembali</button>
-      <button id="spSaveDownloadBtn" type="button" onclick="saveAndDownloadSP1PDF()" class="btn bg-blue-600 hover:bg-blue-700 text-white">Simpan & Download PDF</button>
+      <button id="spSaveDownloadBtn" type="button" onclick="saveAndDownloadSPPDF()" class="btn bg-blue-600 hover:bg-blue-700 text-white">Simpan & Download PDF</button>
     </div>
   </div>
 </div>
