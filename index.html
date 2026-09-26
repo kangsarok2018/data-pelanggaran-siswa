@@ -1041,32 +1041,47 @@ function buildSP2PDF() {
 }
 
 function getCurrentSPPDF() {
-  const level = document.getElementById("spJenis").value;
-  if (level === "SP II") return buildSP2PDF();
-  if (level === "SP I") return buildSP1PDF();
+  const level = document.getElementById("spJenis").value.trim();
+  if (level === "SP II") {
+    return buildSP2PDF();
+  }
+  if (level === "SP I") {
+    return buildSP1PDF();
+  }
   throw new Error("Untuk sementara PDF yang tersedia adalah SP I dan SP II.");
 }
 
 function previewSP1PDF() {
   const btn = document.getElementById("spPreviewBtn");
-  btn.disabled = true;
-  btn.textContent = "Menyiapkan preview...";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Menyiapkan preview...";
+  }
+
   try {
     const pdf = getCurrentSPPDF();
     if (currentSP1PDFUrl) URL.revokeObjectURL(currentSP1PDFUrl);
+
     currentSP1PDFBlob = pdf.blob;
     currentSP1PDFFilename = pdf.filename;
     currentSP1Saved = false;
     currentSP1PDFUrl = URL.createObjectURL(pdf.blob);
-    document.getElementById("spPreviewFrame").src = currentSP1PDFUrl;
-    document.getElementById("spPreviewTitle").textContent = "Preview " + pdf.filename;
+
+    const frame = document.getElementById("spPreviewFrame");
+    if (frame) frame.src = currentSP1PDFUrl;
+
+    const title = document.getElementById("spPreviewTitle");
+    if (title) title.textContent = "Preview " + pdf.filename;
+
     document.getElementById("spPreviewModal").classList.remove("hidden");
   } catch (err) {
     console.error(err);
     toast("Preview PDF gagal: " + err.message, "error");
   } finally {
-    btn.disabled = false;
-    btn.textContent = "Preview PDF";
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Preview PDF";
+    }
   }
 }
 
