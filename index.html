@@ -646,7 +646,7 @@ function renderRekap() {
       <tr class="border-b hover:bg-slate-50">
         <td class="p-3">${i+1}</td>
         <td class="p-3 font-semibold">
-          <button type="button" class="text-blue-700 hover:text-blue-900 hover:underline text-left" onclick="showStudentDetail(${JSON.stringify(s.nama)}, ${JSON.stringify(s.kelas)}, ${JSON.stringify(semester)})">
+          <button type="button" class="text-blue-700 hover:text-blue-900 hover:underline text-left" onclick="showStudentDetail(${escapeHTML(JSON.stringify(s.nama))}, ${escapeHTML(JSON.stringify(s.kelas))}, ${escapeHTML(JSON.stringify(semester))})">
             ${escapeHTML(s.nama)}
           </button>
         </td>
