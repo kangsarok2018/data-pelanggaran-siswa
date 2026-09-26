@@ -455,30 +455,35 @@ async function saveRecord(record) {
   if (!CONFIG.API_URL) {
     records.push(record);
     saveLocal();
-    return true;
+    return { ok:true, record };
   }
 
   try {
     const response = await fetch(CONFIG.API_URL, {
       method:"POST",
       headers:{ "Content-Type":"text/plain;charset=utf-8" },
-      body:JSON.stringify(record)
+      body:JSON.stringify({ action:"addPelanggaran", ...record })
     });
 
     if (!response.ok) throw new Error("HTTP " + response.status);
 
-    records.push(record);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message || "Server menolak data.");
+
+    // Gunakan data yang dikembalikan server agar ID lokal sama dengan ID di Sheet.
+    const saved = normalizeRecord(result.data || record);
+    records.push(saved);
     saveLocal();
-    return true;
+    return { ok:true, record:saved };
   } catch (err) {
     console.error(err);
     if (CONFIG.USE_LOCAL_FALLBACK) {
       records.push(record);
       saveLocal();
       toast("Server gagal menerima data. Data disimpan sementara di perangkat.", "warning");
-      return true;
+      return { ok:true, record, localOnly:true };
     }
-    return false;
+    return { ok:false, error:err };
   }
 }
 
@@ -545,12 +550,12 @@ async function submitViolation(e) {
   btn.disabled = true;
   btn.textContent = "Menyimpan...";
 
-  const ok = await saveRecord(record);
+  const saveResult = await saveRecord(record);
 
   btn.disabled = false;
   btn.textContent = "Simpan Pelanggaran";
 
-  if (ok) {
+  if (saveResult.ok) {
     document.getElementById("violationForm").reset();
     document.getElementById("violationDate").valueAsDate = new Date();
     document.getElementById("semester").value = detectSemester(document.getElementById("violationDate").value);
