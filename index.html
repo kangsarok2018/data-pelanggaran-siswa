@@ -48,7 +48,6 @@
 </head>
 
 <body class="text-slate-800">
-  <!-- Header -->
   <header class="no-print sticky top-0 z-40 bg-white border-b border-slate-200">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
       <div class="flex items-center gap-3 min-w-0">
@@ -66,7 +65,6 @@
   </header>
 
   <div class="max-w-7xl mx-auto px-4 py-5 md:py-7">
-    <!-- Navigation -->
     <nav class="no-print flex gap-2 overflow-x-auto pb-2 mb-5">
       <button class="nav-btn active whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold" data-tab="dashboard">Dashboard</button>
       <button class="nav-btn whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold" data-tab="input">Input Pelanggaran</button>
@@ -74,7 +72,6 @@
       <button class="nav-btn whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold" data-tab="riwayat">Riwayat</button>
     </nav>
 
-    <!-- DASHBOARD -->
     <section id="tab-dashboard" class="tab-content">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-5">
         <div class="card p-4">
@@ -127,7 +124,6 @@
       </div>
     </section>
 
-    <!-- INPUT -->
     <section id="tab-input" class="tab-content hidden">
       <div class="card p-5 max-w-3xl mx-auto">
         <div class="mb-5">
@@ -188,7 +184,6 @@
       </div>
     </section>
 
-    <!-- REKAP -->
     <section id="tab-rekap" class="tab-content hidden">
       <div class="card p-5">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
@@ -224,7 +219,6 @@
       </div>
     </section>
 
-    <!-- RIWAYAT -->
     <section id="tab-riwayat" class="tab-content hidden">
       <div class="card p-5">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
@@ -257,1206 +251,436 @@
 
   <div id="toastContainer" class="fixed right-4 bottom-4 z-50 space-y-2"></div>
 
-<script>
-/* =========================================================
-   KONFIGURASI
-   ========================================================= */
-
-const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbwP59pALnmM1-hfK4Y9tDBpgJ8BNAaIXqvzeiRClRTMDslJDXg3W0wK1-EEhi9Rfl6pLQ/exec",
-  APP_NAME: "Sistem Poin Pelanggaran Siswa",
-  SCHOOL_NAME: "SMP Negeri 37 Merangin",
-  USE_LOCAL_FALLBACK: true
-};
-
-const VIOLATIONS = [
-  { category:"I. Kedisiplinan", type:"Terlambat datang ke sekolah", points:5 },
-  { category:"I. Kedisiplinan", type:"Tidak mengikuti apel/upacara tanpa alasan", points:5 },
-  { category:"I. Kedisiplinan", type:"Meninggalkan sekolah tanpa izin", points:10 },
-
-  { category:"II. Seragam dan Atribut", type:"Tidak memakai atribut lengkap", points:5 },
-  { category:"II. Seragam dan Atribut", type:"Memakai seragam tidak sesuai ketentuan", points:5 },
-  { category:"II. Seragam dan Atribut", type:"Rambut/penampilan tidak sesuai ketentuan", points:5 },
-
-  { category:"III. Kehadiran", type:"Tidak masuk tanpa keterangan", points:10 },
-  { category:"III. Kehadiran", type:"Membolos pada jam pelajaran", points:15 },
-
-  { category:"IV. Ketertiban", type:"Mengganggu ketertiban kelas", points:5 },
-  { category:"IV. Ketertiban", type:"Tidak membawa perlengkapan belajar", points:3 },
-  { category:"IV. Ketertiban", type:"Bermain saat proses pembelajaran", points:5 },
-
-  { category:"V. Sikap dan Etika", type:"Berkata tidak sopan kepada warga sekolah", points:10 },
-  { category:"V. Sikap dan Etika", type:"Tidak menghormati guru/karyawan", points:10 },
-  { category:"V. Sikap dan Etika", type:"Berkelahi", points:25 },
-
-  { category:"VI. Kebersihan", type:"Membuang sampah sembarangan", points:5 },
-  { category:"VI. Kebersihan", type:"Tidak melaksanakan piket", points:5 },
-  { category:"VI. Kebersihan", type:"Merusak kebersihan fasilitas sekolah", points:10 },
-
-  { category:"VII. Barang Terlarang", type:"Membawa barang yang dilarang sekolah", points:25 },
-  { category:"VII. Barang Terlarang", type:"Merokok di lingkungan sekolah", points:50 },
-
-  { category:"VIII. Kekerasan dan Perundungan", type:"Mengintimidasi/perundungan", points:25 },
-  { category:"VIII. Kekerasan dan Perundungan", type:"Melakukan kekerasan fisik", points:50 },
-
-  { category:"IX. Pelanggaran Berat", type:"Membawa senjata/barang berbahaya", points:75 },
-  { category:"IX. Pelanggaran Berat", type:"Pelanggaran berat lainnya", points:100 }
-];
-
-let records = [];
-let students = [];
-
-/* ---------- Utilitas ---------- */
-function escapeHTML(value) {
-  return String(value ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
-
-function normalizePoints(value) {
-  const n = Number(String(value ?? 0).replace(/[^\d.-]/g, ""));
-  return Math.abs(Number.isFinite(n) ? n : 0);
-}
-
-function statusFromPoints(points) {
-  const p = normalizePoints(points);
-  if (p >= 100) return { label:"SP IV (Akhir)", cls:"bg-red-100 text-red-800" };
-  if (p >= 50) return { label:"SP III", cls:"bg-red-100 text-red-700" };
-  if (p >= 31) return { label:"SP II", cls:"bg-orange-100 text-orange-700" };
-  if (p >= 20) return { label:"SP I", cls:"bg-yellow-100 text-yellow-700" };
-  return { label:"Aman", cls:"bg-green-100 text-green-700" };
-}
-
-function toast(message, type="success") {
-  const el = document.createElement("div");
-  el.className = `toast px-4 py-3 rounded-xl shadow-lg text-sm font-medium ${
-    type === "error" ? "bg-red-600 text-white" :
-    type === "warning" ? "bg-yellow-500 text-white" :
-    "bg-slate-900 text-white"
-  }`;
-  el.textContent = message;
-  document.getElementById("toastContainer").appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
-
-function localKey() {
-  return "smpn37_poin_records_v1";
-}
-
-function saveLocal() {
-  localStorage.setItem(localKey(), JSON.stringify(records));
-}
-
-function loadLocal() {
-  try {
-    records = JSON.parse(localStorage.getItem(localKey()) || "[]");
-    if (!Array.isArray(records)) records = [];
-  } catch {
-    records = [];
-  }
-}
-
-function detectSemester(dateString) {
-  const d = new Date(dateString + "T00:00:00");
-  const month = d.getMonth() + 1;
-  return (month >= 7 && month <= 12) ? "1" : "2";
-}
-
-/* ---------- Data ---------- */
-async function loadData() {
-  if (!CONFIG.API_URL) {
-    loadLocal();
-    students = [];
-    renderAll();
-    return;
-  }
-
-  try {
-    const [pelanggaranResponse, siswaResponse] = await Promise.all([
-      fetch(CONFIG.API_URL, { method:"GET" }),
-      fetch(CONFIG.API_URL + "?action=siswa", { method:"GET" })
-    ]);
-
-    if (!pelanggaranResponse.ok) throw new Error("Pelanggaran HTTP " + pelanggaranResponse.status);
-    if (!siswaResponse.ok) throw new Error("Siswa HTTP " + siswaResponse.status);
-
-    const pelanggaranJson = await pelanggaranResponse.json();
-    const siswaJson = await siswaResponse.json();
-
-    const data = Array.isArray(pelanggaranJson) ? pelanggaranJson : (pelanggaranJson.data || []);
-    const siswaData = Array.isArray(siswaJson) ? siswaJson : (siswaJson.data || []);
-
-    records = data.map(normalizeRecord);
-    students = siswaData.map(normalizeStudent).filter(s => s.nama);
-    saveLocal();
-    renderAll();
-    toast(`Data diperbarui: ${students.length} siswa, ${records.length} pelanggaran.`);
-  } catch (err) {
-    console.error(err);
-    loadLocal();
-    renderAll();
-    toast("Data server belum dapat dimuat. Periksa koneksi API/Siswa.", "warning");
-  }
-}
-
-function normalizeStudent(s) {
-  return {
-    id: s.id || s.ID || "",
-    nis: s.nis || s.NIS || "",
-    nisn: s.nisn || s.NISN || "",
-    nama: s.nama || s.nama_siswa || s["Nama Siswa"] || s.Nama || "",
-    kelas: s.kelas || s.Kelas || "",
-    orangTua: s.orangTua || s.namaOrangTua || s["Nama Orang Tua"] || ""
-  };
-}
-
-function normalizeRecord(r) {
-  return {
-    id: r.id || r.ID || crypto.randomUUID(),
-    nama: r.nama || r.nama_siswa || r.Nama || "",
-    kelas: r.kelas || r.Kelas || "",
-    tanggal: r.tanggal || r.date || r.Tanggal || "",
-    semester: String(r.semester || r.Semester || detectSemester(r.tanggal || "")),
-    kategori: r.kategori || r.Kategori || "",
-    pelanggaran: r.pelanggaran || r.jenis_pelanggaran || r.Pelanggaran || "",
-    poin: normalizePoints(r.poin || r.Poin || 0),
-    keterangan: r.keterangan || r.catatan || r.Keterangan || ""
-  };
-}
-
-async function saveRecord(record) {
-  if (!CONFIG.API_URL) {
-    records.push(record);
-    saveLocal();
-    return { ok:true, record };
-  }
-
-  try {
-    const response = await fetch(CONFIG.API_URL, {
-      method:"POST",
-      headers:{ "Content-Type":"text/plain;charset=utf-8" },
-      body:JSON.stringify({ action:"addPelanggaran", ...record })
-    });
-
-    if (!response.ok) throw new Error("HTTP " + response.status);
-
-    const result = await response.json();
-    if (!result.success) throw new Error(result.message || "Server menolak data.");
-
-    const saved = normalizeRecord(result.data || record);
-    records.push(saved);
-    saveLocal();
-    return { ok:true, record:saved };
-  } catch (err) {
-    console.error(err);
-    if (CONFIG.USE_LOCAL_FALLBACK) {
-      records.push(record);
-      saveLocal();
-      toast("Server gagal menerima data. Data disimpan sementara di perangkat.", "warning");
-      return { ok:true, record, localOnly:true };
-    }
-    return { ok:false, error:err };
-  }
-}
-
-/* ---------- Form ---------- */
-function populateCategories() {
-  const select = document.getElementById("category");
-  const categories = [...new Set(VIOLATIONS.map(v => v.category))];
-  select.innerHTML = '<option value="">Pilih kategori...</option>' +
-    categories.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");
-}
-
-function populateViolationTypes() {
-  const category = document.getElementById("category").value;
-  const select = document.getElementById("violationType");
-  const list = VIOLATIONS.filter(v => v.category === category);
-
-  select.innerHTML = '<option value="">Pilih jenis pelanggaran...</option>' +
-    list.map(v => `<option value="${escapeHTML(v.type)}" data-points="${v.points}">${escapeHTML(v.type)} — ${v.points} poin</option>`).join("");
-
-  document.getElementById("points").value = "0";
-}
-
-function updatePoints() {
-  const option = document.querySelector("#violationType option:checked");
-  document.getElementById("points").value = option?.dataset?.points || 0;
-}
-
-function updateStudentClass() {
-  const name = document.getElementById("studentName").value.trim().toLowerCase();
-  const foundStudent = students.find(s => String(s.nama).trim().toLowerCase() === name && s.kelas);
-  if (foundStudent) {
-    document.getElementById("studentClass").value = foundStudent.kelas;
-    return;
-  }
-
-  const foundRecord = records.find(r => String(r.nama).trim().toLowerCase() === name && r.kelas);
-  if (foundRecord) document.getElementById("studentClass").value = foundRecord.kelas;
-}
-
-async function submitViolation(e) {
-  e.preventDefault();
-
-  const nama = document.getElementById("studentName").value.trim();
-  const kelas = document.getElementById("studentClass").value.trim();
-  const tanggal = document.getElementById("violationDate").value;
-  const semester = document.getElementById("semester").value;
-  const kategori = document.getElementById("category").value;
-  const pelanggaran = document.getElementById("violationType").value;
-  const poin = normalizePoints(document.getElementById("points").value);
-  const keterangan = document.getElementById("notes").value.trim();
-
-  if (!nama || !kelas || !tanggal || !kategori || !pelanggaran || poin <= 0) {
-    toast("Lengkapi data pelanggaran terlebih dahulu.", "error");
-    return;
-  }
-
-  const record = {
-    id: crypto.randomUUID(),
-    nama, kelas, tanggal, semester, kategori, pelanggaran, poin, keterangan
-  };
-
-  const btn = document.getElementById("saveBtn");
-  btn.disabled = true;
-  btn.textContent = "Menyimpan...";
-
-  const saveResult = await saveRecord(record);
-
-  btn.disabled = false;
-  btn.textContent = "Simpan Pelanggaran";
-
-  if (saveResult.ok) {
-    document.getElementById("violationForm").reset();
-    document.getElementById("violationDate").valueAsDate = new Date();
-    document.getElementById("semester").value = detectSemester(document.getElementById("violationDate").value);
-    document.getElementById("points").value = "0";
-    toast("Pelanggaran berhasil dicatat.");
-    renderAll();
-    showTab("rekap");
-  } else {
-    toast("Data gagal disimpan.", "error");
-  }
-}
-
-/* ---------- Rekap ---------- */
-function getFilteredRecords(semester="Semua") {
-  if (semester === "Semua") return [...records];
-  return records.filter(r => String(r.semester) === String(semester));
-}
-
-function aggregateStudents(semester="Semua") {
-  const map = new Map();
-
-  getFilteredRecords(semester).forEach(r => {
-    const key = `${String(r.nama).trim().toLowerCase()}|${String(r.kelas).trim().toLowerCase()}`;
-    if (!map.has(key)) {
-      map.set(key, { nama:r.nama, kelas:r.kelas, pelanggaran:0, poin:0 });
-    }
-    const item = map.get(key);
-    item.pelanggaran += 1;
-    item.poin += normalizePoints(r.poin);
-  });
-
-  return [...map.values()].sort((a,b) => b.poin - a.poin || a.nama.localeCompare(b.nama));
-}
-
-function renderDashboard() {
-  const semester = document.getElementById("dashboardSemester").value;
-  const data = getFilteredRecords(semester);
-  const students = aggregateStudents(semester);
-
-  document.getElementById("statStudents").textContent = students.length;
-  document.getElementById("statViolations").textContent = data.length;
-  document.getElementById("statPoints").textContent = data.reduce((s,r) => s + normalizePoints(r.poin), 0);
-
-  document.getElementById("statSP").textContent =
-    students.filter(s => normalizePoints(s.poin) >= 20).length;
-
-  const top = students.slice(0, 10);
-  const container = document.getElementById("topStudents");
-
-  if (!top.length) {
-    container.innerHTML = '<div class="text-sm text-slate-500 py-8 text-center">Belum ada data pelanggaran.</div>';
-    return;
-  }
-
-  container.innerHTML = top.map((s, i) => {
-    const st = statusFromPoints(s.poin);
-    return `
-      <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
-        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">${i+1}</div>
-        <div class="flex-1 min-w-0">
-          <p class="font-semibold truncate">${escapeHTML(s.nama)}</p>
-          <p class="text-xs text-slate-500">${escapeHTML(s.kelas)} · ${s.pelanggaran} pelanggaran</p>
-        </div>
-        <div class="text-right">
-          <p class="font-bold">${s.poin} poin</p>
-          <span class="text-xs px-2 py-1 rounded-full ${st.cls}">${st.label}</span>
-        </div>
-      </div>`;
-  }).join("");
-}
-
-function renderRekap() {
-  const semester = document.getElementById("rekapSemester").value;
-  const search = document.getElementById("searchRekap").value.trim().toLowerCase();
-  let students = aggregateStudents(semester);
-
-  if (search) {
-    students = students.filter(s =>
-      `${s.nama} ${s.kelas}`.toLowerCase().includes(search)
-    );
-  }
-
-  const body = document.getElementById("rekapBody");
-
-  if (!students.length) {
-    body.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-500">Data tidak ditemukan.</td></tr>';
-    return;
-  }
-
-  body.innerHTML = students.map((s,i) => {
-    const st = statusFromPoints(s.poin);
-    return `
-      <tr class="border-b hover:bg-slate-50">
-        <td class="p-3">${i+1}</td>
-        <td class="p-3 font-semibold">
-          <button type="button" class="text-blue-700 hover:text-blue-900 hover:underline text-left" onclick="showStudentDetail(${escapeHTML(JSON.stringify(s.nama))}, ${escapeHTML(JSON.stringify(s.kelas))}, ${escapeHTML(JSON.stringify(semester))})">
-            ${escapeHTML(s.nama)}
-          </button>
-        </td>
-        <td class="p-3">${escapeHTML(s.kelas)}</td>
-        <td class="p-3 text-center">${s.pelanggaran}</td>
-        <td class="p-3 text-center font-bold">${s.poin}</td>
-        <td class="p-3 text-center"><span class="px-2 py-1 rounded-full text-xs ${st.cls}">${st.label}</span></td>
-      </tr>`;
-  }).join("");
-}
-
-function showStudentDetail(nama, kelas, semester="Semua") {
-  const nameKey = String(nama).trim().toLowerCase();
-  const classKey = String(kelas).trim().toLowerCase();
-
-  let data = getFilteredRecords(semester).filter(r =>
-    String(r.nama).trim().toLowerCase() === nameKey &&
-    String(r.kelas).trim().toLowerCase() === classKey
-  );
-
-  data.sort((a,b) => String(b.tanggal).localeCompare(String(a.tanggal)));
-
-  const totalPoints = data.reduce((sum, r) => sum + normalizePoints(r.poin), 0);
-  const status = statusFromPoints(totalPoints);
-  currentStudentDetail = { nama, kelas, semester, data, totalPoints };
-
-  document.getElementById("detailStudentName").textContent = nama;
-  document.getElementById("detailStudentClass").textContent = `Kelas ${kelas}`;
-  document.getElementById("detailViolationCount").textContent = data.length;
-  document.getElementById("detailTotalPoints").textContent = totalPoints;
-  document.getElementById("detailSemester").textContent = semester === "Semua" ? "Semua Semester" : `Semester ${semester}`;
-  document.getElementById("detailStatus").innerHTML = `<span class="px-3 py-1 rounded-full text-xs font-semibold ${status.cls}">${escapeHTML(status.label)}</span>`;
-  prepareSPButton(totalPoints);
-
-  const body = document.getElementById("detailHistoryBody");
-  if (!data.length) {
-    body.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-500">Belum ada riwayat pelanggaran pada semester ini.</td></tr>';
-  } else {
-    body.innerHTML = data.map(r => `
-      <tr class="border-b last:border-0">
-        <td class="p-3 whitespace-nowrap">${escapeHTML(r.tanggal)}</td>
-        <td class="p-3">${escapeHTML(r.kategori)}</td>
-        <td class="p-3 font-semibold">${escapeHTML(r.pelanggaran)}</td>
-        <td class="p-3 text-center font-bold">${normalizePoints(r.poin)}</td>
-        <td class="p-3">${escapeHTML(r.keterangan || "-")}</td>
-      </tr>
-    `).join("");
-  }
-
-  document.getElementById("studentDetailModal").classList.remove("hidden");
-  document.body.classList.add("overflow-hidden");
-}
-
-let currentStudentDetail = null;
-
-function getSPLevel(points) {
-  const p = normalizePoints(points);
-  if (p >= 100) return "SP IV (Akhir)";
-  if (p >= 50) return "SP III";
-  if (p >= 31) return "SP II";
-  if (p >= 20) return "SP I";
-  return "";
-}
-
-function findMasterStudent(nama, kelas) {
-  const nk = String(nama).trim().toLowerCase();
-  const kk = String(kelas).trim().toLowerCase();
-  return students.find(s => String(s.nama).trim().toLowerCase() === nk && String(s.kelas).trim().toLowerCase() === kk) ||
-         students.find(s => String(s.nama).trim().toLowerCase() === nk) || null;
-}
-
-function prepareSPButton(totalPoints) {
-  const btn = document.getElementById("btnBuatSP");
-  const info = document.getElementById("detailSpInfo");
-  const level = getSPLevel(totalPoints);
-  if (level) {
-    btn.disabled = false;
-    btn.textContent = "Buat " + level;
-    info.textContent = "Total poin memenuhi ketentuan " + level + ".";
-  } else {
-    btn.disabled = true;
-    btn.textContent = "Belum Memenuhi SP";
-    info.textContent = "SP mulai diterbitkan pada 20 poin.";
-  }
-}
-
-function openSPForm() {
-  if (!currentStudentDetail) return;
-  const level = getSPLevel(currentStudentDetail.totalPoints);
-  if (!level) return;
-  const master = findMasterStudent(currentStudentDetail.nama, currentStudentDetail.kelas) || {};
-  document.getElementById("spJenis").value = level;
-  document.getElementById("spModalTitle").textContent = "Surat Perjanjian " + (level === "SP IV (Akhir)" ? "TINGKAT IV (AKHIR)" : "TINGKAT " + level.replace("SP ", ""));
-  document.getElementById("spNama").value = currentStudentDetail.nama;
-  document.getElementById("spNIS").value = master.nis || "";
-  document.getElementById("spNISN").value = master.nisn || "";
-  document.getElementById("spKelas").value = currentStudentDetail.kelas;
-  document.getElementById("spTotalPoin").value = currentStudentDetail.totalPoints;
-  document.getElementById("spTanggal").value = new Date().toISOString().slice(0,10);
-  document.getElementById("spDasar").value = "Berdasarkan akumulasi poin pelanggaran tata tertib siswa.";
-  document.getElementById("spRincian").value = currentStudentDetail.data.map(r => `${r.pelanggaran} (${normalizePoints(r.poin)} poin)`).join("\n");
-  document.getElementById("spKeterangan").value = "";
-  document.getElementById("spPetugas").value = "";
-  document.getElementById("spModal").classList.remove("hidden");
-}
-
-function closeSPForm() {
-  document.getElementById("spModal").classList.add("hidden");
-}
-
-async function submitSPForm(event) {
-  event.preventDefault();
-  const btn = document.getElementById("spSubmitBtn");
-  btn.disabled = true;
-  btn.textContent = "Menyimpan...";
-  const payload = {
-    action: "addSuratSP",
-    id: "",
-    nomorSurat: document.getElementById("spNomor").value.trim(),
-    tanggalSurat: document.getElementById("spTanggal").value,
-    namaSiswa: document.getElementById("spNama").value.trim(),
-    nis: document.getElementById("spNIS").value.trim(),
-    nisn: document.getElementById("spNISN").value.trim(),
-    kelas: document.getElementById("spKelas").value.trim(),
-    jenisSP: document.getElementById("spJenis").value,
-    totalPoin: normalizePoints(document.getElementById("spTotalPoin").value),
-    dasarPelanggaran: document.getElementById("spDasar").value.trim(),
-    rincianPelanggaran: document.getElementById("spRincian").value.trim(),
-    keterangan: document.getElementById("spKeterangan").value.trim(),
-    petugas: document.getElementById("spPetugas").value.trim(),
-    status: "Draft",
-    filePDF: ""
-  };
-  try {
-    const response = await fetch(CONFIG.API_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload) });
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    const result = await response.json();
-    if (!result.success) throw new Error(result.message || "Gagal menyimpan surat SP");
-    toast("Surat SP berhasil disimpan sebagai Draft.");
-    closeSPForm();
-  } catch (err) {
-    console.error(err);
-    toast("Surat SP gagal disimpan: " + err.message, "error");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Simpan Draft SP";
-  }
-}
-
-function formatTanggalIndonesia(dateString) {
-  if (!dateString) return "...................... 20...";
-  const d = new Date(dateString + "T00:00:00");
-  const bulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-  return `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-function drawWrapped(doc, text, x, y, maxWidth, lineHeight=5) {
-  const lines = doc.splitTextToSize(String(text || ""), maxWidth);
-  doc.text(lines, x, y);
-  return y + lines.length * lineHeight;
-}
-
-// Menggunakan vector SVG yang di-render ke canvas agar logo selalu tampil sempurna tanpa kendala CORS/eksternal
-function getMeranginLogoDataUrl() {
-  return new Promise((resolve) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 160;
-    canvas.height = 200;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#3b82f6';
-    ctx.beginPath();
-    ctx.moveTo(80, 5);
-    ctx.lineTo(150, 25);
-    ctx.lineTo(150, 130);
-    ctx.lineTo(80, 195);
-    ctx.lineTo(10, 130);
-    ctx.lineTo(10, 25);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = '#dc2626';
-    ctx.lineWidth = 6;
-    ctx.stroke();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('MERANGIN', 80, 35);
-
-    ctx.strokeStyle = '#eab308';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(80, 100, 45, 0, Math.PI * 2);
-    ctx.stroke();
-
-    resolve(canvas.toDataURL('image/png'));
-  });
-}
-
-function getDinasLogoDataUrl() {
-  return new Promise((resolve) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 160;
-    canvas.height = 200;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#0284c7';
-    ctx.beginPath();
-    ctx.moveTo(80, 10);
-    ctx.lineTo(145, 40);
-    ctx.lineTo(145, 150);
-    ctx.lineTo(80, 190);
-    ctx.lineTo(15, 150);
-    ctx.lineTo(15, 40);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 5;
-    ctx.stroke();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.moveTo(80, 50);
-    ctx.bezierCurveTo(90, 70, 110, 80, 115, 110);
-    ctx.lineTo(45, 110);
-    ctx.bezierCurveTo(50, 80, 70, 70, 80, 50);
-    ctx.closePath();
-    ctx.fill();
-
-    resolve(canvas.toDataURL('image/png'));
-  });
-}
-
-async function drawKopSurat(doc) {
-  const left = 22;
-  const right = 188;
-  let y = 14;
-
-  try {
-    const logoMerangin = await getMeranginLogoDataUrl();
-    doc.addImage(logoMerangin, "PNG", left, y, 16, 20);
-  } catch (e) {
-    doc.setDrawColor(120, 120, 120);
-    doc.rect(left, y, 16, 20);
-  }
-
-  try {
-    const logoDinas = await getDinasLogoDataUrl();
-    doc.addImage(logoDinas, "PNG", right - 16, y, 16, 20);
-  } catch (e) {
-    doc.setDrawColor(120, 120, 120);
-    doc.rect(right - 16, y, 16, 20);
-  }
-
-  doc.setFont("times", "bold");
-  doc.setFontSize(12);
-  doc.text("PEMERINTAH KABUPATEN MERANGIN", 105, y + 3, { align: "center" });
-  doc.setFontSize(11);
-  doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", 105, y + 8.5, { align: "center" });
-  doc.setFontSize(14);
-  doc.text("SMP NEGERI 37 MERANGIN", 105, y + 14.5, { align: "center" });
-  doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", 105, y + 19, { align: "center" });
-
-  y += 23;
-  doc.setLineWidth(0.6);
-  doc.line(left, y, right, y);
-  return y + 10;
-}
-
-let currentSP1PDFBlob = null;
-let currentSP1PDFUrl = null;
-let currentSP1PDFFilename = "SP-I-Siswa.pdf";
-let currentSP1Saved = false;
-
-async function buildSP1PDF() {
-  if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
-
-  const nama = document.getElementById("spNama").value.trim();
-  const nis = document.getElementById("spNIS").value.trim();
-  const nisn = document.getElementById("spNISN").value.trim();
-  const kelas = document.getElementById("spKelas").value.trim();
-  const totalPoin = normalizePoints(document.getElementById("spTotalPoin").value);
-  const nomor = document.getElementById("spNomor").value.trim();
-  const tanggal = document.getElementById("spTanggal").value;
-  const rincian = document.getElementById("spRincian").value.trim();
-
-  if (totalPoin < 20 || totalPoin > 30) {
-    throw new Error("PDF SP I hanya dapat dibuat untuk total poin 20–30.");
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
-  const left = 22;
-  const right = 188;
-  
-  let y = await drawKopSurat(doc);
-
-  doc.setFont("times", "bold");
-  doc.setFontSize(13);
-  const titleText = "SURAT PERJANJIAN TINGKAT I";
-  doc.text(titleText, 105, y, { align: "center" });
-  const tWidth = doc.getTextWidth(titleText);
-  doc.setLineWidth(0.4);
-  doc.line(105 - (tWidth/2), y + 1.2, 105 + (tWidth/2), y + 1.2);
-  y += 10;
-
-  doc.setFont("times", "normal");
-  doc.setFontSize(11);
-  if (nomor) {
-    doc.text("Nomor: " + nomor, left, y);
-    y += 7;
-  }
-  doc.text("Yang bertanda tangan di bawah ini:", left, y);
-  y += 7;
-
-  const labelX = left;
-  const colonX = 67;
-  const valueX = 72;
-  doc.text("Nama Siswa", labelX, y); doc.text(":", colonX, y); doc.text(nama || "-", valueX, y); y += 6;
-  doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
-  doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
-  doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
-  doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y); doc.text(totalPoin + " Poin", valueX, y); y += 8;
-
-  doc.setFont("times", "bold");
-  doc.text("Rincian Pelanggaran:", left, y);
-  y += 6;
-  doc.setFont("times", "normal");
-  const detailLines = rincian ? rincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`) : ["Tidak ada rincian pelanggaran."];
-  for (const line of detailLines) {
-    y = drawWrapped(doc, line, left+4, y, 160, 5);
-    y += 1;
-    if (y > 255) { doc.addPage(); y = 20; }
-  }
-  y += 5;
-
-  doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", left, y); y += 7;
-  y = drawWrapped(doc, "1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", left, y, 166, 5); y += 2;
-  y = drawWrapped(doc, "2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.", left, y, 166, 5); y += 2;
-  y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 7;
-
-  y = drawWrapped(doc, "Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.", left, y, 166, 5);
-  y += 10;
-
-  doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
-  y += 8;
-  doc.text("Mengetahui,", left+25, y);
-  doc.text("Siswa yang bersangkutan,", 135, y, {align:"center"});
-  y += 6;
-  doc.text("Wali Kelas,", left+25, y);
-  y += 8;
-  doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(160, 160, 160);
-  doc.text("Materai Rp 10.000", 135, y, {align:"center"});
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("times", "normal");
-  doc.setFontSize(11);
-  y += 12;
-  doc.text("(...........................)", left+25, y);
-  doc.text("( " + (nama || "...........................") + " )", 135, y, {align:"center"});
-
-  const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
-  return {
-    blob: doc.output("blob"),
-    filename: `SP-I-${safeName}.pdf`
-  };
-}
-
-async function buildSP2PDF() {
-  if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
-
-  const nama = document.getElementById("spNama").value.trim();
-  const nis = document.getElementById("spNIS").value.trim();
-  const nisn = document.getElementById("spNISN").value.trim();
-  const kelas = document.getElementById("spKelas").value.trim();
-  const totalPoin = normalizePoints(document.getElementById("spTotalPoin").value);
-  const nomor = document.getElementById("spNomor").value.trim();
-  const tanggal = document.getElementById("spTanggal").value;
-  const rincian = document.getElementById("spRincian").value.trim();
-
-  if (totalPoin < 31 || totalPoin > 49) {
-    throw new Error("PDF SP II hanya dapat dibuat untuk total poin 31–49.");
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
-  const left = 22;
-  const right = 188;
-  
-  let y = await drawKopSurat(doc);
-
-  doc.setFont("times", "bold");
-  doc.setFontSize(13);
-  const titleText = "SURAT PERJANJIAN TINGKAT II";
-  doc.text(titleText, 105, y, { align: "center" });
-  const tWidth = doc.getTextWidth(titleText);
-  doc.setLineWidth(0.4);
-  doc.line(105 - (tWidth/2), y + 1.2, 105 + (tWidth/2), y + 1.2);
-  y += 10;
-
-  doc.setFont("times", "normal");
-  doc.setFontSize(11);
-  if (nomor) {
-    doc.text("Nomor: " + nomor, left, y);
-    y += 7;
-  }
-
-  doc.text("Yang bertanda tangan di bawah ini:", left, y);
-  y += 7;
-
-  const labelX = left;
-  const colonX = 67;
-  const valueX = 72;
-  doc.text("Nama Siswa", labelX, y); doc.text(":", colonX, y); doc.text(nama || "-", valueX, y); y += 6;
-  doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
-  doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
-  doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
-  doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y);
-  doc.text(totalPoin + " Poin", valueX, y); y += 8;
-
-  doc.setFont("times", "bold");
-  doc.text("Rincian Pelanggaran:", left, y);
-  y += 6;
-  doc.setFont("times", "normal");
-
-  const detailLines = rincian
-    ? rincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`)
-    : ["Tidak ada rincian pelanggaran."];
-
-  for (const line of detailLines) {
-    y = drawWrapped(doc, line, left+4, y, 160, 5);
-    y += 1;
-    if (y > 245) { doc.addPage(); y = 20; }
-  }
-
-  y += 5;
-  doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", left, y); y += 7;
-  y = drawWrapped(doc, "1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", left, y, 166, 5); y += 2;
-  y = drawWrapped(doc, "2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.", left, y, 166, 5); y += 2;
-  y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 7;
-
-  y = drawWrapped(doc, "Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.", left, y, 166, 5);
-  y += 8;
-
-  doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
-  y += 8;
-
-  doc.text("Mengetahui,", left+25, y);
-  doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
-  y += 6;
-
-  doc.text("Guru BK,", left+25, y);
-  y += 8;
-  doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(160, 160, 160);
-  doc.text("Materai Rp 10.000", 145, y, {align:"center"});
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("times", "normal");
-  doc.setFontSize(11);
-  y += 12;
-  doc.text("(...........................)", left+25, y);
-  doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
-  y += 10;
-
-  doc.text("Wali Kelas,", left+25, y);
-  doc.text("Orang Tua/Wali,", 145, y, {align:"center"});
-  y += 16;
-  doc.text("(...........................)", left+25, y);
-  doc.text("(...........................)", 145, y, {align:"center"});
-
-  const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
-  return {
-    blob: doc.output("blob"),
-    filename: `SP-II-${safeName}.pdf`
-  };
-}
-
-async function buildSP3PDF() {
-  if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
-
-  const nama = document.getElementById("spNama").value.trim();
-  const nis = document.getElementById("spNIS").value.trim();
-  const nisn = document.getElementById("spNISN").value.trim();
-  const kelas = document.getElementById("spKelas").value.trim();
-  const totalPoin = normalizePoints(document.getElementById("spTotalPoin").value);
-  const nomor = document.getElementById("spNomor").value.trim();
-  const tanggal = document.getElementById("spTanggal").value;
-  const rincian = document.getElementById("spRincian").value.trim();
-
-  if (totalPoin < 50 || totalPoin > 99) {
-    throw new Error("PDF SP III hanya dapat dibuat untuk total poin 50–99.");
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
-  const left = 22;
-  const right = 188;
-  
-  let y = await drawKopSurat(doc);
-
-  doc.setFont("times", "bold");
-  doc.setFontSize(13);
-  const titleText = "SURAT PERJANJIAN TINGKAT III";
-  doc.text(titleText, 105, y, { align: "center" });
-  const tWidth = doc.getTextWidth(titleText);
-  doc.setLineWidth(0.4);
-  doc.line(105 - (tWidth/2), y + 1.2, 105 + (tWidth/2), y + 1.2);
-  y += 10;
-
-  if (nomor) {
-    doc.setFont("times", "normal");
-    doc.setFontSize(11);
-    doc.text("Nomor: " + nomor, left, y);
-    y += 7;
-  }
-
-  doc.setFont("times", "normal");
-  doc.setFontSize(11);
-  doc.text("Yang bertanda tangan di bawah ini:", left, y);
-  y += 7;
-
-  const labelX = left;
-  const colonX = 67;
-  const valueX = 72;
-  doc.text("Nama Siswa", labelX, y); doc.text(":", colonX, y); doc.text(nama || "-", valueX, y); y += 6;
-  doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
-  doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
-  doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
-  doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y);
-  doc.text(totalPoin + " Poin", valueX, y); y += 8;
-
-  doc.setFont("times", "bold");
-  doc.text("Rincian Pelanggaran:", left, y);
-  y += 6;
-  doc.setFont("times", "normal");
-
-  const detailLines = rincian
-    ? rincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`)
-    : ["Tidak ada rincian pelanggaran."];
-
-  for (const line of detailLines) {
-    y = drawWrapped(doc, line, left+4, y, 160, 5);
-    y += 1;
-    if (y > 235) { doc.addPage(); y = 20; }
-  }
-
-  y += 5;
-  doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", left, y); y += 7;
-  y = drawWrapped(doc, "1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", left, y, 166, 5); y += 2;
-  y = drawWrapped(doc, "2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.", left, y, 166, 5); y += 2;
-  y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 7;
-
-  y = drawWrapped(doc, "Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.", left, y, 166, 5);
-  y += 8;
-
-  doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
-  y += 8;
-
-  doc.text("Mengetahui,", left+25, y);
-  doc.text("Mengetahui,", 145, y, {align:"center"});
-  y += 6;
-
-  doc.text("Wali Kelas,", left+25, y);
-  doc.text("Guru BK,", 145, y, {align:"center"});
-  y += 16;
-  doc.text("(...........................)", left+25, y);
-  doc.text("(...........................)", 145, y, {align:"center"});
-  y += 8;
-
-  doc.text("Pembina OSIS,", left+25, y);
-  doc.text("Waka Kesiswaan,", 145, y, {align:"center"});
-  y += 16;
-  doc.text("(...........................)", left+25, y);
-  doc.text("(...........................)", 145, y, {align:"center"});
-  y += 8;
-
-  doc.text("Orang Tua/Wali,", left+25, y);
-  doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
-  y += 6;
-  doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(160, 160, 160);
-  doc.text("Materai Rp 10.000", 145, y, {align:"center"});
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("times", "normal");
-  doc.setFontSize(11);
-  y += 10;
-  doc.text("(...........................)", left+25, y);
-  doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
-
-  const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
-  return {
-    blob: doc.output("blob"),
-    filename: `SP-III-${safeName}.pdf`
-  };
-}
-
-async function buildSP4PDF() {
-  if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
-
-  const nama = document.getElementById("spNama").value.trim();
-  const nis = document.getElementById("spNIS").value.trim();
-  const nisn = document.getElementById("spNISN").value.trim();
-  const kelas = document.getElementById("spKelas").value.trim();
-  const totalPoin = normalizePoints(document.getElementById("spTotalPoin").value);
-  const nomor = document.getElementById("spNomor").value.trim();
-  const tanggal = document.getElementById("spTanggal").value;
-  const rincian = document.getElementById("spRincian").value.trim();
-
-  if (totalPoin < 100) {
-    throw new Error("PDF SP IV hanya dapat dibuat untuk total poin ≥ 100.");
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
-  const left = 22;
-  const right = 188;
-  
-  let y = await drawKopSurat(doc);
-
-  doc.setFont("times", "bold");
-  doc.setFontSize(13);
-  const titleText = "SURAT PERJANJIAN TINGKAT IV";
-  doc.text(titleText, 105, y, { align: "center" });
-  const tWidth = doc.getTextWidth(titleText);
-  doc.setLineWidth(0.4);
-  doc.line(105 - (tWidth/2), y + 1.2, 105 + (tWidth/2), y + 1.2);
-  y += 10;
-
-  if (nomor) {
-    doc.setFont("times", "normal");
-    doc.setFontSize(11);
-    doc.text("Nomor: " + nomor, left, y);
-    y += 7;
-  }
-
-  doc.setFont("times", "normal");
-  doc.setFontSize(11);
-  doc.text("Yang bertanda tangan di bawah ini:", left, y);
-  y += 7;
-
-  const labelX = left;
-  const colonX = 67;
-  const valueX = 72;
-  doc.text("Nama Siswa", labelX, y); doc.text(":", colonX, y); doc.text(nama || "-", valueX, y); y += 6;
-  doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
-  doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
-  doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
-  doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y);
-  doc.text(totalPoin + " Poin", valueX, y); y += 8;
-
-  doc.setFont("times", "bold");
-  doc.text("Rincian Pelanggaran:", left, y);
-  y += 6;
-  doc.setFont("times", "normal");
-
-  const detailLines = rincian
-    ? rincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`)
-    : ["Tidak ada rincian pelanggaran."];
-
-  for (const line of detailLines) {
-    y = drawWrapped(doc, line, left+4, y, 160, 5);
-    y += 1;
-    if (y > 225) { doc.addPage(); y = 20; }
-  }
-
-  y += 5;
-  doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", left, y); y += 7;
-  y = drawWrapped(doc, "1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", left, y, 166, 5); y += 2;
-  y = drawWrapped(doc, "2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.", left, y, 166, 5); y += 2;
-  y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 6;
-
-  doc.setFont("times", "bold");
-  y = drawWrapped(doc, "Mengingat poin pelanggaran sudah mencapai batas maksimal, maka siswa dikembalikan kepada Orang Tua.", left, y, 166, 5);
-  doc.setFont("times", "normal");
-  y += 6;
-
-  doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
-  y += 8;
-
-  doc.text("Waka Kesiswaan,", left+25, y);
-  doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
-  y += 6;
-  doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(160, 160, 160);
-  doc.text("Materai Rp 10.000", 145, y, {align:"center"});
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("times", "normal");
-  doc.setFontSize(11);
-  y += 10;
-  doc.text("(...........................)", left+25, y);
-  doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
-  y += 8;
-
-  doc.text("Guru BK,", left+25, y);
-  doc.text("Orang Tua/Wali,", 145, y, {align:"center"});
-  y += 16;
-  doc.text("(...........................)", left+25, y);
-  doc.text("(...........................)", 145, y, {align:"center"});
-  y += 8;
-
-  doc.text("Wali Kelas,", left+25, y);
-  doc.text("Mengetahui, Kepala Sekolah", 145, y, {align:"center"});
-  y += 16;
-  doc.text("(...........................)", left+25, y);
-  
-  const kepalaSekolahNama = "HENDRIADI, S.Pd.I., M.Pd.I";
-  const headmasterCenterX = 145;
-  const nameWidth = doc.getTextWidth(kepalaSekolahNama);
-  const underlinePadding = 4;
-  doc.setFont("times", "bold");
-  doc.text(kepalaSekolahNama, headmasterCenterX, y, {align:"center"});
-  doc.setLineWidth(0.4);
-  doc.line(headmasterCenterX - (nameWidth / 2) - underlinePadding, y + 1.2, headmasterCenterX + (nameWidth / 2) + underlinePadding, y + 1.2);
-  
-  y += 5;
-  doc.setFont("times", "normal");
-  doc.text("NIP. 198408072009041004", headmasterCenterX, y, {align:"center"});
-
-  const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
-  return {
-    blob: doc.output("blob"),
-    filename: `SP-IV-${safeName}.pdf`
-  };
-}
-
-async function getCurrentSPPDF() {
-  const level = document.getElementById("spJenis").value.trim();
-  if (level.includes("SP IV") || level.includes("IV (Akhir)")) {
-    return await buildSP4PDF();
-  }
-  if (level === "SP III") {
-    return await buildSP3PDF();
-  }
-  if (level === "SP II") {
-    return await buildSP2PDF();
-  }
-  if (level === "SP I") {
-    return await buildSP1PDF();
-  }
-  throw new Error("Jenis surat perjanjian tidak dikenal.");
-}
-
-async function previewSP1PDF() {
-  const btn = document.getElementById("spPreviewBtn");
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "Menyiapkan preview...";
-  }
-
-  try {
-    const pdf = await getCurrentSPPDF();
-    if (currentSP1PDFUrl) URL.revokeObjectURL(currentSP1PDFUrl);
-
-    currentSP1PDFBlob = pdf.blob;
-    currentSP1PDFFilename = pdf.filename;
-    currentSP1Saved = false;
-    currentSP1PDFUrl = URL.createObjectURL(pdf.blob);
-
-    const frame = document.getElementById("spPreviewFrame");
-    if (frame) frame.src = currentSP1PDFUrl;
-
-    const title = document.getElementById("spPreviewTitle");
-    if (title) title.textContent = "Preview " + pdf.filename;
-
-    document.getElementById("spPreviewModal").classList.remove("hidden");
-  } catch (err) {
-    console.error(err);
-    toast("Preview PDF gagal: " + err.message, "error");
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "Preview PDF";
-    }
-  }
-}
-
-function closeSPPreview() {
-  document.getElementById("spPreviewModal").classList.add("hidden");
-  const frame = document.getElementById("spPreviewFrame");
-  if (frame) frame.src = "about:blank";
-}
-
-function downloadSP1PDF() {
-  if (!currentSP1PDFBlob) {
-    previewSP1PDF();
-    return;
-  }
-  const url = URL.createObjectURL(currentSP1PDFBlob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = currentSP1PDFFilename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function blobToBase64_(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = String(reader.result || "");
-      const comma = result.indexOf(",");
-      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+  <script>
+    const CONFIG = {
+      API_URL: "https://script.google.com/macros/s/AKfycbwP59pALnmM1-hfK4Y9tDBpgJ8BNAaIXqvzeiRClRTMDslJDXg3W0wK1-EEhi9Rfl6pLQ/exec",
+      APP_NAME: "Sistem Poin Pelanggaran Siswa",
+      SCHOOL_NAME: "SMP Negeri 37 Merangin",
+      USE_LOCAL_FALLBACK: true
     };
-    reader.onerror = () => reject(new Error("PDF tidak dapat diproses."));
-    reader.readAsDataURL(blob);
-  });
-}
 
-async function saveAndDownloadSP1PDF() {
-  const btn = document.getElementById("spSaveDownloadBtn");
-  const level = document.getElementById("spJenis").value;
-  btn.disabled = true;
-  btn.textContent = "Menyimpan PDF...";
+    const VIOLATIONS = [
+      { category:"I. Kedisiplinan", type:"Terlambat datang ke sekolah", points:5 },
+      { category:"I. Kedisiplinan", type:"Tidak mengikuti apel/upacara tanpa alasan", points:5 },
+      { category:"I. Kedisiplinan", type:"Meninggalkan sekolah tanpa izin", points:10 },
 
-  try {
-    if (!currentSP1PDFBlob) {
-      const pdf = await getCurrentSPPDF();
-      currentSP1PDFBlob = pdf.blob;
-      currentSP1PDFFilename = pdf.filename;
+      { category:"II. Seragam dan Atribut", type:"Tidak memakai atribut lengkap", points:5 },
+      { category:"II. Seragam dan Atribut", type:"Memakai seragam tidak sesuai ketentuan", points:5 },
+      { category:"II. Seragam dan Atribut", type:"Rambut/penampilan tidak sesuai ketentuan", points:5 },
+
+      { category:"III. Kehadiran", type:"Tidak masuk tanpa keterangan", points:10 },
+      { category:"III. Kehadiran", type:"Membolos pada jam pelajaran", points:15 },
+
+      { category:"IV. Ketertiban", type:"Mengganggu ketertiban kelas", points:5 },
+      { category:"IV. Ketertiban", type:"Tidak membawa perlengkapan belajar", points:3 },
+      { category:"IV. Ketertiban", type:"Bermain saat proses pembelajaran", points:5 },
+
+      { category:"V. Sikap dan Etika", type:"Berkata tidak sopan kepada warga sekolah", points:10 },
+      { category:"V. Sikap dan Etika", type:"Tidak menghormati guru/karyawan", points:10 },
+      { category:"V. Sikap dan Etika", type:"Berkelahi", points:25 },
+
+      { category:"VI. Kebersihan", type:"Membuang sampah sembarangan", points:5 },
+      { category:"VI. Kebersihan", type:"Tidak melaksanakan piket", points:5 },
+      { category:"VI. Kebersihan", type:"Merusak kebersihan fasilitas sekolah", points:10 },
+
+      { category:"VII. Barang Terlarang", type:"Membawa barang yang dilarang sekolah", points:25 },
+      { category:"VII. Barang Terlarang", type:"Merokok di lingkungan sekolah", points:50 },
+
+      { category:"VIII. Kekerasan dan Perundungan", type:"Mengintimidasi/perundungan", points:25 },
+      { category:"VIII. Kekerasan dan Perundungan", type:"Melakukan kekerasan fisik", points:50 },
+
+      { category:"IX. Pelanggaran Berat", type:"Membawa senjata/barang berbahaya", points:75 },
+      { category:"IX. Pelanggaran Berat", type:"Pelanggaran berat lainnya", points:100 }
+    ];
+
+    let records = [];
+    let students = [];
+
+    function escapeHTML(value) {
+      return String(value ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
 
-    if (!currentSP1Saved) {
-      const pdfBase64 = await blobToBase64_(currentSP1PDFBlob);
+    function normalizePoints(value) {
+      const n = Number(String(value ?? 0).replace(/[^\d.-]/g, ""));
+      return Math.abs(Number.isFinite(n) ? n : 0);
+    }
+
+    function statusFromPoints(points) {
+      const p = normalizePoints(points);
+      if (p >= 100) return { label:"SP IV (Akhir)", cls:"bg-red-100 text-red-800" };
+      if (p >= 50) return { label:"SP III", cls:"bg-red-100 text-red-700" };
+      if (p >= 31) return { label:"SP II", cls:"bg-orange-100 text-orange-700" };
+      if (p >= 20) return { label:"SP I", cls:"bg-yellow-100 text-yellow-700" };
+      return { label:"Aman", cls:"bg-green-100 text-green-700" };
+    }
+
+    function toast(message, type="success") {
+      const el = document.createElement("div");
+      el.className = `toast px-4 py-3 rounded-xl shadow-lg text-sm font-medium ${
+        type === "error" ? "bg-red-600 text-white" :
+        type === "warning" ? "bg-yellow-500 text-white" :
+        "bg-slate-900 text-white"
+      }`;
+      el.textContent = message;
+      document.getElementById("toastContainer").appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    function localKey() { return "smpn37_poin_records_v1"; }
+    function saveLocal() { localStorage.setItem(localKey(), JSON.stringify(records)); }
+    function loadLocal() {
+      try {
+        records = JSON.parse(localStorage.getItem(localKey()) || "[]");
+        if (!Array.isArray(records)) records = [];
+      } catch { records = []; }
+    }
+
+    function detectSemester(dateString) {
+      const d = new Date(dateString + "T00:00:00");
+      const month = d.getMonth() + 1;
+      return (month >= 7 && month <= 12) ? "1" : "2";
+    }
+
+    async function loadData() {
+      if (!CONFIG.API_URL) {
+        loadLocal();
+        students = [];
+        renderAll();
+        return;
+      }
+      try {
+        const [pelanggaranResponse, siswaResponse] = await Promise.all([
+          fetch(CONFIG.API_URL, { method:"GET" }),
+          fetch(CONFIG.API_URL + "?action=siswa", { method:"GET" })
+        ]);
+        if (!pelanggaranResponse.ok) throw new Error("Pelanggaran HTTP " + pelanggaranResponse.status);
+        if (!siswaResponse.ok) throw new Error("Siswa HTTP " + siswaResponse.status);
+        const pelanggaranJson = await pelanggaranResponse.json();
+        const siswaJson = await siswaResponse.json();
+        records = (Array.isArray(pelanggaranJson) ? pelanggaranJson : (pelanggaranJson.data || [])).map(normalizeRecord);
+        students = (Array.isArray(siswaJson) ? siswaJson : (siswaJson.data || [])).map(normalizeStudent).filter(s => s.nama);
+        saveLocal();
+        renderAll();
+        toast(`Data diperbarui: ${students.length} siswa, ${records.length} pelanggaran.`);
+      } catch (err) {
+        console.error(err);
+        loadLocal();
+        renderAll();
+        toast("Data server belum dapat dimuat. Menggunakan data lokal.", "warning");
+      }
+    }
+
+    function normalizeStudent(s) {
+      return {
+        id: s.id || s.ID || "",
+        nis: s.nis || s.NIS || "",
+        nisn: s.nisn || s.NISN || "",
+        nama: s.nama || s.nama_siswa || s["Nama Siswa"] || s.Nama || "",
+        kelas: s.kelas || s.Kelas || "",
+        orangTua: s.orangTua || s.namaOrangTua || s["Nama Orang Tua"] || ""
+      };
+    }
+
+    function normalizeRecord(r) {
+      return {
+        id: r.id || r.ID || crypto.randomUUID(),
+        nama: r.nama || r.nama_siswa || r.Nama || "",
+        kelas: r.kelas || r.Kelas || "",
+        tanggal: r.tanggal || r.date || r.Tanggal || "",
+        semester: String(r.semester || r.Semester || detectSemester(r.tanggal || "")),
+        kategori: r.kategori || r.Kategori || "",
+        pelanggaran: r.pelanggaran || r.jenis_pelanggaran || r.Pelanggaran || "",
+        poin: normalizePoints(r.poin || r.Poin || 0),
+        keterangan: r.keterangan || r.catatan || r.Keterangan || ""
+      };
+    }
+
+    async function saveRecord(record) {
+      if (!CONFIG.API_URL) {
+        records.push(record);
+        saveLocal();
+        return { ok:true, record };
+      }
+      try {
+        const response = await fetch(CONFIG.API_URL, {
+          method:"POST",
+          headers:{ "Content-Type":"text/plain;charset=utf-8" },
+          body:JSON.stringify({ action:"addPelanggaran", ...record })
+        });
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message || "Server menolak data.");
+        const saved = normalizeRecord(result.data || record);
+        records.push(saved);
+        saveLocal();
+        return { ok:true, record:saved };
+      } catch (err) {
+        console.error(err);
+        if (CONFIG.USE_LOCAL_FALLBACK) {
+          records.push(record);
+          saveLocal();
+          toast("Server gagal menerima data. Disimpan sementara di perangkat.", "warning");
+          return { ok:true, record, localOnly:true };
+        }
+        return { ok:false, error:err };
+      }
+    }
+
+    function populateCategories() {
+      const select = document.getElementById("category");
+      const categories = [...new Set(VIOLATIONS.map(v => v.category))];
+      select.innerHTML = '<option value="">Pilih kategori...</option>' +
+        categories.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");
+    }
+
+    function populateViolationTypes() {
+      const category = document.getElementById("category").value;
+      const select = document.getElementById("violationType");
+      const list = VIOLATIONS.filter(v => v.category === category);
+      select.innerHTML = '<option value="">Pilih jenis pelanggaran...</option>' +
+        list.map(v => `<option value="${escapeHTML(v.type)}" data-points="${v.points}">${escapeHTML(v.type)} — ${v.points} poin</option>`).join("");
+      document.getElementById("points").value = "0";
+    }
+
+    function updatePoints() {
+      const option = document.querySelector("#violationType option:checked");
+      document.getElementById("points").value = option?.dataset?.points || 0;
+    }
+
+    function updateStudentClass() {
+      const name = document.getElementById("studentName").value.trim().toLowerCase();
+      const foundStudent = students.find(s => String(s.nama).trim().toLowerCase() === name && s.kelas);
+      if (foundStudent) {
+        document.getElementById("studentClass").value = foundStudent.kelas;
+        return;
+      }
+      const foundRecord = records.find(r => String(r.nama).trim().toLowerCase() === name && r.kelas);
+      if (foundRecord) document.getElementById("studentClass").value = foundRecord.kelas;
+    }
+
+    async function submitViolation(e) {
+      e.preventDefault();
+      const nama = document.getElementById("studentName").value.trim();
+      const kelas = document.getElementById("studentClass").value.trim();
+      const tanggal = document.getElementById("violationDate").value;
+      const semester = document.getElementById("semester").value;
+      const kategori = document.getElementById("category").value;
+      const pelanggaran = document.getElementById("violationType").value;
+      const poin = normalizePoints(document.getElementById("points").value);
+      const keterangan = document.getElementById("notes").value.trim();
+
+      if (!nama || !kelas || !tanggal || !kategori || !pelanggaran || poin <= 0) {
+        toast("Lengkapi data pelanggaran terlebih dahulu.", "error");
+        return;
+      }
+      const record = { id: crypto.randomUUID(), nama, kelas, tanggal, semester, kategori, pelanggaran, poin, keterangan };
+      const btn = document.getElementById("saveBtn");
+      btn.disabled = true;
+      btn.textContent = "Menyimpan...";
+      const saveResult = await saveRecord(record);
+      btn.disabled = false;
+      btn.textContent = "Simpan Pelanggaran";
+      if (saveResult.ok) {
+        document.getElementById("violationForm").reset();
+        document.getElementById("violationDate").valueAsDate = new Date();
+        document.getElementById("semester").value = detectSemester(document.getElementById("violationDate").value);
+        document.getElementById("points").value = "0";
+        toast("Pelanggaran berhasil dicatat.");
+        renderAll();
+        showTab("rekap");
+      } else {
+        toast("Data gagal disimpan.", "error");
+      }
+    }
+
+    function getFilteredRecords(semester="Semua") {
+      if (semester === "Semua") return [...records];
+      return records.filter(r => String(r.semester) === String(semester));
+    }
+
+    function aggregateStudents(semester="Semua") {
+      const map = new Map();
+      getFilteredRecords(semester).forEach(r => {
+        const key = `${String(r.nama).trim().toLowerCase()}|${String(r.kelas).trim().toLowerCase()}`;
+        if (!map.has(key)) {
+          map.set(key, { nama:r.nama, kelas:r.kelas, pelanggaran:0, poin:0 });
+        }
+        const item = map.get(key);
+        item.pelanggaran += 1;
+        item.poin += normalizePoints(r.poin);
+      });
+      return [...map.values()].sort((a,b) => b.poin - a.poin || a.nama.localeCompare(b.nama));
+    }
+
+    function renderDashboard() {
+      const semester = document.getElementById("dashboardSemester").value;
+      const data = getFilteredRecords(semester);
+      const studentsList = aggregateStudents(semester);
+      document.getElementById("statStudents").textContent = studentsList.length;
+      document.getElementById("statViolations").textContent = data.length;
+      document.getElementById("statPoints").textContent = data.reduce((s,r) => s + normalizePoints(r.poin), 0);
+      document.getElementById("statSP").textContent = studentsList.filter(s => normalizePoints(s.poin) >= 20).length;
+
+      const top = studentsList.slice(0, 10);
+      const container = document.getElementById("topStudents");
+      if (!top.length) {
+        container.innerHTML = '<div class="text-sm text-slate-500 py-8 text-center">Belum ada data pelanggaran.</div>';
+        return;
+      }
+      container.innerHTML = top.map((s, i) => {
+        const st = statusFromPoints(s.poin);
+        return `
+          <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
+            <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">${i+1}</div>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold truncate">${escapeHTML(s.nama)}</p>
+              <p class="text-xs text-slate-500">${escapeHTML(s.kelas)} · ${s.pelanggaran} pelanggaran</p>
+            </div>
+            <div class="text-right">
+              <p class="font-bold">${s.poin} poin</p>
+              <span class="text-xs px-2 py-1 rounded-full ${st.cls}">${st.label}</span>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    function renderRekap() {
+      const semester = document.getElementById("rekapSemester").value;
+      const search = document.getElementById("searchRekap").value.trim().toLowerCase();
+      let studentsList = aggregateStudents(semester);
+      if (search) {
+        studentsList = studentsList.filter(s => `${s.nama} ${s.kelas}`.toLowerCase().includes(search));
+      }
+      const body = document.getElementById("rekapBody");
+      if (!studentsList.length) {
+        body.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-500">Data tidak ditemukan.</td></tr>';
+        return;
+      }
+      body.innerHTML = studentsList.map((s,i) => {
+        const st = statusFromPoints(s.poin);
+        return `
+          <tr class="border-b hover:bg-slate-50">
+            <td class="p-3">${i+1}</td>
+            <td class="p-3 font-semibold">
+              <button type="button" class="text-blue-700 hover:text-blue-900 hover:underline text-left" onclick="showStudentDetail(${escapeHTML(JSON.stringify(s.nama))}, ${escapeHTML(JSON.stringify(s.kelas))}, ${escapeHTML(JSON.stringify(semester))})">
+                ${escapeHTML(s.nama)}
+              </button>
+            </td>
+            <td class="p-3">${escapeHTML(s.kelas)}</td>
+            <td class="p-3 text-center">${s.pelanggaran}</td>
+            <td class="p-3 text-center font-bold">${s.poin}</td>
+            <td class="p-3 text-center"><span class="px-2 py-1 rounded-full text-xs ${st.cls}">${st.label}</span></td>
+          </tr>`;
+      }).join("");
+    }
+
+    function showStudentDetail(nama, kelas, semester="Semua") {
+      const nameKey = String(nama).trim().toLowerCase();
+      const classKey = String(kelas).trim().toLowerCase();
+      let data = getFilteredRecords(semester).filter(r =>
+        String(r.nama).trim().toLowerCase() === nameKey &&
+        String(r.kelas).trim().toLowerCase() === classKey
+      );
+      data.sort((a,b) => String(b.tanggal).localeCompare(String(a.tanggal)));
+      const totalPoints = data.reduce((sum, r) => sum + normalizePoints(r.poin), 0);
+      const status = statusFromPoints(totalPoints);
+      currentStudentDetail = { nama, kelas, semester, data, totalPoints };
+
+      document.getElementById("detailStudentName").textContent = nama;
+      document.getElementById("detailStudentClass").textContent = `Kelas ${kelas}`;
+      document.getElementById("detailViolationCount").textContent = data.length;
+      document.getElementById("detailTotalPoints").textContent = totalPoints;
+      document.getElementById("detailSemester").textContent = semester === "Semua" ? "Semua Semester" : `Semester ${semester}`;
+      document.getElementById("detailStatus").innerHTML = `<span class="px-3 py-1 rounded-full text-xs font-semibold ${status.cls}">${escapeHTML(status.label)}</span>`;
+      prepareSPButton(totalPoints);
+
+      const body = document.getElementById("detailHistoryBody");
+      if (!data.length) {
+        body.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-500">Belum ada riwayat pelanggaran pada semester ini.</td></tr>';
+      } else {
+        body.innerHTML = data.map(r => `
+          <tr class="border-b last:border-0">
+            <td class="p-3 whitespace-nowrap">${escapeHTML(r.tanggal)}</td>
+            <td class="p-3">${escapeHTML(r.kategori)}</td>
+            <td class="p-3 font-semibold">${escapeHTML(r.pelanggaran)}</td>
+            <td class="p-3 text-center font-bold">${normalizePoints(r.poin)}</td>
+            <td class="p-3">${escapeHTML(r.keterangan || "-")}</td>
+          </tr>
+        `).join("");
+      }
+      document.getElementById("studentDetailModal").classList.remove("hidden");
+      document.body.classList.add("overflow-hidden");
+    }
+
+    let currentStudentDetail = null;
+
+    function getSPLevel(points) {
+      const p = normalizePoints(points);
+      if (p >= 100) return "SP IV (Akhir)";
+      if (p >= 50) return "SP III";
+      if (p >= 31) return "SP II";
+      if (p >= 20) return "SP I";
+      return "";
+    }
+
+    function findMasterStudent(nama, kelas) {
+      const nk = String(nama).trim().toLowerCase();
+      const kk = String(kelas).trim().toLowerCase();
+      return students.find(s => String(s.nama).trim().toLowerCase() === nk && String(s.kelas).trim().toLowerCase() === kk) ||
+             students.find(s => String(s.nama).trim().toLowerCase() === nk) || null;
+    }
+
+    function prepareSPButton(totalPoints) {
+      const btn = document.getElementById("btnBuatSP");
+      const info = document.getElementById("detailSpInfo");
+      const level = getSPLevel(totalPoints);
+      if (level) {
+        btn.disabled = false;
+        btn.textContent = "Buat " + level;
+        info.textContent = "Total poin memenuhi ketentuan " + level + ".";
+      } else {
+        btn.disabled = true;
+        btn.textContent = "Belum Memenuhi SP";
+        info.textContent = "SP mulai diterbitkan pada 20 poin.";
+      }
+    }
+
+    function openSPForm() {
+      if (!currentStudentDetail) return;
+      const level = getSPLevel(currentStudentDetail.totalPoints);
+      if (!level) return;
+      const master = findMasterStudent(currentStudentDetail.nama, currentStudentDetail.kelas) || {};
+      document.getElementById("spJenis").value = level;
+      document.getElementById("spModalTitle").textContent = "Surat Perjanjian " + (level === "SP IV (Akhir)" ? "TINGKAT IV (AKHIR)" : "TINGKAT " + level.replace("SP ", ""));
+      document.getElementById("spNama").value = currentStudentDetail.nama;
+      document.getElementById("spNIS").value = master.nis || "";
+      document.getElementById("spNISN").value = master.nisn || "";
+      document.getElementById("spKelas").value = currentStudentDetail.kelas;
+      document.getElementById("spTotalPoin").value = currentStudentDetail.totalPoints;
+      document.getElementById("spTanggal").value = new Date().toISOString().slice(0,10);
+      document.getElementById("spDasar").value = "Berdasarkan akumulasi poin pelanggaran tata tertib siswa.";
+      document.getElementById("spRincian").value = currentStudentDetail.data.map(r => `${r.pelanggaran} (${normalizePoints(r.poin)} poin)`).join("\n");
+      document.getElementById("spKeterangan").value = "";
+      document.getElementById("spPetugas").value = "";
+      document.getElementById("spModal").classList.remove("hidden");
+    }
+
+    function closeSPForm() {
+      document.getElementById("spModal").classList.add("hidden");
+    }
+
+    async function submitSPForm(event) {
+      event.preventDefault();
+      const btn = document.getElementById("spSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Menyimpan...";
       const payload = {
-        action: "publishSuratSP",
+        action: "addSuratSP",
         id: "",
         nomorSurat: document.getElementById("spNomor").value.trim(),
         tanggalSurat: document.getElementById("spTanggal").value,
@@ -1464,336 +688,978 @@ async function saveAndDownloadSP1PDF() {
         nis: document.getElementById("spNIS").value.trim(),
         nisn: document.getElementById("spNISN").value.trim(),
         kelas: document.getElementById("spKelas").value.trim(),
-        jenisSP: level,
+        jenisSP: document.getElementById("spJenis").value,
         totalPoin: normalizePoints(document.getElementById("spTotalPoin").value),
         dasarPelanggaran: document.getElementById("spDasar").value.trim(),
         rincianPelanggaran: document.getElementById("spRincian").value.trim(),
         keterangan: document.getElementById("spKeterangan").value.trim(),
         petugas: document.getElementById("spPetugas").value.trim(),
-        status: "Diterbitkan",
-        fileName: currentSP1PDFFilename,
-        pdfBase64: pdfBase64
+        status: "Draft",
+        filePDF: ""
       };
-
-      const response = await fetch(CONFIG.API_URL, {
-        method:"POST",
-        headers:{"Content-Type":"text/plain;charset=utf-8"},
-        body:JSON.stringify(payload)
-      });
-      if (!response.ok) throw new Error("HTTP " + response.status);
-
-      const result = await response.json();
-      if (!result.success) throw new Error(result.message || "Gagal menyimpan PDF " + level);
-
-      currentSP1Saved = true;
+      try {
+        const response = await fetch(CONFIG.API_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload) });
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message || "Gagal menyimpan surat SP");
+        toast("Surat SP berhasil disimpan sebagai Draft.");
+        closeSPForm();
+      } catch (err) {
+        console.error(err);
+        toast("Surat SP gagal disimpan: " + err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Simpan Draft SP";
+      }
     }
 
-    downloadSP1PDF();
-    toast(level + " berhasil disimpan ke Surat_SP dan PDF diunduh.");
-  } catch (err) {
-    console.error(err);
-    toast(level + " gagal disimpan: " + err.message, "error");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Simpan & Download PDF";
-  }
-}
+    function formatTanggalIndonesia(dateString) {
+      if (!dateString) return "...................... 20...";
+      const d = new Date(dateString + "T00:00:00");
+      const bulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+      return `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`;
+    }
 
-function closeSPFormOnBackdrop(event) {
-  if (event.target.id === "spModal") closeSPForm();
-}
+    function drawWrapped(doc, text, x, y, maxWidth, lineHeight=5) {
+      const lines = doc.splitTextToSize(String(text || ""), maxWidth);
+      doc.text(lines, x, y);
+      return y + lines.length * lineHeight;
+    }
 
-function closeStudentDetail(event) {
-  if (event && event.target && event.target.id !== "studentDetailModal") return;
-  document.getElementById("studentDetailModal").classList.add("hidden");
-  document.body.classList.remove("overflow-hidden");
-}
+    function getMeranginLogoDataUrl() {
+      return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 160;
+        canvas.height = 200;
+        const ctx = canvas.getContext('2d');
+        // Shield shape
+        ctx.fillStyle = '#3b82f6';
+        ctx.beginPath();
+        ctx.moveTo(80, 5);
+        ctx.lineTo(150, 25);
+        ctx.lineTo(150, 130);
+        ctx.lineTo(80, 195);
+        ctx.lineTo(10, 130);
+        ctx.lineTo(10, 25);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#dc2626';
+        ctx.lineWidth = 6;
+        ctx.stroke();
 
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape") closeStudentDetail();
-});
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 15px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('MERANGIN', 80, 32);
 
-function renderHistory() {
-  const search = document.getElementById("searchHistory").value.trim().toLowerCase();
-  let data = [...records].sort((a,b) => String(b.tanggal).localeCompare(String(a.tanggal)));
+        // Center chain & dome symbol
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(80, 100, 42, 0, Math.PI * 2);
+        ctx.stroke();
 
-  if (search) {
-    data = data.filter(r =>
-      `${r.nama} ${r.kelas} ${r.pelanggaran} ${r.kategori} ${r.keterangan}`.toLowerCase().includes(search)
-    );
-  }
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(80, 75, 14, Math.PI, 0, false);
+        ctx.fill();
 
-  const body = document.getElementById("historyBody");
+        resolve(canvas.toDataURL('image/png'));
+      });
+    }
 
-  if (!data.length) {
-    body.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-500">Belum ada riwayat.</td></tr>';
-    return;
-  }
+    function getDinasLogoDataUrl() {
+      return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 160;
+        canvas.height = 200;
+        const ctx = canvas.getContext('2d');
+        // Tut Wuri Handayani pentagon shield
+        ctx.fillStyle = '#0284c7';
+        ctx.beginPath();
+        ctx.moveTo(80, 10);
+        ctx.lineTo(145, 45);
+        ctx.lineTo(125, 150);
+        ctx.lineTo(80, 190);
+        ctx.lineTo(35, 150);
+        ctx.lineTo(15, 45);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 5;
+        ctx.stroke();
 
-  body.innerHTML = data.map(r => `
-    <tr class="border-b hover:bg-slate-50">
-      <td class="p-3 whitespace-nowrap">${escapeHTML(r.tanggal)}</td>
-      <td class="p-3 font-semibold">${escapeHTML(r.nama)}</td>
-      <td class="p-3">${escapeHTML(r.kelas)}</td>
-      <td class="p-3">${escapeHTML(r.pelanggaran)}</td>
-      <td class="p-3 text-center font-bold">${normalizePoints(r.poin)}</td>
-      <td class="p-3 text-center">${escapeHTML(r.semester)}</td>
-      <td class="p-3">${escapeHTML(r.keterangan)}</td>
-    </tr>
-  `).join("");
-}
+        // White stylized Garuda wings / open book
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(80, 50);
+        ctx.bezierCurveTo(90, 70, 115, 80, 120, 115);
+        ctx.lineTo(40, 115);
+        ctx.bezierCurveTo(45, 80, 70, 70, 80, 50);
+        ctx.closePath();
+        ctx.fill();
 
-function populateStudentList() {
-  const masterNames = students.map(s => s.nama).filter(Boolean);
-  const recordNames = records.map(r => r.nama).filter(Boolean);
-  const names = [...new Set([...masterNames, ...recordNames])].sort((a,b) => a.localeCompare(b, "id"));
-  document.getElementById("studentList").innerHTML =
-    names.map(n => `<option value="${escapeHTML(n)}">`).join("");
-}
+        // Yellow flame / quill in center
+        ctx.fillStyle = '#eab308';
+        ctx.beginPath();
+        ctx.moveTo(80, 75);
+        ctx.quadraticCurveTo(88, 100, 80, 125);
+        ctx.quadraticCurveTo(72, 100, 80, 75);
+        ctx.fill();
 
-function renderAll() {
-  renderDashboard();
-  renderRekap();
-  renderHistory();
-  populateStudentList();
-}
+        resolve(canvas.toDataURL('image/png'));
+      });
+    }
 
-/* ---------- Navigasi ---------- */
-function showTab(tab) {
-  document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
-  document.getElementById(`tab-${tab}`).classList.remove("hidden");
+    async function drawKopSurat(doc) {
+      const left = 22;
+      const right = 188;
+      let y = 12;
 
-  document.querySelectorAll(".nav-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.tab === tab);
-  });
-}
+      try {
+        const logoMerangin = await getMeranginLogoDataUrl();
+        doc.addImage(logoMerangin, "PNG", left, y, 16, 20);
+      } catch (e) {
+        doc.setDrawColor(120, 120, 120);
+        doc.rect(left, y, 16, 20);
+      }
 
-/* ---------- PDF ---------- */
-function exportPDF() {
-  if (!records.length) {
-    toast("Belum ada data untuk dicetak.", "warning");
-    return;
-  }
+      try {
+        const logoDinas = await getDinasLogoDataUrl();
+        doc.addImage(logoDinas, "PNG", right - 16, y, 16, 20);
+      } catch (e) {
+        doc.setDrawColor(120, 120, 120);
+        doc.rect(right - 16, y, 16, 20);
+      }
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("landscape");
+      doc.setFont("times", "bold");
+      doc.setFontSize(12);
+      doc.text("PEMERINTAH KABUPATEN MERANGIN", 105, y + 3, { align: "center" });
+      doc.setFontSize(11);
+      doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", 105, y + 8.5, { align: "center" });
+      doc.setFontSize(14);
+      doc.text("SMP NEGERI 37 MERANGIN", 105, y + 14.5, { align: "center" });
+      doc.setFont("times", "normal");
+      doc.setFontSize(9);
+      doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", 105, y + 19, { align: "center" });
 
-  doc.setFontSize(16);
-  doc.text(CONFIG.SCHOOL_NAME, 14, 15);
-  doc.setFontSize(12);
-  doc.text("REKAPITULASI POIN PELANGGARAN SISWA", 14, 23);
-  doc.setFontSize(9);
-  doc.text("Dicetak: " + new Date().toLocaleString("id-ID"), 14, 30);
+      y += 22;
+      doc.setLineWidth(0.6);
+      doc.line(left, y, right, y);
+      return y + 10;
+    }
 
-  const students = aggregateStudents(document.getElementById("rekapSemester").value);
+    let currentSP1PDFBlob = null;
+    let currentSP1PDFUrl = null;
+    let currentSP1PDFFilename = "SP-I-Siswa.pdf";
+    let currentSP1Saved = false;
 
-  doc.autoTable({
-    startY: 36,
-    head: [["No","Nama Siswa","Kelas","Jumlah Pelanggaran","Total Poin","Status"]],
-    body: students.map((s,i) => [
-      i+1, s.nama, s.kelas, s.pelanggaran, s.poin, statusFromPoints(s.poin).label
-    ]),
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [37,99,235] }
-  });
+    async function buildSP1PDF() {
+      if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
+      const nama = document.getElementById("spNama").value.trim();
+      const nis = document.getElementById("spNIS").value.trim();
+      const nisn = document.getElementById("spNISN").value.trim();
+      const kelas = document.getElementById("spKelas").value.trim();
+      const totalPoin = normalizePoints(document.getElementById("spTotalPoin").value);
+      const nomor = document.getElementById("spNomor").value.trim();
+      const tanggal = document.getElementById("spTanggal").value;
+      const rincian = document.getElementById("spRincian").value.trim();
 
-  doc.save("Rekap-Poin-Siswa-SMPN37-Merangin.pdf");
-}
+      if (totalPoin < 20 || totalPoin > 30) {
+        throw new Error("PDF SP I hanya dapat dibuat untuk total poin 20–30.");
+      }
 
-/* ---------- Init ---------- */
-document.addEventListener("DOMContentLoaded", () => {
-  const today = new Date();
-  document.getElementById("violationDate").valueAsDate = today;
-  document.getElementById("semester").value = detectSemester(
-    document.getElementById("violationDate").value
-  );
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+      const left = 22;
+      const right = 188;
+      
+      let y = await drawKopSurat(doc);
 
-  populateCategories();
-  populateViolationTypes();
-  loadData();
+      doc.setFont("times", "bold");
+      doc.setFontSize(13);
+      const titleText = "SURAT PERJANJIAN TINGKAT I";
+      doc.text(titleText, 105, y, { align: "center" });
+      const tWidth = doc.getTextWidth(titleText);
+      doc.setLineWidth(0.4);
+      doc.line(105 - (tWidth/2), y + 1.2, 105 + (tWidth/2), y + 1.2);
+      y += 10;
 
-  document.getElementById("category").addEventListener("change", populateViolationTypes);
-  document.getElementById("violationType").addEventListener("change", updatePoints);
-  document.getElementById("studentName").addEventListener("change", updateStudentClass);
-  document.getElementById("violationDate").addEventListener("change", e => {
-    document.getElementById("semester").value = detectSemester(e.target.value);
-  });
-  document.getElementById("violationForm").addEventListener("submit", submitViolation);
+      doc.setFont("times", "normal");
+      doc.setFontSize(11);
+      if (nomor) {
+        doc.text("Nomor: " + nomor, left, y);
+        y += 7;
+      }
+      doc.text("Yang bertanda tangan di bawah ini:", left, y);
+      y += 7;
 
-  document.querySelectorAll(".nav-btn").forEach(btn => {
-    btn.addEventListener("click", () => showTab(btn.dataset.tab));
-  });
-});
-</script>
+      const labelX = left;
+      const colonX = 67;
+      const valueX = 72;
+      doc.text("Nama Siswa", labelX, y); doc.text(":", colonX, y); doc.text(nama || "-", valueX, y); y += 6;
+      doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
+      doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
+      doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
+      doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y); doc.text(totalPoin + " Poin", valueX, y); y += 8;
 
-<!-- MODAL FORM SURAT SP -->
-<div id="spModal" class="hidden fixed inset-0 z-[60] bg-slate-900/50 p-4 overflow-y-auto no-print" onclick="closeSPFormOnBackdrop(event)">
-  <div class="max-w-3xl mx-auto mt-8 card overflow-hidden" onclick="event.stopPropagation()">
-    <div class="p-5 border-b flex items-start justify-between gap-3">
-      <div>
-        <p class="text-xs text-slate-500">Dokumen Surat Peringatan</p>
-        <h3 id="spModalTitle" class="text-xl font-bold">Surat Perjanjian Tingkat I</h3>
-        <p class="text-sm text-slate-500 mt-1">Data akan diambil dari data siswa dan riwayat pelanggaran.</p>
+      doc.setFont("times", "bold");
+      doc.text("Rincian Pelanggaran:", left, y);
+      y += 6;
+      doc.setFont("times", "normal");
+      const cleanRincian = rincian.replace(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s*-\s*/g, "").replace(/\d{4}-\d{2}-\d{2}\s*/g, "");
+      const detailLines = cleanRincian ? cleanRincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`) : ["Tidak ada rincian pelanggaran."];
+      for (const line of detailLines) {
+        y = drawWrapped(doc, line, left+4, y, 160, 5);
+        y += 1;
+        if (y > 255) { doc.addPage(); y = 20; }
+      }
+      y += 5;
+
+      doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", left, y); y += 7;
+      y = drawWrapped(doc, "1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", left, y, 166, 5); y += 2;
+      y = drawWrapped(doc, "2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.", left, y, 166, 5); y += 2;
+      y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 7;
+
+      y = drawWrapped(doc, "Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.", left, y, 166, 5);
+      y += 10;
+
+      doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
+      y += 8;
+      doc.text("Mengetahui,", left+25, y);
+      doc.text("Siswa yang bersangkutan,", 135, y, {align:"center"});
+      y += 6;
+      doc.text("Wali Kelas,", left+25, y);
+      y += 12;
+      doc.setFont("times", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(140, 140, 140);
+      doc.text("Materai Rp 10.000", 135, y, {align:"center"});
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("times", "normal");
+      doc.setFontSize(11);
+      y += 12;
+      doc.text("(...........................)", left+25, y);
+      doc.text("( " + (nama || "...........................") + " )", 135, y, {align:"center"});
+
+      const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
+      return { blob: doc.output("blob"), filename: `SP-I-${safeName}.pdf` };
+    }
+
+    async function buildSP2PDF() {
+      if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
+      const nama = document.getElementById("spNama").value.trim();
+      const nis = document.getElementById("spNIS").value.trim();
+      const nisn = document.getElementById("spNISN").value.trim();
+      const kelas = document.getElementById("spKelas").value.trim();
+      const totalPoin = normalizePoints(document.getElementById("spTotalPoin").value);
+      const nomor = document.getElementById("spNomor").value.trim();
+      const tanggal = document.getElementById("spTanggal").value;
+      const rincian = document.getElementById("spRincian").value.trim();
+
+      if (totalPoin < 31 || totalPoin > 49) {
+        throw new Error("PDF SP II hanya dapat dibuat untuk total poin 31–49.");
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+      const left = 22;
+      const right = 188;
+      
+      let y = await drawKopSurat(doc);
+
+      doc.setFont("times", "bold");
+      doc.setFontSize(13);
+      const titleText = "SURAT PERJANJIAN TINGKAT II";
+      doc.text(titleText, 105, y, { align: "center" });
+      const tWidth = doc.getTextWidth(titleText);
+      doc.setLineWidth(0.4);
+      doc.line(105 - (tWidth/2), y + 1.2, 105 + (tWidth/2), y + 1.2);
+      y += 10;
+
+      doc.setFont("times", "normal");
+      doc.setFontSize(11);
+      if (nomor) {
+        doc.text("Nomor: " + nomor, left, y);
+        y += 7;
+      }
+      doc.text("Yang bertanda tangan di bawah ini:", left, y);
+      y += 7;
+
+      const labelX = left;
+      const colonX = 67;
+      const valueX = 72;
+      doc.text("Nama Siswa", labelX, y); doc.text(":", colonX, y); doc.text(nama || "-", valueX, y); y += 6;
+      doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
+      doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
+      doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
+      doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y); doc.text(totalPoin + " Poin", valueX, y); y += 8;
+
+      doc.setFont("times", "bold");
+      doc.text("Rincian Pelanggaran:", left, y);
+      y += 6;
+      doc.setFont("times", "normal");
+
+      const cleanRincian = rincian.replace(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s*-\s*/g, "").replace(/\d{4}-\d{2}-\d{2}\s*/g, "");
+      const detailLines = cleanRincian ? cleanRincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`) : ["Tidak ada rincian pelanggaran."];
+      for (const line of detailLines) {
+        y = drawWrapped(doc, line, left+4, y, 160, 5);
+        y += 1;
+        if (y > 245) { doc.addPage(); y = 20; }
+      }
+
+      y += 5;
+      doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", left, y); y += 7;
+      y = drawWrapped(doc, "1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", left, y, 166, 5); y += 2;
+      y = drawWrapped(doc, "2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.", left, y, 166, 5); y += 2;
+      y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 7;
+
+      y = drawWrapped(doc, "Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.", left, y, 166, 5);
+      y += 8;
+
+      doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
+      y += 8;
+
+      doc.text("Mengetahui,", left+25, y);
+      doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
+      y += 6;
+
+      doc.text("Guru BK,", left+25, y);
+      y += 12;
+      doc.setFont("times", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(140, 140, 140);
+      doc.text("Materai Rp 10.000", 145, y, {align:"center"});
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("times", "normal");
+      doc.setFontSize(11);
+      y += 12;
+      doc.text("(...........................)", left+25, y);
+      doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
+      y += 10;
+
+      doc.text("Wali Kelas,", left+25, y);
+      doc.text("Orang Tua/Wali,", 145, y, {align:"center"});
+      y += 16;
+      doc.text("(...........................)", left+25, y);
+      doc.text("(...........................)", 145, y, {align:"center"});
+
+      const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
+      return { blob: doc.output("blob"), filename: `SP-II-${safeName}.pdf` };
+    }
+
+    async function buildSP3PDF() {
+      if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
+      const nama = document.getElementById("spNama").value.trim();
+      const nis = document.getElementById("spNIS").value.trim();
+      const nisn = document.getElementById("spNISN").value.trim();
+      const kelas = document.getElementById("spKelas").value.trim();
+      const totalPoin = normalizePoints(document.getElementById("spTotalPoin").value);
+      const nomor = document.getElementById("spNomor").value.trim();
+      const tanggal = document.getElementById("spTanggal").value;
+      const rincian = document.getElementById("spRincian").value.trim();
+
+      if (totalPoin < 50 || totalPoin > 99) {
+        throw new Error("PDF SP III hanya dapat dibuat untuk total poin 50–99.");
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+      const left = 22;
+      const right = 188;
+      
+      let y = await drawKopSurat(doc);
+
+      doc.setFont("times", "bold");
+      doc.setFontSize(13);
+      const titleText = "SURAT PERJANJIAN TINGKAT III";
+      doc.text(titleText, 105, y, { align: "center" });
+      const tWidth = doc.getTextWidth(titleText);
+      doc.setLineWidth(0.4);
+      doc.line(105 - (tWidth/2), y + 1.2, 105 + (tWidth/2), y + 1.2);
+      y += 10;
+
+      if (nomor) {
+        doc.setFont("times", "normal");
+        doc.setFontSize(11);
+        doc.text("Nomor: " + nomor, left, y);
+        y += 7;
+      }
+
+      doc.setFont("times", "normal");
+      doc.setFontSize(11);
+      doc.text("Yang bertanda tangan di bawah ini:", left, y);
+      y += 7;
+
+      const labelX = left;
+      const colonX = 67;
+      const valueX = 72;
+      doc.text("Nama Siswa", labelX, y); doc.text(":", colonX, y); doc.text(nama || "-", valueX, y); y += 6;
+      doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
+      doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
+      doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
+      doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y); doc.text(totalPoin + " Poin", valueX, y); y += 8;
+
+      doc.setFont("times", "bold");
+      doc.text("Rincian Pelanggaran:", left, y);
+      y += 6;
+      doc.setFont("times", "normal");
+
+      const cleanRincian = rincian.replace(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s*-\s*/g, "").replace(/\d{4}-\d{2}-\d{2}\s*/g, "");
+      const detailLines = cleanRincian ? cleanRincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`) : ["Tidak ada rincian pelanggaran."];
+      for (const line of detailLines) {
+        y = drawWrapped(doc, line, left+4, y, 160, 5);
+        y += 1;
+        if (y > 235) { doc.addPage(); y = 20; }
+      }
+
+      y += 5;
+      doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", left, y); y += 7;
+      y = drawWrapped(doc, "1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", left, y, 166, 5); y += 2;
+      y = drawWrapped(doc, "2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.", left, y, 166, 5); y += 2;
+      y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 7;
+
+      y = drawWrapped(doc, "Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.", left, y, 166, 5);
+      y += 8;
+
+      doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
+      y += 8;
+
+      doc.text("Mengetahui,", left+25, y);
+      doc.text("Mengetahui,", 145, y, {align:"center"});
+      y += 6;
+
+      doc.text("Wali Kelas,", left+25, y);
+      doc.text("Guru BK,", 145, y, {align:"center"});
+      y += 16;
+      doc.text("(...........................)", left+25, y);
+      doc.text("(...........................)", 145, y, {align:"center"});
+      y += 8;
+
+      doc.text("Pembina OSIS,", left+25, y);
+      doc.text("Waka Kesiswaan,", 145, y, {align:"center"});
+      y += 16;
+      doc.text("(...........................)", left+25, y);
+      doc.text("(...........................)", 145, y, {align:"center"});
+      y += 8;
+
+      doc.text("Orang Tua/Wali,", left+25, y);
+      doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
+      y += 6;
+      doc.setFont("times", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(140, 140, 140);
+      doc.text("Materai Rp 10.000", 145, y, {align:"center"});
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("times", "normal");
+      doc.setFontSize(11);
+      y += 10;
+      doc.text("(...........................)", left+25, y);
+      doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
+
+      const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
+      return { blob: doc.output("blob"), filename: `SP-III-${safeName}.pdf` };
+    }
+
+    async function buildSP4PDF() {
+      if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
+      const nama = document.getElementById("spNama").value.trim();
+      const nis = document.getElementById("spNIS").value.trim();
+      const nisn = document.getElementById("spNISN").value.trim();
+      const kelas = document.getElementById("spKelas").value.trim();
+      const totalPoin = normalizePoints(document.getElementById("spTotalPoin").value);
+      const nomor = document.getElementById("spNomor").value.trim();
+      const tanggal = document.getElementById("spTanggal").value;
+      const rincian = document.getElementById("spRincian").value.trim();
+
+      if (totalPoin < 100) {
+        throw new Error("PDF SP IV hanya dapat dibuat untuk total poin ≥ 100.");
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+      const left = 22;
+      const right = 188;
+      
+      let y = await drawKopSurat(doc);
+
+      doc.setFont("times", "bold");
+      doc.setFontSize(13);
+      const titleText = "SURAT PERJANJIAN TINGKAT IV";
+      doc.text(titleText, 105, y, { align: "center" });
+      const tWidth = doc.getTextWidth(titleText);
+      doc.setLineWidth(0.4);
+      doc.line(105 - (tWidth/2), y + 1.2, 105 + (tWidth/2), y + 1.2);
+      y += 10;
+
+      if (nomor) {
+        doc.setFont("times", "normal");
+        doc.setFontSize(11);
+        doc.text("Nomor: " + nomor, left, y);
+        y += 7;
+      }
+
+      doc.setFont("times", "normal");
+      doc.setFontSize(11);
+      doc.text("Yang bertanda tangan di bawah ini:", left, y);
+      y += 7;
+
+      const labelX = left;
+      const colonX = 67;
+      const valueX = 72;
+      doc.text("Nama Siswa", labelX, y); doc.text(":", colonX, y); doc.text(nama || "-", valueX, y); y += 6;
+      doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
+      doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
+      doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
+      doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y); doc.text(totalPoin + " Poin", valueX, y); y += 8;
+
+      doc.setFont("times", "bold");
+      doc.text("Rincian Pelanggaran:", left, y);
+      y += 6;
+      doc.setFont("times", "normal");
+
+      const cleanRincian = rincian.replace(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s*-\s*/g, "").replace(/\d{4}-\d{2}-\d{2}\s*/g, "");
+      const detailLines = cleanRincian ? cleanRincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`) : ["Tidak ada rincian pelanggaran."];
+      for (const line of detailLines) {
+        y = drawWrapped(doc, line, left+4, y, 160, 5);
+        y += 1;
+        if (y > 225) { doc.addPage(); y = 20; }
+      }
+
+      y += 5;
+      doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", left, y); y += 7;
+      y = drawWrapped(doc, "1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", left, y, 166, 5); y += 2;
+      y = drawWrapped(doc, "2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.", left, y, 166, 5); y += 2;
+      y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 5;
+
+      doc.setFont("times", "bold");
+      y = drawWrapped(doc, "Mengingat poin pelanggaran sudah mencapai batas maksimal, maka siswa dikembalikan kepada Orang Tua.", left, y, 166, 5);
+      doc.setFont("times", "normal");
+      y += 6;
+
+      doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
+      y += 8;
+
+      doc.text("Waka Kesiswaan,", left+25, y);
+      doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
+      y += 6;
+      doc.setFont("times", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(140, 140, 140);
+      doc.text("Materai Rp 10.000", 145, y, {align:"center"});
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("times", "normal");
+      doc.setFontSize(11);
+      y += 10;
+      doc.text("(...........................)", left+25, y);
+      doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
+      y += 8;
+
+      doc.text("Guru BK,", left+25, y);
+      doc.text("Orang Tua/Wali,", 145, y, {align:"center"});
+      y += 16;
+      doc.text("(...........................)", left+25, y);
+      doc.text("(...........................)", 145, y, {align:"center"});
+      y += 8;
+
+      doc.text("Wali Kelas,", left+25, y);
+      doc.text("Mengetahui, Kepala Sekolah", 145, y, {align:"center"});
+      y += 16;
+      doc.text("(...........................)", left+25, y);
+      
+      const kepalaSekolahNama = "HENDRIADI, S.Pd.I., M.Pd.I";
+      const headmasterCenterX = 145;
+      const nameWidth = doc.getTextWidth(kepalaSekolahNama);
+      doc.setFont("times", "bold");
+      doc.text(kepalaSekolahNama, headmasterCenterX, y, {align:"center"});
+      doc.setLineWidth(0.4);
+      doc.line(headmasterCenterX - (nameWidth / 2) - 2, y + 1.2, headmasterCenterX + (nameWidth / 2) + 2, y + 1.2);
+      
+      y += 5;
+      doc.setFont("times", "normal");
+      doc.text("NIP. 198408072009041004", headmasterCenterX, y, {align:"center"});
+
+      const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
+      return { blob: doc.output("blob"), filename: `SP-IV-${safeName}.pdf` };
+    }
+
+    function getCurrentSPPDF() {
+      const level = document.getElementById("spJenis").value.trim();
+      if (level.includes("SP IV") || level.includes("IV (Akhir)")) return buildSP4PDF();
+      if (level === "SP III") return buildSP3PDF();
+      if (level === "SP II") return buildSP2PDF();
+      if (level === "SP I") return buildSP1PDF();
+      throw new Error("Jenis surat perjanjian tidak dikenal.");
+    }
+
+    async function previewSP1PDF() {
+      const btn = document.getElementById("spPreviewBtn");
+      if (btn) { btn.disabled = true; btn.textContent = "Menyiapkan preview..."; }
+      try {
+        const pdf = await getCurrentSPPDF();
+        if (currentSP1PDFUrl) URL.revokeObjectURL(currentSP1PDFUrl);
+        currentSP1PDFBlob = pdf.blob;
+        currentSP1PDFFilename = pdf.filename;
+        currentSP1Saved = false;
+        currentSP1PDFUrl = URL.createObjectURL(pdf.blob);
+
+        const frame = document.getElementById("spPreviewFrame");
+        if (frame) frame.src = currentSP1PDFUrl;
+        const title = document.getElementById("spPreviewTitle");
+        if (title) title.textContent = "Preview " + pdf.filename;
+        document.getElementById("spPreviewModal").classList.remove("hidden");
+      } catch (err) {
+        console.error(err);
+        toast("Preview PDF gagal: " + err.message, "error");
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = "Preview PDF"; }
+      }
+    }
+
+    function closeSPPreview() {
+      document.getElementById("spPreviewModal").classList.add("hidden");
+      const frame = document.getElementById("spPreviewFrame");
+      if (frame) frame.src = "about:blank";
+    }
+
+    function downloadSP1PDF() {
+      if (!currentSP1PDFBlob) { previewSP1PDF(); return; }
+      const url = URL.createObjectURL(currentSP1PDFBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = currentSP1PDFFilename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function blobToBase64_(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = String(reader.result || "");
+          const comma = result.indexOf(",");
+          resolve(comma >= 0 ? result.slice(comma + 1) : result);
+        };
+        reader.onerror = () => reject(new Error("PDF tidak dapat diproses."));
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function saveAndDownloadSP1PDF() {
+      const btn = document.getElementById("spSaveDownloadBtn");
+      const level = document.getElementById("spJenis").value;
+      btn.disabled = true;
+      btn.textContent = "Menyimpan PDF...";
+      try {
+        if (!currentSP1PDFBlob) {
+          const pdf = await getCurrentSPPDF();
+          currentSP1PDFBlob = pdf.blob;
+          currentSP1PDFFilename = pdf.filename;
+        }
+        if (!currentSP1Saved) {
+          const pdfBase64 = await blobToBase64_(currentSP1PDFBlob);
+          const payload = {
+            action: "publishSuratSP",
+            id: "",
+            nomorSurat: document.getElementById("spNomor").value.trim(),
+            tanggalSurat: document.getElementById("spTanggal").value,
+            namaSiswa: document.getElementById("spNama").value.trim(),
+            nis: document.getElementById("spNIS").value.trim(),
+            nisn: document.getElementById("spNISN").value.trim(),
+            kelas: document.getElementById("spKelas").value.trim(),
+            jenisSP: level,
+            totalPoin: normalizePoints(document.getElementById("spTotalPoin").value),
+            dasarPelanggaran: document.getElementById("spDasar").value.trim(),
+            rincianPelanggaran: document.getElementById("spRincian").value.trim(),
+            keterangan: document.getElementById("spKeterangan").value.trim(),
+            petugas: document.getElementById("spPetugas").value.trim(),
+            status: "Diterbitkan",
+            fileName: currentSP1PDFFilename,
+            pdfBase64: pdfBase64
+          };
+          const response = await fetch(CONFIG.API_URL, {
+            method:"POST",
+            headers:{"Content-Type":"text/plain;charset=utf-8"},
+            body:JSON.stringify(payload)
+          });
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          const result = await response.json();
+          if (!result.success) throw new Error(result.message || "Gagal menyimpan PDF " + level);
+          currentSP1Saved = true;
+        }
+        downloadSP1PDF();
+        toast(level + " berhasil disimpan dan diunduh.");
+      } catch (err) {
+        console.error(err);
+        toast(level + " gagal disimpan: " + err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Simpan & Download PDF";
+      }
+    }
+
+    function closeSPFormOnBackdrop(event) { if (event.target.id === "spModal") closeSPForm(); }
+    function closeStudentDetail(event) {
+      if (event && event.target && event.target.id !== "studentDetailModal") return;
+      document.getElementById("studentDetailModal").classList.add("hidden");
+      document.body.classList.remove("overflow-hidden");
+    }
+
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closeStudentDetail(); });
+
+    function renderHistory() {
+      const search = document.getElementById("searchHistory").value.trim().toLowerCase();
+      let data = [...records].sort((a,b) => String(b.tanggal).localeCompare(String(a.tanggal)));
+      if (search) {
+        data = data.filter(r => `${r.nama} ${r.kelas} ${r.pelanggaran} ${r.kategori} ${r.keterangan}`.toLowerCase().includes(search));
+      }
+      const body = document.getElementById("historyBody");
+      if (!data.length) {
+        body.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-500">Belum ada riwayat.</td></tr>';
+        return;
+      }
+      body.innerHTML = data.map(r => `
+        <tr class="border-b hover:bg-slate-50">
+          <td class="p-3 whitespace-nowrap">${escapeHTML(r.tanggal)}</td>
+          <td class="p-3 font-semibold">${escapeHTML(r.nama)}</td>
+          <td class="p-3">${escapeHTML(r.kelas)}</td>
+          <td class="p-3">${escapeHTML(r.pelanggaran)}</td>
+          <td class="p-3 text-center font-bold">${normalizePoints(r.poin)}</td>
+          <td class="p-3 text-center">${escapeHTML(r.semester)}</td>
+          <td class="p-3">${escapeHTML(r.keterangan)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function populateStudentList() {
+      const masterNames = students.map(s => s.nama).filter(Boolean);
+      const recordNames = records.map(r => r.nama).filter(Boolean);
+      const names = [...new Set([...masterNames, ...recordNames])].sort((a,b) => a.localeCompare(b, "id"));
+      document.getElementById("studentList").innerHTML = names.map(n => `<option value="${escapeHTML(n)}">`).join("");
+    }
+
+    function renderAll() {
+      renderDashboard();
+      renderRekap();
+      renderHistory();
+      populateStudentList();
+    }
+
+    function showTab(tab) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+      document.getElementById(`tab-${tab}`).classList.remove("hidden");
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tab);
+      });
+    }
+
+    function exportPDF() {
+      if (!records.length) { toast("Belum ada data untuk dicetak.", "warning"); return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF("landscape");
+      doc.setFontSize(16);
+      doc.text(CONFIG.SCHOOL_NAME, 14, 15);
+      doc.setFontSize(12);
+      doc.text("REKAPITULASI POIN PELANGGARAN SISWA", 14, 23);
+      doc.setFontSize(9);
+      doc.text("Dicetak: " + new Date().toLocaleString("id-ID"), 14, 30);
+      const studentsList = aggregateStudents(document.getElementById("rekapSemester").value);
+      doc.autoTable({
+        startY: 36,
+        head: [["No","Nama Siswa","Kelas","Jumlah Pelanggaran","Total Poin","Status"]],
+        body: studentsList.map((s,i) => [i+1, s.nama, s.kelas, s.pelanggaran, s.poin, statusFromPoints(s.poin).label]),
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [37,99,235] }
+      });
+      doc.save("Rekap-Poin-Siswa-SMPN37-Merangin.pdf");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const today = new Date();
+      document.getElementById("violationDate").valueAsDate = today;
+      document.getElementById("semester").value = detectSemester(document.getElementById("violationDate").value);
+      populateCategories();
+      populateViolationTypes();
+      loadData();
+      document.getElementById("category").addEventListener("change", populateViolationTypes);
+      document.getElementById("violationType").addEventListener("change", updatePoints);
+      document.getElementById("studentName").addEventListener("change", updateStudentClass);
+      document.getElementById("violationDate").addEventListener("change", e => {
+        document.getElementById("semester").value = detectSemester(e.target.value);
+      });
+      document.getElementById("violationForm").addEventListener("submit", submitViolation);
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.addEventListener("click", () => showTab(btn.dataset.tab));
+      });
+    });
+  </script>
+
+  <div id="spModal" class="hidden fixed inset-0 z-[60] bg-slate-900/50 p-4 overflow-y-auto no-print" onclick="closeSPFormOnBackdrop(event)">
+    <div class="max-w-3xl mx-auto mt-8 card overflow-hidden" onclick="event.stopPropagation()">
+      <div class="p-5 border-b flex items-start justify-between gap-3">
+        <div>
+          <p class="text-xs text-slate-500">Dokumen Surat Peringatan</p>
+          <h3 id="spModalTitle" class="text-xl font-bold">Surat Perjanjian Tingkat I</h3>
+          <p class="text-sm text-slate-500 mt-1">Data akan diambil dari data siswa dan riwayat pelanggaran.</p>
+        </div>
+        <button type="button" onclick="closeSPForm()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Tutup</button>
       </div>
-      <button type="button" onclick="closeSPForm()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Tutup</button>
+
+      <form id="spForm" class="p-5 space-y-4" onsubmit="submitSPForm(event)">
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold mb-1">Nomor Surat</label>
+            <input id="spNomor" class="input" placeholder="Contoh: 421.3/123/SMPN37/2026">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-1">Tanggal Surat *</label>
+            <input id="spTanggal" type="date" class="input" required>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-4">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-semibold mb-1">Nama Siswa *</label>
+            <input id="spNama" class="input bg-slate-50" readonly required>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-1">Kelas *</label>
+            <input id="spKelas" class="input bg-slate-50" readonly required>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-semibold mb-1">NIS</label>
+            <input id="spNIS" class="input" placeholder="NIS">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-1">NISN</label>
+            <input id="spNISN" class="input" placeholder="NISN">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-1">Jenis SP</label>
+            <input id="spJenis" class="input bg-slate-50" readonly>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold mb-1">Total Poin</label>
+            <input id="spTotalPoin" class="input bg-slate-50 font-bold" readonly>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-1">Petugas</label>
+            <input id="spPetugas" class="input" placeholder="Nama petugas">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-1">Dasar Pelanggaran</label>
+          <textarea id="spDasar" class="input min-h-20"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-1">Rincian Pelanggaran</label>
+          <textarea id="spRincian" class="input min-h-32"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-1">Keterangan</label>
+          <textarea id="spKeterangan" class="input min-h-20" placeholder="Keterangan tambahan (opsional)"></textarea>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+          <button id="spSubmitBtn" type="submit" class="btn bg-slate-700 hover:bg-slate-800 text-white">Simpan Draft SP</button>
+          <button id="spPreviewBtn" type="button" onclick="previewSP1PDF()" class="btn bg-blue-600 hover:bg-blue-700 text-white">Preview PDF</button>
+        </div>
+      </form>
     </div>
-
-    <form id="spForm" class="p-5 space-y-4" onsubmit="submitSPForm(event)">
-      <div class="grid md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-semibold mb-1">Nomor Surat</label>
-          <input id="spNomor" class="input" placeholder="Contoh: 421.3/123/SMPN37/2026">
-        </div>
-        <div>
-          <label class="block text-sm font-semibold mb-1">Tanggal Surat *</label>
-          <input id="spTanggal" type="date" class="input" required>
-        </div>
-      </div>
-
-      <div class="grid md:grid-cols-3 gap-4">
-        <div class="md:col-span-2">
-          <label class="block text-sm font-semibold mb-1">Nama Siswa *</label>
-          <input id="spNama" class="input bg-slate-50" readonly required>
-        </div>
-        <div>
-          <label class="block text-sm font-semibold mb-1">Kelas *</label>
-          <input id="spKelas" class="input bg-slate-50" readonly required>
-        </div>
-      </div>
-
-      <div class="grid md:grid-cols-3 gap-4">
-        <div>
-          <label class="block text-sm font-semibold mb-1">NIS</label>
-          <input id="spNIS" class="input" placeholder="NIS">
-        </div>
-        <div>
-          <label class="block text-sm font-semibold mb-1">NISN</label>
-          <input id="spNISN" class="input" placeholder="NISN">
-        </div>
-        <div>
-          <label class="block text-sm font-semibold mb-1">Jenis SP</label>
-          <input id="spJenis" class="input bg-slate-50" readonly>
-        </div>
-      </div>
-
-      <div class="grid md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-semibold mb-1">Total Poin</label>
-          <input id="spTotalPoin" class="input bg-slate-50 font-bold" readonly>
-        </div>
-        <div>
-          <label class="block text-sm font-semibold mb-1">Petugas</label>
-          <input id="spPetugas" class="input" placeholder="Nama petugas">
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-sm font-semibold mb-1">Dasar Pelanggaran</label>
-        <textarea id="spDasar" class="input min-h-20"></textarea>
-      </div>
-
-      <div>
-        <label class="block text-sm font-semibold mb-1">Rincian Pelanggaran</label>
-        <textarea id="spRincian" class="input min-h-32"></textarea>
-      </div>
-
-      <div>
-        <label class="block text-sm font-semibold mb-1">Keterangan</label>
-        <textarea id="spKeterangan" class="input min-h-20" placeholder="Keterangan tambahan (opsional)"></textarea>
-      </div>
-
-      <div class="flex flex-col sm:flex-row justify-end gap-2 pt-2">
-        <button id="spSubmitBtn" type="submit" class="btn bg-slate-700 hover:bg-slate-800 text-white">Simpan Draft SP</button>
-        <button id="spPreviewBtn" type="button" onclick="previewSP1PDF()" class="btn bg-blue-600 hover:bg-blue-700 text-white">Preview PDF</button>
-      </div>
-    </form>
   </div>
-</div>
 
-<!-- PREVIEW PDF SP -->
-<div id="spPreviewModal" class="hidden fixed inset-0 z-[80] bg-slate-900/80 p-3 md:p-6 no-print">
-  <div class="max-w-6xl mx-auto h-[calc(100vh-1.5rem)] md:h-[calc(100vh-3rem)] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col">
-    <div class="p-4 border-b flex items-center justify-between gap-3">
-      <div class="min-w-0">
-        <p class="text-xs text-slate-500">Preview Dokumen</p>
-        <h3 id="spPreviewTitle" class="font-bold truncate">Preview SP</h3>
+  <div id="spPreviewModal" class="hidden fixed inset-0 z-[80] bg-slate-900/80 p-3 md:p-6 no-print">
+    <div class="max-w-6xl mx-auto h-[calc(100vh-1.5rem)] md:h-[calc(100vh-3rem)] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+      <div class="p-4 border-b flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-xs text-slate-500">Preview Dokumen</p>
+          <h3 id="spPreviewTitle" class="font-bold truncate">Preview SP</h3>
+        </div>
+        <button type="button" onclick="closeSPPreview()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Tutup</button>
       </div>
-      <button type="button" onclick="closeSPPreview()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Tutup</button>
-    </div>
-    <div class="flex-1 bg-slate-200 p-2 md:p-4 min-h-0">
-      <iframe id="spPreviewFrame" title="Preview PDF SP" class="w-full h-full bg-white rounded-lg border" src="about:blank"></iframe>
-    </div>
-    <div class="p-3 border-t flex flex-col sm:flex-row justify-end gap-2">
-      <button type="button" onclick="closeSPPreview()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Kembali</button>
-      <button id="spSaveDownloadBtn" type="button" onclick="saveAndDownloadSP1PDF()" class="btn bg-blue-600 hover:bg-blue-700 text-white">Simpan & Download PDF</button>
-    </div>
-  </div>
-</div>
-
-<!-- DETAIL SISWA MODAL -->
-<div id="studentDetailModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 p-4 overflow-y-auto no-print" onclick="closeStudentDetail(event)">
-  <div class="max-w-4xl mx-auto mt-8 card overflow-hidden" onclick="event.stopPropagation()">
-    <div class="p-5 border-b flex items-start justify-between gap-3">
-      <div>
-        <p class="text-xs text-slate-500">Detail Siswa</p>
-        <h3 id="detailStudentName" class="text-xl font-bold">-</h3>
-        <p id="detailStudentClass" class="text-sm text-slate-500 mt-1">-</p>
+      <div class="flex-1 bg-slate-200 p-2 md:p-4 min-h-0">
+        <iframe id="spPreviewFrame" title="Preview PDF SP" class="w-full h-full bg-white rounded-lg border" src="about:blank"></iframe>
       </div>
-      <button type="button" onclick="closeStudentDetail()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Tutup</button>
-    </div>
-
-    <div class="p-5">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <div class="rounded-xl bg-slate-50 p-4">
-          <p class="text-xs text-slate-500">Jumlah Pelanggaran</p>
-          <p id="detailViolationCount" class="text-2xl font-bold mt-1">0</p>
-        </div>
-        <div class="rounded-xl bg-slate-50 p-4">
-          <p class="text-xs text-slate-500">Total Poin</p>
-          <p id="detailTotalPoints" class="text-2xl font-bold mt-1">0</p>
-        </div>
-        <div class="rounded-xl bg-slate-50 p-4">
-          <p class="text-xs text-slate-500">Semester</p>
-          <p id="detailSemester" class="text-lg font-bold mt-2">Semua</p>
-        </div>
-        <div class="rounded-xl bg-slate-50 p-4">
-          <p class="text-xs text-slate-500">Status</p>
-          <div id="detailStatus" class="mt-2">-</div>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-between gap-3 mb-3">
-        <div>
-          <h4 class="font-bold">Surat Peringatan (SP)</h4>
-          <p id="detailSpInfo" class="text-xs text-slate-500 mt-1">-</p>
-        </div>
-        <button id="btnBuatSP" type="button" onclick="openSPForm()" class="btn bg-blue-600 hover:bg-blue-700 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed">Buat Surat SP</button>
-      </div>
-
-      <div class="flex items-center justify-between gap-3 mb-3">
-        <div>
-          <h4 class="font-bold">Riwayat Pelanggaran</h4>
-          <p class="text-xs text-slate-500">Data yang tersimpan pada Google Sheets.</p>
-        </div>
-      </div>
-
-      <div class="overflow-x-auto border rounded-xl">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="border-b bg-slate-50">
-              <th class="text-left p-3">Tanggal</th>
-              <th class="text-left p-3">Kategori</th>
-              <th class="text-left p-3">Pelanggaran</th>
-              <th class="text-center p-3">Poin</th>
-              <th class="text-left p-3">Keterangan</th>
-            </tr>
-          </thead>
-          <tbody id="detailHistoryBody"></tbody>
-        </table>
+      <div class="p-3 border-t flex flex-col sm:flex-row justify-end gap-2">
+        <button type="button" onclick="closeSPPreview()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Kembali</button>
+        <button id="spSaveDownloadBtn" type="button" onclick="saveAndDownloadSP1PDF()" class="btn bg-blue-600 hover:bg-blue-700 text-white">Simpan & Download PDF</button>
       </div>
     </div>
   </div>
-</div>
 
+  <div id="studentDetailModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 p-4 overflow-y-auto no-print" onclick="closeStudentDetail(event)">
+    <div class="max-w-4xl mx-auto mt-8 card overflow-hidden" onclick="event.stopPropagation()">
+      <div class="p-5 border-b flex items-start justify-between gap-3">
+        <div>
+          <p class="text-xs text-slate-500">Detail Siswa</p>
+          <h3 id="detailStudentName" class="text-xl font-bold">-</h3>
+          <p id="detailStudentClass" class="text-sm text-slate-500 mt-1">-</p>
+        </div>
+        <button type="button" onclick="closeStudentDetail()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Tutup</button>
+      </div>
+
+      <div class="p-5">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+          <div class="rounded-xl bg-slate-50 p-4">
+            <p class="text-xs text-slate-500">Jumlah Pelanggaran</p>
+            <p id="detailViolationCount" class="text-2xl font-bold mt-1">0</p>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <p class="text-xs text-slate-500">Total Poin</p>
+            <p id="detailTotalPoints" class="text-2xl font-bold mt-1">0</p>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <p class="text-xs text-slate-500">Semester</p>
+            <p id="detailSemester" class="text-lg font-bold mt-2">Semua</p>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <p class="text-xs text-slate-500">Status</p>
+            <div id="detailStatus" class="mt-2">-</div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <h4 class="font-bold">Surat Peringatan (SP)</h4>
+            <p id="detailSpInfo" class="text-xs text-slate-500 mt-1">-</p>
+          </div>
+          <button id="btnBuatSP" type="button" onclick="openSPForm()" class="btn bg-blue-600 hover:bg-blue-700 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed">Buat Surat SP</button>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <h4 class="font-bold">Riwayat Pelanggaran</h4>
+            <p class="text-xs text-slate-500">Data yang tersimpan pada Google Sheets.</p>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto border rounded-xl">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b bg-slate-50">
+                <th class="text-left p-3">Tanggal</th>
+                <th class="text-left p-3">Kategori</th>
+                <th class="text-left p-3">Pelanggaran</th>
+                <th class="text-center p-3">Poin</th>
+                <th class="text-left p-3">Keterangan</th>
+              </tr>
+            </thead>
+            <tbody id="detailHistoryBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
