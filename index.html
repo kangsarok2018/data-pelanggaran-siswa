@@ -1,3 +1,168 @@
+Mantap. 🎉 Berarti alur utama sudah berhasil:
+
+Vercel → Frontend → Google Apps Script → Google Sheets ✅
+
+Dan data percobaan sudah masuk ke sheet Pelanggaran.
+
+Sekarang saya sarankan jangan langsung menambahkan fitur SP atau login. Kita rapikan dulu fondasi datanya agar nanti tidak perlu bongkar ulang.
+
+Tahap berikutnya yang kita kerjakan
+
+1. Hubungkan sheet Siswa ke aplikasi
+
+Nama siswa diambil otomatis dari Google Sheets.
+Saat memilih nama siswa, kelas bisa otomatis terisi.
+Tidak perlu mengetik nama siswa berulang-ulang.
+Mengurangi kesalahan penulisan nama.
+
+2. Buat rekap berdasarkan siswa
+Misalnya:
+
+Nama	Kelas	Total Poin	Status
+Ahmad	VII A	15	Aman
+Budi	VII A	27	SP I
+
+3. Buat riwayat pelanggaran siswa
+Ketika memilih seorang siswa, akan terlihat seluruh pelanggarannya:
+
+Tanggal → Pelanggaran → Poin → Keterangan
+
+4. Setelah itu baru kita buat modul Surat SP
+
+Data Surat SP
+Nomor surat
+Jenis SP
+Dasar dari total poin/riwayat
+Cetak surat PDF
+
+5. Terakhir baru login petugas
+Supaya nama petugas yang login dapat tercatat pada setiap entri.
+
+Ada satu hal penting
+
+Data percobaan yang tadi berhasil masuk ke Pelanggaran jangan dihapus dulu. Kita bisa gunakan untuk memastikan fitur berikutnya benar-benar membaca data dari Google Sheets.
+
+Kalau Anda setuju, langkah berikutnya saya buatkan koneksi sheet Siswa ke aplikasi, sehingga pada form pelanggaran nama siswa bisa dipilih dari daftar dan kelas otomatis terisi.
+
+Kalau bagian deployment stabilitas penting, opsi uptime monitoring bisa membantu menjaga layanan.
+
+HetrixTools Inc
+
+Free Uptime Monitor & Server Monitor - HetrixTools
+
+15 Uptime Monitors & 1 Minute Checkup Time - Free For Life
+
+Ad
+More options
+Ads do not influence the answers you get from ChatGPT. Your chats stay private. 
+Learn about ads and personalization
+ayo lanjutkan
+
+Baik, kita lanjut. 👍
+
+Karena koneksi Vercel → Google Apps Script → Google Sheets sudah terbukti berhasil, sekarang kita aktifkan Master Data Siswa.
+
+1. Isi sheet Siswa
+
+Di Google Sheets Anda, buka tab Siswa.
+
+Buat baris pertama seperti ini:
+
+A	B	C	D	E	F
+ID	NIS	NISN	Nama Siswa	Kelas	Nama Orang Tua
+
+Kemudian masukkan data siswa mulai dari baris 2.
+
+Contoh:
+
+ID	NIS	NISN	Nama Siswa	Kelas	Nama Orang Tua
+SIS001	1001	1234567890	Ahmad Fauzi	VII A	Bapak Ahmad
+SIS002	1002	1234567891	Siti Aminah	VII A	Ibu Aminah
+SIS003	1003	1234567892	Budi Saputra	VII B	Bapak Budi
+
+ID boleh dibuat sederhana seperti SIS001, SIS002, dst.
+
+Kalau Anda sudah memiliki daftar siswa dari sekolah, nanti lebih baik kita masukkan data asli tersebut, bukan mengetik satu per satu.
+
+2. Saya sudah siapkan perubahan pada aplikasi
+
+Saya sudah mengubah versi frontend sehingga:
+
+Nama siswa akan mengambil data dari sheet Siswa
+Nama siswa muncul sebagai daftar pilihan
+Setelah nama dipilih, kelas otomatis terisi
+Kelas dibuat tidak perlu diketik manual
+Data lama di Pelanggaran tetap bisa digunakan sebagai fallback
+Saat aplikasi dibuka, aplikasi mengambil:
+data pelanggaran
+data master siswa
+
+File versi baru:
+
+Download index-siswa.html
+
+3. Jangan upload ke Vercel dulu
+
+Isi beberapa data di Siswa terlebih dahulu.
+
+Saya sarankan masukkan 3–5 siswa saja sebagai percobaan.
+
+Setelah itu beri tahu saya "sudah".
+
+Nanti kita lakukan tes:
+
+Google Sheet Siswa → Apps Script → Vercel → pilih nama siswa → kelas otomatis muncul.
+
+Kalau tahap ini berhasil, baru kita masukkan seluruh daftar siswa. Setelah master siswa beres, kita lanjut ke rekap detail per siswa, kemudian modul Surat SP.
+
+index-siswa.html
+HTML
+sudah
+
+Baik. 👍 Data siswa sudah kita siapkan.
+
+Sekarang kita lakukan tes koneksi Master Siswa sebelum memasukkan seluruh data.
+
+Langkah 1 — Upload versi terbaru ke Vercel
+
+File yang perlu digunakan sekarang adalah:
+
+Download index-siswa.html
+
+Di Vercel, gunakan file ini sebagai index.html untuk menggantikan versi sebelumnya.
+
+Jangan membuat project Vercel baru. Cukup update/deploy ulang project yang sama.
+
+Langkah 2 — Buka aplikasi Vercel
+
+Setelah deployment selesai, buka alamat Vercel Anda.
+
+Pada form Tambah Pelanggaran, bagian:
+
+Nama Siswa
+
+seharusnya sekarang bisa mengambil nama dari sheet Siswa.
+
+Pilih/ketik salah satu nama siswa yang tadi Anda masukkan.
+
+Kemudian perhatikan bagian:
+
+Kelas
+
+Seharusnya terisi otomatis sesuai data di sheet Siswa.
+
+Langkah 3 — Tes satu entri
+
+Pilih siswa → pilih pelanggaran → simpan.
+
+Kemudian cek Pelanggaran di Google Sheets.
+
+Kita ingin memastikan:
+
+Nama siswa dan kelas yang tersimpan sesuai dengan master Siswa.
+
+Kalau sudah di-deploy, kirim screenshot form Vercel setelah Anda memilih nama siswa. Dari situ kita bisa memastikan apakah dropdown/master siswa sudah bekerja sebelum kita lanjut ke rekap siswa.
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -144,7 +309,7 @@
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Kelas *</label>
-              <input id="studentClass" class="input" placeholder="Contoh: VII A" required>
+              <input id="studentClass" class="input" placeholder="Otomatis dari data siswa" required readonly>
             </div>
           </div>
 
@@ -328,6 +493,7 @@ const VIOLATIONS = [
 ];
 
 let records = [];
+let students = [];
 
 /* ---------- Utilitas ---------- */
 function escapeHTML(value) {
@@ -392,26 +558,48 @@ function detectSemester(dateString) {
 async function loadData() {
   if (!CONFIG.API_URL) {
     loadLocal();
+    students = [];
     renderAll();
     return;
   }
 
   try {
-    const response = await fetch(CONFIG.API_URL, { method:"GET" });
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    const json = await response.json();
+    const [pelanggaranResponse, siswaResponse] = await Promise.all([
+      fetch(CONFIG.API_URL, { method:"GET" }),
+      fetch(CONFIG.API_URL + "?action=siswa", { method:"GET" })
+    ]);
 
-    const data = Array.isArray(json) ? json : (json.data || []);
+    if (!pelanggaranResponse.ok) throw new Error("Pelanggaran HTTP " + pelanggaranResponse.status);
+    if (!siswaResponse.ok) throw new Error("Siswa HTTP " + siswaResponse.status);
+
+    const pelanggaranJson = await pelanggaranResponse.json();
+    const siswaJson = await siswaResponse.json();
+
+    const data = Array.isArray(pelanggaranJson) ? pelanggaranJson : (pelanggaranJson.data || []);
+    const siswaData = Array.isArray(siswaJson) ? siswaJson : (siswaJson.data || []);
+
     records = data.map(normalizeRecord);
+    students = siswaData.map(normalizeStudent).filter(s => s.nama);
     saveLocal();
     renderAll();
-    toast("Data berhasil diperbarui.");
+    toast(`Data diperbarui: ${students.length} siswa, ${records.length} pelanggaran.`);
   } catch (err) {
     console.error(err);
     loadLocal();
     renderAll();
-    toast("Server tidak dapat diakses. Menampilkan data lokal.", "warning");
+    toast("Data server belum dapat dimuat. Periksa koneksi API/Siswa.", "warning");
   }
+}
+
+function normalizeStudent(s) {
+  return {
+    id: s.id || s.ID || "",
+    nis: s.nis || s.NIS || "",
+    nisn: s.nisn || s.NISN || "",
+    nama: s.nama || s.nama_siswa || s["Nama Siswa"] || s.Nama || "",
+    kelas: s.kelas || s.Kelas || "",
+    orangTua: s.orangTua || s.namaOrangTua || s["Nama Orang Tua"] || ""
+  };
 }
 
 function normalizeRecord(r) {
@@ -485,8 +673,15 @@ function updatePoints() {
 
 function updateStudentClass() {
   const name = document.getElementById("studentName").value.trim().toLowerCase();
-  const found = records.find(r => String(r.nama).trim().toLowerCase() === name && r.kelas);
-  if (found) document.getElementById("studentClass").value = found.kelas;
+  const foundStudent = students.find(s => String(s.nama).trim().toLowerCase() === name && s.kelas);
+  if (foundStudent) {
+    document.getElementById("studentClass").value = foundStudent.kelas;
+    return;
+  }
+
+  // Fallback: gunakan data pelanggaran lama jika nama belum ada di master Siswa.
+  const foundRecord = records.find(r => String(r.nama).trim().toLowerCase() === name && r.kelas);
+  if (foundRecord) document.getElementById("studentClass").value = foundRecord.kelas;
 }
 
 async function submitViolation(e) {
@@ -655,7 +850,9 @@ function renderHistory() {
 }
 
 function populateStudentList() {
-  const names = [...new Set(records.map(r => r.nama).filter(Boolean))].sort();
+  const masterNames = students.map(s => s.nama).filter(Boolean);
+  const recordNames = records.map(r => r.nama).filter(Boolean);
+  const names = [...new Set([...masterNames, ...recordNames])].sort((a,b) => a.localeCompare(b, "id"));
   document.getElementById("studentList").innerHTML =
     names.map(n => `<option value="${escapeHTML(n)}">`).join("");
 }
@@ -736,3 +933,8 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+index-siswa.html
+HTML
+
+Sponsored options
+Ad
