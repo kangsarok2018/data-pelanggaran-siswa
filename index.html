@@ -253,7 +253,7 @@
 
 <script>
 /* =========================================================
-   STREAMING_CHUNK:Initializing configurations and global state...
+   STREAMING_CHUNK:Initializing global configurations and state...
    ========================================================= */
 
 const CONFIG = {
@@ -980,18 +980,15 @@ function buildSP2PDF() {
   y += 6;
 
   doc.text("Guru BK,", left+25, y);
-  y += 21;
+  y += 18;
   doc.text("(...........................)", left+25, y);
+  doc.text("Materai Rp 10.000", 145, y - 6, {align:"center"});
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
-  y += 9;
-
-  doc.setFont("times", "normal");
-  doc.text("Materai Rp 10.000", 145, y, {align:"center"});
-  y += 13;
+  y += 12;
 
   doc.text("Wali Kelas,", left+25, y);
   doc.text("Orang Tua/Wali,", 145, y, {align:"center"});
-  y += 21;
+  y += 18;
   doc.text("(...........................)", left+25, y);
   doc.text("(...........................)", 145, y, {align:"center"});
 
@@ -1100,14 +1097,14 @@ function buildSP3PDF() {
 
   doc.text("Wali Kelas,", left+25, y);
   doc.text("Guru BK,", 145, y, {align:"center"});
-  y += 20;
+  y += 18;
   doc.text("(...........................)", left+25, y);
   doc.text("(...........................)", 145, y, {align:"center"});
   y += 10;
 
   doc.text("Pembina OSIS,", left+25, y);
   doc.text("Waka Kesiswaan,", 145, y, {align:"center"});
-  y += 20;
+  y += 18;
   doc.text("(...........................)", left+25, y);
   doc.text("(...........................)", 145, y, {align:"center"});
   y += 10;
@@ -1115,8 +1112,8 @@ function buildSP3PDF() {
   doc.text("Orang Tua/Wali,", left+25, y);
   doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
   y += 6;
-  doc.text("Materai Rp 10.000", 145, y + 13, {align:"center"});
-  y += 23;
+  doc.text("Materai Rp 10.000", 145, y + 6, {align:"center"});
+  y += 18;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
 
@@ -1163,38 +1160,38 @@ function buildSP4PDF() {
   y += 3;
   doc.setLineWidth(0.5);
   doc.line(left, y, right, y);
-  y += 12;
+  y += 13;
 
   doc.setFont("times", "bold");
   doc.setFontSize(13);
   doc.text("SURAT PERJANJIAN TINGKAT IV", pageWidth/2, y, {align:"center"});
-  y += 7;
+  y += 8;
 
   if (nomor) {
     doc.setFont("times", "normal");
     doc.setFontSize(11);
     doc.text("Nomor: " + nomor, left, y);
-    y += 6;
+    y += 7;
   }
 
   doc.setFont("times", "normal");
   doc.setFontSize(11);
   doc.text("Yang bertanda tangan di bawah ini:", left, y);
-  y += 6;
+  y += 7;
 
   const labelX = left;
   const colonX = 67;
   const valueX = 72;
-  doc.text("Nama Siswa", labelX, y); doc.text(":", colonX, y); doc.text(nama || "-", valueX, y); y += 5;
-  doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 5;
-  doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 5;
-  doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 5;
+  doc.text("Nama Siswa", labelX, y); doc.text(":", colonX, y); doc.text(nama || "-", valueX, y); y += 6;
+  doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
+  doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
+  doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
   doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y);
-  doc.text(totalPoin + " Poin", valueX, y); y += 6;
+  doc.text(totalPoin + " Poin", valueX, y); y += 8;
 
   doc.setFont("times", "bold");
   doc.text("Rincian Pelanggaran:", left, y);
-  y += 5;
+  y += 6;
   doc.setFont("times", "normal");
 
   const detailLines = rincian
@@ -1202,58 +1199,53 @@ function buildSP4PDF() {
     : ["Tidak ada rincian pelanggaran."];
 
   for (const line of detailLines) {
-    y = drawWrapped(doc, line, left+4, y, 160, 4.5);
+    y = drawWrapped(doc, line, left+4, y, 160, 5);
     y += 1;
-    if (y > 210) { doc.addPage(); y = 20; }
+    if (y > 225) { doc.addPage(); y = 20; }
   }
 
-  y += 3;
-  doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", left, y); y += 5;
-  y = drawWrapped(doc, "1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", left, y, 166, 4.5); y += 1;
-  y = drawWrapped(doc, "2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.", left, y, 166, 4.5); y += 1;
-  y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 4.5); y += 4;
+  y += 5;
+  doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", left, y); y += 7;
+  y = drawWrapped(doc, "1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", left, y, 166, 5); y += 2;
+  y = drawWrapped(doc, "2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.", left, y, 166, 5); y += 2;
+  y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 6;
 
   doc.setFont("times", "bold");
-  y = drawWrapped(doc, "Mengingat poin pelanggaran sudah mencapai batas maksimal, maka siswa dikembalikan kepada Orang Tua.", left, y, 166, 4.5);
+  y = drawWrapped(doc, "Mengingat poin pelanggaran sudah mencapai batas maksimal, maka siswa dikembalikan kepada Orang Tua.", left, y, 166, 5);
   doc.setFont("times", "normal");
-  y += 5;
+  y += 6;
 
   doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
-  y += 6;
+  y += 8;
 
-  // Exact signature rows matching requested layout with "Materai Rp 10.000" right above the student name
-  doc.text("Waka Kesiswaan,", left+10, y);
+  doc.text("Waka Kesiswaan,", left+25, y);
   doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
-  y += 22;
-  
-  doc.text("(...........................)", left+10, y);
+  y += 18;
+  doc.text("(...........................)", left+25, y);
   doc.text("Materai Rp 10.000", 145, y - 6, {align:"center"});
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
-  y += 6;
+  y += 10;
 
-  doc.text("Guru BK,", left+10, y);
-  doc.text("Orang tua/Wali,", 145, y, {align:"center"});
-  y += 22;
-  
-  doc.text("(...........................)", left+10, y);
+  doc.text("Guru BK,", left+25, y);
+  doc.text("Orang Tua/Wali,", 145, y, {align:"center"});
+  y += 18;
+  doc.text("(...........................)", left+25, y);
   doc.text("(...........................)", 145, y, {align:"center"});
-  y += 6;
+  y += 10;
 
-  doc.text("Wali Kelas,", left+10, y);
+  doc.text("Wali Kelas,", left+25, y);
   doc.text("Mengetahui, Kepala Sekolah", 145, y, {align:"center"});
-  y += 22;
-  
-  doc.text("(...........................)", left+10, y);
+  y += 18;
+  doc.text("(...........................)", left+25, y);
   
   const kepalaSekolahNama = "HENDRIADI, S.Pd.I., M.Pd.I";
   const nameWidth = doc.getTextWidth(kepalaSekolahNama);
   const headmasterCenterX = 145;
-  
   doc.setFont("times", "bold");
   doc.text(kepalaSekolahNama, headmasterCenterX, y, {align:"center"});
   doc.line(headmasterCenterX - (nameWidth / 2), y + 1.2, headmasterCenterX + (nameWidth / 2), y + 1.2);
   
-  y += 5;
+  y += 6;
   doc.setFont("times", "normal");
   doc.text("NIP. 198408072009041004", headmasterCenterX, y, {align:"center"});
 
@@ -1281,40 +1273,6 @@ function getCurrentSPPDF() {
   throw new Error("Jenis surat perjanjian tidak dikenal.");
 }
 
-let pdfRenderTask = null;
-
-function renderPDFOnCanvas(blob) {
-  const reader = new FileReader();
-  reader.onload = function() {
-    const typedarray = new Uint8Array(this.result);
-    pdfjsLib.getDocument(typedarray).promise.then(function(pdfDoc_) {
-      pdfDoc_.getPage(1).then(function(page) {
-        const canvas = document.getElementById('pdfCanvas');
-        const ctx = canvas.getContext('2d');
-        const container = canvas.parentElement;
-        
-        const viewportUnscaled = page.getViewport({ scale: 1.5 });
-        const scale = (container.clientWidth - 32) / viewportUnscaled.width;
-        const viewport = page.getViewport({ scale: Math.max(scale, 1.0) });
-
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        if (pdfRenderTask) {
-          pdfRenderTask.cancel();
-        }
-
-        const renderContext = {
-          canvasContext: ctx,
-          viewport: viewport
-        };
-        pdfRenderTask = page.render(renderContext);
-      });
-    });
-  };
-  reader.readAsArrayBuffer(blob);
-}
-
 function previewSP1PDF() {
   const btn = document.getElementById("spPreviewBtn");
   if (btn) {
@@ -1324,15 +1282,20 @@ function previewSP1PDF() {
 
   try {
     const pdf = getCurrentSPPDF();
+    if (currentSP1PDFUrl) URL.revokeObjectURL(currentSP1PDFUrl);
+
     currentSP1PDFBlob = pdf.blob;
     currentSP1PDFFilename = pdf.filename;
     currentSP1Saved = false;
+    currentSP1PDFUrl = URL.createObjectURL(pdf.blob);
+
+    const frame = document.getElementById("spPreviewFrame");
+    if (frame) frame.src = currentSP1PDFUrl;
 
     const title = document.getElementById("spPreviewTitle");
     if (title) title.textContent = "Preview " + pdf.filename;
 
     document.getElementById("spPreviewModal").classList.remove("hidden");
-    renderPDFOnCanvas(pdf.blob);
   } catch (err) {
     console.error(err);
     toast("Preview PDF gagal: " + err.message, "error");
@@ -1346,6 +1309,8 @@ function previewSP1PDF() {
 
 function closeSPPreview() {
   document.getElementById("spPreviewModal").classList.add("hidden");
+  const frame = document.getElementById("spPreviewFrame");
+  if (frame) frame.src = "about:blank";
 }
 
 function downloadSP1PDF() {
@@ -1646,25 +1611,18 @@ document.addEventListener("DOMContentLoaded", () => {
   </div>
 </div>
 
-<!-- PREVIEW PDF SP (Canvas Integration) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script>
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-</script>
-
+<!-- PREVIEW PDF SP -->
 <div id="spPreviewModal" class="hidden fixed inset-0 z-[80] bg-slate-900/80 p-3 md:p-6 no-print">
-  <div class="max-w-4xl mx-auto h-[calc(100vh-1.5rem)] md:h-[calc(100vh-3rem)] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+  <div class="max-w-6xl mx-auto h-[calc(100vh-1.5rem)] md:h-[calc(100vh-3rem)] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col">
     <div class="p-4 border-b flex items-center justify-between gap-3">
       <div class="min-w-0">
-        <p class="text-xs text-slate-500">Preview Dokumen (Canvas)</p>
+        <p class="text-xs text-slate-500">Preview Dokumen</p>
         <h3 id="spPreviewTitle" class="font-bold truncate">Preview SP</h3>
       </div>
       <button type="button" onclick="closeSPPreview()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Tutup</button>
     </div>
-    <div class="flex-1 bg-slate-200 p-2 md:p-4 overflow-auto flex items-center justify-center min-h-0">
-      <div class="bg-white shadow-lg rounded-lg overflow-hidden max-w-full">
-        <canvas id="pdfCanvas" class="block"></canvas>
-      </div>
+    <div class="flex-1 bg-slate-200 p-2 md:p-4 min-h-0">
+      <iframe id="spPreviewFrame" title="Preview PDF SP" class="w-full h-full bg-white rounded-lg border" src="about:blank"></iframe>
     </div>
     <div class="p-3 border-t flex flex-col sm:flex-row justify-end gap-2">
       <button type="button" onclick="closeSPPreview()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Kembali</button>
