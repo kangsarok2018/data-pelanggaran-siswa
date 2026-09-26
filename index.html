@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2563eb">
+  <title>Sistem Poin Pelanggaran Siswa - SMP Negeri 37 Merangin</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            school: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body { background: #f8fafc; }
+    .card { border: 1px solid #e2e8f0; border-radius: 1rem; background: white; box-shadow: 0 4px 18px rgba(15,23,42,.05); }
+    .input { width:100%; border:1px solid #cbd5e1; border-radius:.65rem; padding:.65rem .8rem; outline:none; background:white; }
+    .input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.12); }
+    .btn { border-radius:.65rem; padding:.65rem 1rem; font-weight:600; transition:.15s; }
+    .btn:active { transform:scale(.98); }
+    .nav-btn.active { background:#dbeafe; color:#1d4ed8; }
+    .toast { animation: slideIn .2s ease-out; }
+    @keyframes slideIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    @media print {
+      .no-print { display:none !important; }
+      body { background:white; }
+      .card { box-shadow:none; }
+    }
+  </style>
+</head>
+
+<body class="text-slate-800">
+  <!-- Header -->
+  <header class="no-print sticky top-0 z-40 bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg shrink-0">37</div>
+        <div class="min-w-0">
+          <h1 class="font-bold text-base md:text-lg truncate">Sistem Poin Pelanggaran Siswa</h1>
+          <p class="text-xs md:text-sm text-slate-500 truncate">SMP Negeri 37 Merangin</p>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="exportPDF()" class="btn bg-blue-600 hover:bg-blue-700 text-white text-sm">Cetak PDF</button>
+        <button onclick="loadData()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm">Refresh</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 py-5 md:py-7">
+    <!-- Navigation -->
+    <nav class="no-print flex gap-2 overflow-x-auto pb-2 mb-5">
+      <button class="nav-btn active whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold" data-tab="dashboard">Dashboard</button>
+      <button class="nav-btn whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold" data-tab="input">Input Pelanggaran</button>
+      <button class="nav-btn whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold" data-tab="rekap">Rekap Siswa</button>
+      <button class="nav-btn whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold" data-tab="riwayat">Riwayat</button>
+    </nav>
+
+    <!-- DASHBOARD -->
+    <section id="tab-dashboard" class="tab-content">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-5">
+        <div class="card p-4">
+          <p class="text-xs text-slate-500">Total Siswa</p>
+          <p id="statStudents" class="text-2xl font-bold mt-1">0</p>
+        </div>
+        <div class="card p-4">
+          <p class="text-xs text-slate-500">Total Pelanggaran</p>
+          <p id="statViolations" class="text-2xl font-bold mt-1">0</p>
+        </div>
+        <div class="card p-4">
+          <p class="text-xs text-slate-500">Total Poin</p>
+          <p id="statPoints" class="text-2xl font-bold mt-1">0</p>
+        </div>
+        <div class="card p-4">
+          <p class="text-xs text-slate-500">Perlu SP</p>
+          <p id="statSP" class="text-2xl font-bold mt-1 text-red-600">0</p>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-3 gap-5">
+        <div class="card p-5 lg:col-span-2">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="font-bold text-lg">Siswa dengan Poin Tertinggi</h2>
+              <p class="text-xs text-slate-500">Berdasarkan data yang sedang ditampilkan</p>
+            </div>
+            <select id="dashboardSemester" class="input !w-auto text-sm" onchange="renderAll()">
+              <option value="Semua">Semua Semester</option>
+              <option value="1">Semester 1</option>
+              <option value="2">Semester 2</option>
+            </select>
+          </div>
+          <div id="topStudents" class="space-y-2"></div>
+        </div>
+
+        <div class="card p-5">
+          <h2 class="font-bold text-lg mb-4">Keterangan Status</h2>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between"><span>0–19</span><span class="font-semibold text-green-600">Aman</span></div>
+            <div class="flex justify-between"><span>20–34</span><span class="font-semibold text-yellow-600">SP I</span></div>
+            <div class="flex justify-between"><span>35–49</span><span class="font-semibold text-orange-600">SP II</span></div>
+            <div class="flex justify-between"><span>50–99</span><span class="font-semibold text-red-600">SP III</span></div>
+            <div class="flex justify-between"><span>≥100</span><span class="font-semibold text-red-800">SP Akhir</span></div>
+          </div>
+          <div class="mt-5 p-3 rounded-lg bg-blue-50 text-blue-800 text-xs">
+            Ambang SP dapat diubah pada bagian <b>KONFIGURASI</b> di dalam script.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INPUT -->
+    <section id="tab-input" class="tab-content hidden">
+      <div class="card p-5 max-w-3xl mx-auto">
+        <div class="mb-5">
+          <h2 class="text-xl font-bold">Input Pelanggaran Siswa</h2>
+          <p class="text-sm text-slate-500">Pilih siswa dan jenis pelanggaran. Poin akan terisi otomatis.</p>
+        </div>
+
+        <form id="violationForm" class="space-y-4">
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold mb-1">Nama Siswa *</label>
+              <input id="studentName" class="input" list="studentList" required placeholder="Ketik nama siswa">
+              <datalist id="studentList"></datalist>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Kelas *</label>
+              <input id="studentClass" class="input" placeholder="Contoh: VII A" required>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-semibold mb-1">Tanggal *</label>
+              <input id="violationDate" type="date" class="input" required>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Semester *</label>
+              <select id="semester" class="input" required>
+                <option value="1">Semester 1</option>
+                <option value="2">Semester 2</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Kategori *</label>
+              <select id="category" class="input" required></select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold mb-1">Jenis Pelanggaran *</label>
+            <select id="violationType" class="input" required></select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold mb-1">Poin</label>
+            <input id="points" type="number" class="input bg-slate-50 font-bold" readonly value="0">
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold mb-1">Keterangan</label>
+            <textarea id="notes" class="input min-h-24" placeholder="Keterangan tambahan (opsional)"></textarea>
+          </div>
+
+          <button id="saveBtn" class="btn w-full bg-blue-600 hover:bg-blue-700 text-white" type="submit">
+            Simpan Pelanggaran
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- REKAP -->
+    <section id="tab-rekap" class="tab-content hidden">
+      <div class="card p-5">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+          <div>
+            <h2 class="text-xl font-bold">Rekap Poin Siswa</h2>
+            <p class="text-sm text-slate-500">Total poin dikelompokkan berdasarkan siswa.</p>
+          </div>
+          <div class="flex gap-2">
+            <select id="rekapSemester" class="input !w-auto text-sm" onchange="renderAll()">
+              <option value="Semua">Semua Semester</option>
+              <option value="1">Semester 1</option>
+              <option value="2">Semester 2</option>
+            </select>
+            <input id="searchRekap" oninput="renderAll()" class="input !w-48 text-sm" placeholder="Cari siswa...">
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b bg-slate-50">
+                <th class="text-left p-3">No</th>
+                <th class="text-left p-3">Nama Siswa</th>
+                <th class="text-left p-3">Kelas</th>
+                <th class="text-center p-3">Pelanggaran</th>
+                <th class="text-center p-3">Total Poin</th>
+                <th class="text-center p-3">Status</th>
+              </tr>
+            </thead>
+            <tbody id="rekapBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIWAYAT -->
+    <section id="tab-riwayat" class="tab-content hidden">
+      <div class="card p-5">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+          <div>
+            <h2 class="text-xl font-bold">Riwayat Pelanggaran</h2>
+            <p class="text-sm text-slate-500">Daftar semua pelanggaran yang tercatat.</p>
+          </div>
+          <input id="searchHistory" oninput="renderAll()" class="input !w-full md:!w-64 text-sm" placeholder="Cari nama/kelas/pelanggaran...">
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b bg-slate-50">
+                <th class="text-left p-3">Tanggal</th>
+                <th class="text-left p-3">Nama</th>
+                <th class="text-left p-3">Kelas</th>
+                <th class="text-left p-3">Pelanggaran</th>
+                <th class="text-center p-3">Poin</th>
+                <th class="text-left p-3">Semester</th>
+                <th class="text-left p-3">Keterangan</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="toastContainer" class="fixed right-4 bottom-4 z-50 space-y-2"></div>
+
+<script>
+/* =========================================================
+   KONFIGURASI
+   =========================================================
+   Setelah Google Apps Script siap, isi API_URL dengan URL
+   Web App Apps Script Anda.
+
+   Format data yang diharapkan dari GET:
+   {
+     "data": [
+       {
+         "id": "...",
+         "nama": "...",
+         "kelas": "...",
+         "tanggal": "2026-09-25",
+         "semester": "1",
+         "kategori": "...",
+         "pelanggaran": "...",
+         "poin": 10,
+         "keterangan": "..."
+       }
+     ]
+   }
+
+   POST mengirim objek yang sama.
+   ========================================================= */
+
+const CONFIG = {
+  API_URL: "https://script.google.com/macros/s/AKfycbzywoS0BzW1YrsbGsi-aeQc9FPo0CyaM8Y5Kr-CZaUyEnxJ4f-_moX-qxQZ7E7gV5wt/exec",
+  APP_NAME: "Sistem Poin Pelanggaran Siswa",
+  SCHOOL_NAME: "SMP Negeri 37 Merangin",
+  USE_LOCAL_FALLBACK: true
+};
+
+/* Daftar aturan contoh. Silakan sesuaikan dengan tata tertib
+   sekolah Anda. Struktur ini sengaja dibuat mudah diperluas. */
+const VIOLATIONS = [
+  { category:"I. Kedisiplinan", type:"Terlambat datang ke sekolah", points:5 },
+  { category:"I. Kedisiplinan", type:"Tidak mengikuti apel/upacara tanpa alasan", points:5 },
+  { category:"I. Kedisiplinan", type:"Meninggalkan sekolah tanpa izin", points:10 },
+
+  { category:"II. Seragam dan Atribut", type:"Tidak memakai atribut lengkap", points:5 },
+  { category:"II. Seragam dan Atribut", type:"Memakai seragam tidak sesuai ketentuan", points:5 },
+  { category:"II. Seragam dan Atribut", type:"Rambut/penampilan tidak sesuai ketentuan", points:5 },
+
+  { category:"III. Kehadiran", type:"Tidak masuk tanpa keterangan", points:10 },
+  { category:"III. Kehadiran", type:"Membolos pada jam pelajaran", points:15 },
+
+  { category:"IV. Ketertiban", type:"Mengganggu ketertiban kelas", points:5 },
+  { category:"IV. Ketertiban", type:"Tidak membawa perlengkapan belajar", points:3 },
+  { category:"IV. Ketertiban", type:"Bermain saat proses pembelajaran", points:5 },
+
+  { category:"V. Sikap dan Etika", type:"Berkata tidak sopan kepada warga sekolah", points:10 },
+  { category:"V. Sikap dan Etika", type:"Tidak menghormati guru/karyawan", points:10 },
+  { category:"V. Sikap dan Etika", type:"Berkelahi", points:25 },
+
+  { category:"VI. Kebersihan", type:"Membuang sampah sembarangan", points:5 },
+  { category:"VI. Kebersihan", type:"Tidak melaksanakan piket", points:5 },
+  { category:"VI. Kebersihan", type:"Merusak kebersihan fasilitas sekolah", points:10 },
+
+  { category:"VII. Barang Terlarang", type:"Membawa barang yang dilarang sekolah", points:25 },
+  { category:"VII. Barang Terlarang", type:"Merokok di lingkungan sekolah", points:50 },
+
+  { category:"VIII. Kekerasan dan Perundungan", type:"Mengintimidasi/perundungan", points:25 },
+  { category:"VIII. Kekerasan dan Perundungan", type:"Melakukan kekerasan fisik", points:50 },
+
+  { category:"IX. Pelanggaran Berat", type:"Membawa senjata/barang berbahaya", points:75 },
+  { category:"IX. Pelanggaran Berat", type:"Pelanggaran berat lainnya", points:100 }
+];
+
+let records = [];
+
+/* ---------- Utilitas ---------- */
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function normalizePoints(value) {
+  const n = Number(String(value ?? 0).replace(/[^\d.-]/g, ""));
+  return Math.abs(Number.isFinite(n) ? n : 0);
+}
+
+function statusFromPoints(points) {
+  const p = normalizePoints(points);
+  if (p >= 100) return { label:"SP Akhir", cls:"bg-red-100 text-red-800" };
+  if (p >= 50) return { label:"SP III", cls:"bg-red-100 text-red-700" };
+  if (p >= 35) return { label:"SP II", cls:"bg-orange-100 text-orange-700" };
+  if (p >= 20) return { label:"SP I", cls:"bg-yellow-100 text-yellow-700" };
+  return { label:"Aman", cls:"bg-green-100 text-green-700" };
+}
+
+function toast(message, type="success") {
+  const el = document.createElement("div");
+  el.className = `toast px-4 py-3 rounded-xl shadow-lg text-sm font-medium ${
+    type === "error" ? "bg-red-600 text-white" :
+    type === "warning" ? "bg-yellow-500 text-white" :
+    "bg-slate-900 text-white"
+  }`;
+  el.textContent = message;
+  document.getElementById("toastContainer").appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function localKey() {
+  return "smpn37_poin_records_v1";
+}
+
+function saveLocal() {
+  localStorage.setItem(localKey(), JSON.stringify(records));
+}
+
+function loadLocal() {
+  try {
+    records = JSON.parse(localStorage.getItem(localKey()) || "[]");
+    if (!Array.isArray(records)) records = [];
+  } catch {
+    records = [];
+  }
+}
+
+function detectSemester(dateString) {
+  const d = new Date(dateString + "T00:00:00");
+  const month = d.getMonth() + 1;
+  return (month >= 7 && month <= 12) ? "1" : "2";
+}
+
+/* ---------- Data ---------- */
+async function loadData() {
+  if (!CONFIG.API_URL) {
+    loadLocal();
+    renderAll();
+    return;
+  }
+
+  try {
+    const response = await fetch(CONFIG.API_URL, { method:"GET" });
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    const json = await response.json();
+
+    const data = Array.isArray(json) ? json : (json.data || []);
+    records = data.map(normalizeRecord);
+    saveLocal();
+    renderAll();
+    toast("Data berhasil diperbarui.");
+  } catch (err) {
+    console.error(err);
+    loadLocal();
+    renderAll();
+    toast("Server tidak dapat diakses. Menampilkan data lokal.", "warning");
+  }
+}
+
+function normalizeRecord(r) {
+  return {
+    id: r.id || r.ID || crypto.randomUUID(),
+    nama: r.nama || r.nama_siswa || r.Nama || "",
+    kelas: r.kelas || r.Kelas || "",
+    tanggal: r.tanggal || r.date || r.Tanggal || "",
+    semester: String(r.semester || r.Semester || detectSemester(r.tanggal || "")),
+    kategori: r.kategori || r.Kategori || "",
+    pelanggaran: r.pelanggaran || r.jenis_pelanggaran || r.Pelanggaran || "",
+    poin: normalizePoints(r.poin || r.Poin || 0),
+    keterangan: r.keterangan || r.catatan || r.Keterangan || ""
+  };
+}
+
+async function saveRecord(record) {
+  if (!CONFIG.API_URL) {
+    records.push(record);
+    saveLocal();
+    return true;
+  }
+
+  try {
+    const response = await fetch(CONFIG.API_URL, {
+      method:"POST",
+      headers:{ "Content-Type":"text/plain;charset=utf-8" },
+      body:JSON.stringify(record)
+    });
+
+    if (!response.ok) throw new Error("HTTP " + response.status);
+
+    records.push(record);
+    saveLocal();
+    return true;
+  } catch (err) {
+    console.error(err);
+    if (CONFIG.USE_LOCAL_FALLBACK) {
+      records.push(record);
+      saveLocal();
+      toast("Server gagal menerima data. Data disimpan sementara di perangkat.", "warning");
+      return true;
+    }
+    return false;
+  }
+}
+
+/* ---------- Form ---------- */
+function populateCategories() {
+  const select = document.getElementById("category");
+  const categories = [...new Set(VIOLATIONS.map(v => v.category))];
+  select.innerHTML = '<option value="">Pilih kategori...</option>' +
+    categories.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");
+}
+
+function populateViolationTypes() {
+  const category = document.getElementById("category").value;
+  const select = document.getElementById("violationType");
+  const list = VIOLATIONS.filter(v => v.category === category);
+
+  select.innerHTML = '<option value="">Pilih jenis pelanggaran...</option>' +
+    list.map(v => `<option value="${escapeHTML(v.type)}" data-points="${v.points}">${escapeHTML(v.type)} — ${v.points} poin</option>`).join("");
+
+  document.getElementById("points").value = "0";
+}
+
+function updatePoints() {
+  const option = document.querySelector("#violationType option:checked");
+  document.getElementById("points").value = option?.dataset?.points || 0;
+}
+
+function updateStudentClass() {
+  const name = document.getElementById("studentName").value.trim().toLowerCase();
+  const found = records.find(r => String(r.nama).trim().toLowerCase() === name && r.kelas);
+  if (found) document.getElementById("studentClass").value = found.kelas;
+}
+
+async function submitViolation(e) {
+  e.preventDefault();
+
+  const nama = document.getElementById("studentName").value.trim();
+  const kelas = document.getElementById("studentClass").value.trim();
+  const tanggal = document.getElementById("violationDate").value;
+  const semester = document.getElementById("semester").value;
+  const kategori = document.getElementById("category").value;
+  const pelanggaran = document.getElementById("violationType").value;
+  const poin = normalizePoints(document.getElementById("points").value);
+  const keterangan = document.getElementById("notes").value.trim();
+
+  if (!nama || !kelas || !tanggal || !kategori || !pelanggaran || poin <= 0) {
+    toast("Lengkapi data pelanggaran terlebih dahulu.", "error");
+    return;
+  }
+
+  const record = {
+    id: crypto.randomUUID(),
+    nama, kelas, tanggal, semester, kategori, pelanggaran, poin, keterangan
+  };
+
+  const btn = document.getElementById("saveBtn");
+  btn.disabled = true;
+  btn.textContent = "Menyimpan...";
+
+  const ok = await saveRecord(record);
+
+  btn.disabled = false;
+  btn.textContent = "Simpan Pelanggaran";
+
+  if (ok) {
+    document.getElementById("violationForm").reset();
+    document.getElementById("violationDate").valueAsDate = new Date();
+    document.getElementById("semester").value = detectSemester(document.getElementById("violationDate").value);
+    document.getElementById("points").value = "0";
+    toast("Pelanggaran berhasil dicatat.");
+    renderAll();
+    showTab("rekap");
+  } else {
+    toast("Data gagal disimpan.", "error");
+  }
+}
+
+/* ---------- Rekap ---------- */
+function getFilteredRecords(semester="Semua") {
+  if (semester === "Semua") return [...records];
+  return records.filter(r => String(r.semester) === String(semester));
+}
+
+function aggregateStudents(semester="Semua") {
+  const map = new Map();
+
+  getFilteredRecords(semester).forEach(r => {
+    const key = `${String(r.nama).trim().toLowerCase()}|${String(r.kelas).trim().toLowerCase()}`;
+    if (!map.has(key)) {
+      map.set(key, { nama:r.nama, kelas:r.kelas, pelanggaran:0, poin:0 });
+    }
+    const item = map.get(key);
+    item.pelanggaran += 1;
+    item.poin += normalizePoints(r.poin);
+  });
+
+  return [...map.values()].sort((a,b) => b.poin - a.poin || a.nama.localeCompare(b.nama));
+}
+
+function renderDashboard() {
+  const semester = document.getElementById("dashboardSemester").value;
+  const data = getFilteredRecords(semester);
+  const students = aggregateStudents(semester);
+
+  document.getElementById("statStudents").textContent = students.length;
+  document.getElementById("statViolations").textContent = data.length;
+  document.getElementById("statPoints").textContent = data.reduce((s,r) => s + normalizePoints(r.poin), 0);
+
+  document.getElementById("statSP").textContent =
+    students.filter(s => normalizePoints(s.poin) >= 20).length;
+
+  const top = students.slice(0, 10);
+  const container = document.getElementById("topStudents");
+
+  if (!top.length) {
+    container.innerHTML = '<div class="text-sm text-slate-500 py-8 text-center">Belum ada data pelanggaran.</div>';
+    return;
+  }
+
+  container.innerHTML = top.map((s, i) => {
+    const st = statusFromPoints(s.poin);
+    return `
+      <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
+        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">${i+1}</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold truncate">${escapeHTML(s.nama)}</p>
+          <p class="text-xs text-slate-500">${escapeHTML(s.kelas)} · ${s.pelanggaran} pelanggaran</p>
+        </div>
+        <div class="text-right">
+          <p class="font-bold">${s.poin} poin</p>
+          <span class="text-xs px-2 py-1 rounded-full ${st.cls}">${st.label}</span>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function renderRekap() {
+  const semester = document.getElementById("rekapSemester").value;
+  const search = document.getElementById("searchRekap").value.trim().toLowerCase();
+  let students = aggregateStudents(semester);
+
+  if (search) {
+    students = students.filter(s =>
+      `${s.nama} ${s.kelas}`.toLowerCase().includes(search)
+    );
+  }
+
+  const body = document.getElementById("rekapBody");
+
+  if (!students.length) {
+    body.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-500">Data tidak ditemukan.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = students.map((s,i) => {
+    const st = statusFromPoints(s.poin);
+    return `
+      <tr class="border-b hover:bg-slate-50">
+        <td class="p-3">${i+1}</td>
+        <td class="p-3 font-semibold">${escapeHTML(s.nama)}</td>
+        <td class="p-3">${escapeHTML(s.kelas)}</td>
+        <td class="p-3 text-center">${s.pelanggaran}</td>
+        <td class="p-3 text-center font-bold">${s.poin}</td>
+        <td class="p-3 text-center"><span class="px-2 py-1 rounded-full text-xs ${st.cls}">${st.label}</span></td>
+      </tr>`;
+  }).join("");
+}
+
+function renderHistory() {
+  const search = document.getElementById("searchHistory").value.trim().toLowerCase();
+  let data = [...records].sort((a,b) => String(b.tanggal).localeCompare(String(a.tanggal)));
+
+  if (search) {
+    data = data.filter(r =>
+      `${r.nama} ${r.kelas} ${r.pelanggaran} ${r.kategori} ${r.keterangan}`.toLowerCase().includes(search)
+    );
+  }
+
+  const body = document.getElementById("historyBody");
+
+  if (!data.length) {
+    body.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-500">Belum ada riwayat.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = data.map(r => `
+    <tr class="border-b hover:bg-slate-50">
+      <td class="p-3 whitespace-nowrap">${escapeHTML(r.tanggal)}</td>
+      <td class="p-3 font-semibold">${escapeHTML(r.nama)}</td>
+      <td class="p-3">${escapeHTML(r.kelas)}</td>
+      <td class="p-3">${escapeHTML(r.pelanggaran)}</td>
+      <td class="p-3 text-center font-bold">${normalizePoints(r.poin)}</td>
+      <td class="p-3 text-center">${escapeHTML(r.semester)}</td>
+      <td class="p-3">${escapeHTML(r.keterangan)}</td>
+    </tr>
+  `).join("");
+}
+
+function populateStudentList() {
+  const names = [...new Set(records.map(r => r.nama).filter(Boolean))].sort();
+  document.getElementById("studentList").innerHTML =
+    names.map(n => `<option value="${escapeHTML(n)}">`).join("");
+}
+
+function renderAll() {
+  renderDashboard();
+  renderRekap();
+  renderHistory();
+  populateStudentList();
+}
+
+/* ---------- Navigasi ---------- */
+function showTab(tab) {
+  document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+  document.getElementById(`tab-${tab}`).classList.remove("hidden");
+
+  document.querySelectorAll(".nav-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tab);
+  });
+}
+
+/* ---------- PDF ---------- */
+function exportPDF() {
+  if (!records.length) {
+    toast("Belum ada data untuk dicetak.", "warning");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("landscape");
+
+  doc.setFontSize(16);
+  doc.text(CONFIG.SCHOOL_NAME, 14, 15);
+  doc.setFontSize(12);
+  doc.text("REKAPITULASI POIN PELANGGARAN SISWA", 14, 23);
+  doc.setFontSize(9);
+  doc.text("Dicetak: " + new Date().toLocaleString("id-ID"), 14, 30);
+
+  const students = aggregateStudents(document.getElementById("rekapSemester").value);
+
+  doc.autoTable({
+    startY: 36,
+    head: [["No","Nama Siswa","Kelas","Jumlah Pelanggaran","Total Poin","Status"]],
+    body: students.map((s,i) => [
+      i+1, s.nama, s.kelas, s.pelanggaran, s.poin, statusFromPoints(s.poin).label
+    ]),
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [37,99,235] }
+  });
+
+  doc.save("Rekap-Poin-Siswa-SMPN37-Merangin.pdf");
+}
+
+/* ---------- Init ---------- */
+document.addEventListener("DOMContentLoaded", () => {
+  const today = new Date();
+  document.getElementById("violationDate").valueAsDate = today;
+  document.getElementById("semester").value = detectSemester(
+    document.getElementById("violationDate").value
+  );
+
+  populateCategories();
+  populateViolationTypes();
+  loadData();
+
+  document.getElementById("category").addEventListener("change", populateViolationTypes);
+  document.getElementById("violationType").addEventListener("change", updatePoints);
+  document.getElementById("studentName").addEventListener("change", updateStudentClass);
+  document.getElementById("violationDate").addEventListener("change", e => {
+    document.getElementById("semester").value = detectSemester(e.target.value);
+  });
+  document.getElementById("violationForm").addEventListener("submit", submitViolation);
+
+  document.querySelectorAll(".nav-btn").forEach(btn => {
+    btn.addEventListener("click", () => showTab(btn.dataset.tab));
+  });
+});
+</script>
+</body>
+</html>
