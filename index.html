@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMPN 37 Merangin - Sistem Manajemen Poin & Tata Tertib Siswa</title>
+    <title>SMPN 37 MERANGIN - Sistem Manajemen Poin & Tata Tertib Siswa</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter -->
@@ -33,6 +33,10 @@
             </div>
             <div class="flex flex-wrap items-center gap-3">
                 <span id="currentDateDisplay" class="text-xs text-indigo-100 hidden md:inline font-medium bg-white/10 px-3 py-1.5 rounded-lg">Sabtu, 26 September 2026</span>
+                <button onclick="testConnection()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow border border-emerald-400/30">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Test Koneksi
+                </button>
                 <button onclick="triggerBackup()" class="bg-[#4d42be] hover:bg-[#5b50d1] text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow border border-indigo-400/30">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                     Backup
@@ -190,10 +194,16 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h2 class="text-xl font-bold text-slate-800">Manajemen Data Siswa</h2>
-                        <p class="text-xs text-slate-500">Daftar siswa terdaftar dan rekapitulasi poin tiap anak.</p>
+                        <p class="text-xs text-slate-500">Daftar siswa dari database Google Sheets dan rekapitulasi poin tiap anak.</p>
                     </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <input type="text" id="searchStudentInput" onkeyup="renderStudentsTable()" placeholder="Cari nama siswa..." class="px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white focus:ring-2 focus:ring-indigo-500 w-full sm:w-64">
+                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        <select id="filterStudentClass" onchange="renderStudentsTable()" class="px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold bg-white text-indigo-900 shadow-sm">
+                            <option value="">Semua Kelas</option>
+                            <option value="VII">Kelas VII</option>
+                            <option value="VIII">Kelas VIII</option>
+                            <option value="IX">Kelas IX</option>
+                        </select>
+                        <input type="text" id="searchStudentInput" onkeyup="renderStudentsTable()" placeholder="Cari nama siswa..." class="px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white focus:ring-2 focus:ring-indigo-500 w-full sm:w-48">
                         <button onclick="openAddStudentModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-medium transition shadow-sm whitespace-nowrap">
                             + Tambah Siswa
                         </button>
@@ -205,16 +215,17 @@
                             <thead>
                                 <tr class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider border-b border-slate-200">
                                     <th class="px-4 py-3">No</th>
+                                    <th class="px-4 py-3">NIS / NISN</th>
                                     <th class="px-4 py-3">Nama Siswa</th>
                                     <th class="px-4 py-3">Kelas</th>
-                                    <th class="px-4 py-3 text-center">Total Pelanggaran</th>
+                                    <th class="px-4 py-3">Nama Orang Tua</th>
                                     <th class="px-4 py-3 text-center">Akumulasi Poin</th>
-                                    <th class="px-4 py-3 text-center">Status Sanksi (SP)</th>
+                                    <th class="px-4 py-3 text-center">Status Sanksi</th>
                                     <th class="px-4 py-3 text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="studentsTableBody" class="divide-y divide-slate-100 text-slate-700">
-                                <tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">Memuat data siswa...</td></tr>
+                                <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">Memuat data siswa dari Google Sheets...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -234,8 +245,11 @@
                     <form id="pointForm" onsubmit="submitPoint(event)" class="space-y-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">Nama Siswa</label>
-                                <input type="text" id="name" required placeholder="Contoh: Budi Santoso" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Nama Siswa (Pilih dari Data / Ketik Manual)</label>
+                                <input type="text" id="name" required list="studentListSuggestions" placeholder="Contoh: Budi Santoso" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                <datalist id="studentListSuggestions">
+                                    <!-- Populated dynamically -->
+                                </datalist>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">Kelas (VII - IX)</label>
@@ -351,9 +365,25 @@
 
             <!-- VIEW 5: KATEGORI & POIN -->
             <div id="view-rules" class="space-y-6 hidden">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-800">Kategori & Poin Pelanggaran</h2>
-                    <p class="text-xs text-slate-500">Daftar tata tertib dan bobot poin resmi SMPN 37 Merangin.</p>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Kategori & Poin Pelanggaran</h2>
+                        <p class="text-xs text-slate-500">Daftar tata tertib dan bobot poin resmi SMPN 37 Merangin.</p>
+                    </div>
+                    <div>
+                        <select id="rulesCategoryDropdown" onchange="filterRulesByCategory()" class="px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold bg-white text-indigo-900 shadow-sm focus:ring-2 focus:ring-indigo-500">
+                            <option value="Semua">Semua Kategori (I - IX)</option>
+                            <option value="I. TERLAMBAT">I. TERLAMBAT</option>
+                            <option value="II. KEHADIRAN">II. KEHADIRAN</option>
+                            <option value="III. PAKAIAN">III. PAKAIAN</option>
+                            <option value="IV. KETERTIBAN">IV. KETERTIBAN</option>
+                            <option value="V. ROKOK">V. ROKOK</option>
+                            <option value="VI. SENJATA">VI. SENJATA</option>
+                            <option value="VII. MINUMAN KERAS/NARKOBA/PORNOGRAFI">VII. MINUMAN KERAS/NARKOBA/PORNOGRAFI</option>
+                            <option value="VIII. PERKELAHIAN">VIII. PERKELAHIAN</option>
+                            <option value="IX. MELAWAN GURU/STAF TATA USAHA">IX. MELAWAN GURU/STAF TATA USAHA</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden p-5 space-y-4">
                     <div class="overflow-x-auto">
@@ -420,12 +450,12 @@
                             <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500">
                         </div>
                         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-2">
-                            <p class="font-semibold text-slate-700">Panduan Google Apps Script (`Code.gs`):</p>
-                            <p class="text-[11px] text-slate-500">Gunakan script <code class="bg-slate-200 px-1 rounded">Code-SP-optimized-v2</code> yang mendukung sinkronisasi data, SP, dan Google Drive PDF.</p>
+                            <p class="font-semibold text-slate-700">Status Koneksi Database:</p>
+                            <p id="connectionStatusText" class="text-[11px] text-emerald-600 font-medium">Terhubung ke Web App URL terbaru.</p>
                         </div>
                         <div class="flex justify-end">
                             <button onclick="saveConfig()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-medium transition shadow-sm">
-                                Simpan URL Script
+                                Simpan & Hubungkan
                             </button>
                         </div>
                     </div>
@@ -438,30 +468,36 @@
     <!-- MODAL TAMBAH SISWA -->
     <div id="addStudentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
-            <h3 class="text-base font-bold text-slate-800">Tambah Data Siswa Baru</h3>
+            <h3 class="text-base font-bold text-slate-800">Tambah Data Siswa Baru ke Google Sheets</h3>
             <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">NIS</label>
+                        <input type="text" id="newStudentNis" placeholder="Nomor Induk Siswa" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">NISN</label>
+                        <input type="text" id="newStudentNisn" placeholder="Nomor NISN" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Nama Lengkap</label>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Nama Lengkap Siswa</label>
                     <input type="text" id="newStudentName" placeholder="Nama siswa..." class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">Kelas</label>
-                        <select id="newStudentGrade" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs bg-white font-medium">
-                            <option value="VII">VII</option>
-                            <option value="VIII">VIII</option>
-                            <option value="IX">IX</option>
-                        </select>
+                        <input type="text" id="newStudentClass" placeholder="VII A / VIII B" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs uppercase font-medium">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Paralel / Rombel</label>
-                        <input type="text" id="newStudentParallel" value="A" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs uppercase text-center font-medium">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Nama Orang Tua</label>
+                        <input type="text" id="newStudentParent" placeholder="Nama Orang Tua" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs">
                     </div>
                 </div>
             </div>
             <div class="flex justify-end gap-2 pt-2">
                 <button onclick="closeAddStudentModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium transition">Batal</button>
-                <button onclick="saveNewStudent()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-medium transition">Simpan Siswa</button>
+                <button onclick="saveNewStudent()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-medium transition">Simpan ke Sheets</button>
             </div>
         </div>
     </div>
@@ -508,7 +544,7 @@
             { cat: "IX. MELAWAN GURU/STAF TATA USAHA", desc: "2. Ancaman, teror atau Pemukulan", points: 100 }
         ];
 
-        let SCRIPT_URL = localStorage.getItem('gas_script_url') || '';
+        let SCRIPT_URL = localStorage.getItem('gas_script_url') || 'https://script.google.com/macros/s/AKfycbyDWofMzrXRsNWT4hAfa5V3rNOrhhgTAN632vxhfz8VegBgGJLg0qNG4JTf5iN_ZW_JGw/exec';
         let schoolOfficials = JSON.parse(localStorage.getItem('school_officials')) || {
             kepsek: "Drs. H. Ahmad, M.Pd",
             nipKepsek: "NIP. 196812311994031012",
@@ -520,12 +556,7 @@
         };
 
         let rawDataCache = [];
-        let localStudentsList = JSON.parse(localStorage.getItem('local_students_list')) || [
-            { name: "Budi Santoso", class: "VII A" },
-            { name: "Siti Aminah", class: "VIII B" },
-            { name: "Ahmad Fauzi", class: "IX A" },
-            { name: "Dewi Lestari", class: "VII B" }
-        ];
+        let studentsCache = [];
 
         window.onload = function() {
             const today = new Date().toISOString().split('T')[0];
@@ -540,7 +571,6 @@
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('currentDateDisplay').textContent = new Date().toLocaleDateString('id-ID', options);
 
-            // Load settings
             if (SCRIPT_URL) document.getElementById('scriptUrlInput').value = SCRIPT_URL;
             document.getElementById('settingKepsek').value = schoolOfficials.kepsek || '';
             document.getElementById('settingNipKepsek').value = schoolOfficials.nipKepsek || '';
@@ -554,10 +584,7 @@
             populateRulesTable();
 
             if (SCRIPT_URL) {
-                fetchData();
-            } else {
-                renderDashboard();
-                renderStudentsTable();
+                fetchAllData();
             }
         }
 
@@ -609,14 +636,29 @@
         }
 
         function populateRulesTable() {
+            const selectedCat = document.getElementById('rulesCategoryDropdown') ? document.getElementById('rulesCategoryDropdown').value : 'Semua';
             const tbody = document.getElementById('rulesTableBody');
-            tbody.innerHTML = violationRules.map(r => `
+            
+            const filteredRules = selectedCat === 'Semua' 
+                ? violationRules 
+                : violationRules.filter(r => r.cat === selectedCat);
+
+            if (filteredRules.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-8 text-center text-slate-400">Tidak ada pelanggaran dalam kategori ini.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredRules.map(r => `
                 <tr class="hover:bg-slate-50 transition">
                     <td class="px-4 py-3 font-semibold text-slate-800">${r.cat}</td>
                     <td class="px-4 py-3 text-slate-600">${r.desc}</td>
                     <td class="px-4 py-3 text-center"><span class="bg-rose-100 text-rose-800 px-2.5 py-0.5 rounded-full text-xs font-bold">${r.points} Poin</span></td>
                 </tr>
             `).join('');
+        }
+
+        function filterRulesByCategory() {
+            populateRulesTable();
         }
 
         function showToast(message, type = 'success') {
@@ -632,7 +674,29 @@
             SCRIPT_URL = url;
             localStorage.setItem('gas_script_url', url);
             showToast('Konfigurasi URL berhasil disimpan!');
-            fetchData();
+            fetchAllData();
+        }
+
+        async function testConnection() {
+            if (!SCRIPT_URL) {
+                showToast('URL Script belum diatur!', 'error');
+                return;
+            }
+            showToast('Menguji koneksi ke Google Sheets...');
+            try {
+                const res = await fetch(SCRIPT_URL + '?action=health');
+                const json = await res.json();
+                if (json.success) {
+                    showToast('Koneksi Berhasil! Google Sheets aktif.');
+                    document.getElementById('connectionStatusText').textContent = "Terhubung & Aktif!";
+                    document.getElementById('connectionStatusText').className = "text-[11px] text-emerald-600 font-bold";
+                    fetchAllData();
+                } else {
+                    showToast('Gagal merespons dari Google Sheets.', 'error');
+                }
+            } catch (err) {
+                showToast('Gagal terhubung. Periksa URL / Akses Web App.', 'error');
+            }
         }
 
         function saveSchoolOfficials() {
@@ -641,7 +705,7 @@
                 nipKepsek: document.getElementById('settingNipKepsek').value.trim(),
                 waka: document.getElementById('settingWaka').value.trim(),
                 nipWaka: document.getElementById('settingNipWaka').value.trim(),
-                bp: document.getElementById('settingNipBp').value.trim(),
+                bp: document.getElementById('settingBp').value.trim(),
                 nipBp: document.getElementById('settingNipBp').value.trim(),
                 wali: document.getElementById('settingWali').value.trim()
             };
@@ -649,13 +713,14 @@
             showToast('Data pejabat sekolah berhasil disimpan!');
         }
 
-        async function fetchData() {
+        async function fetchAllData() {
             if (!SCRIPT_URL) return;
             try {
-                const res = await fetch(SCRIPT_URL + '?action=pelanggaran');
-                const json = await res.json();
-                if (json.success && json.data) {
-                    rawDataCache = json.data.map(r => [
+                // Fetch Pelanggaran
+                const resP = await fetch(SCRIPT_URL + '?action=pelanggaran');
+                const jsonP = await resP.json();
+                if (jsonP.success && jsonP.data) {
+                    rawDataCache = jsonP.data.map(r => [
                         r.tanggal,
                         r.nama + (r.kelas ? ` (${r.kelas})` : ''),
                         r.kategori,
@@ -663,39 +728,28 @@
                         r.pelanggaran + (r.keterangan ? " | " + r.keterangan : ""),
                         r.semester || "Semester 1"
                     ]);
-                    renderDashboard();
-                    renderStudentsTable();
-                    applyGlobalFilter();
                 }
+
+                // Fetch Siswa
+                const resS = await fetch(SCRIPT_URL + '?action=siswa');
+                const jsonS = await resS.json();
+                if (jsonS.success && jsonS.data) {
+                    studentsCache = jsonS.data;
+                    updateStudentDatalist();
+                }
+
+                renderDashboard();
+                renderStudentsTable();
+                applyGlobalFilter();
             } catch (err) {
                 console.error(err);
             }
         }
 
-        function getCleanRows(data) {
-            if (!data || data.length === 0) return [];
-            let rows = [...data];
-            if (rows.length > 0 && (rows[0][1] === 'Nama' || rows[0][1] === 'name')) {
-                rows = rows.slice(1);
-            }
-            return rows;
-        }
-
-        function getFilteredDataBySemester(data, semesterKey) {
-            const rows = getCleanRows(data);
-            if (semesterKey === 'Semua') return rows;
-            return rows.filter(row => {
-                const semCol = row[5] || '';
-                if (!semCol) {
-                    const d = new Date(row[0] || '');
-                    if (!isNaN(d.getTime())) {
-                        const m = d.getMonth() + 1;
-                        return ((m >= 7 || m === 12) ? 'Semester 1' : 'Semester 2') === semesterKey;
-                    }
-                    return true;
-                }
-                return semCol.toLowerCase().includes(semesterKey.toLowerCase());
-            });
+        function updateStudentDatalist() {
+            const dl = document.getElementById('studentListSuggestions');
+            if (!dl) return;
+            dl.innerHTML = studentsCache.map(s => `<option value="${s.nama}">${s.kelas ? 'Kelas: ' + s.kelas : ''}</option>`).join('');
         }
 
         async function submitPoint(event) {
@@ -715,10 +769,6 @@
             const notesVal = document.getElementById('notes').value.trim();
 
             const classStr = `${gradeVal} ${parallelVal}`;
-            if (!localStudentsList.some(s => s.name.toLowerCase() === nameVal.toLowerCase())) {
-                localStudentsList.push({ name: nameVal, class: classStr });
-                localStorage.setItem('local_students_list', JSON.stringify(localStudentsList));
-            }
 
             const payload = {
                 action: "addPelanggaran",
@@ -752,19 +802,22 @@
             document.getElementById('semesterSelect').value = semesterVal;
             populateMainCategories();
 
-            if (SCRIPT_URL) setTimeout(fetchData, 1000);
+            if (SCRIPT_URL) setTimeout(fetchAllData, 1000);
             else renderDashboard();
         }
 
         function renderDashboard() {
             const sem = document.getElementById('dashboardSemesterFilter').value;
-            const rows = getFilteredDataBySemester(rawDataCache, sem);
+            const rows = rawDataCache.filter(r => {
+                const semCol = r[5] || 'Semester 1';
+                return semCol.toLowerCase().includes(sem.toLowerCase());
+            });
 
-            const studentSet = new Set(localStudentsList.map(s => s.name));
+            const studentSet = new Set(studentsCache.map(s => s.nama));
             rows.forEach(r => {
                 if (r[1]) studentSet.add(r[1].split(' (')[0]);
             });
-            document.getElementById('statTotalStudents').textContent = studentSet.size;
+            document.getElementById('statTotalStudents').textContent = studentsCache.length > 0 ? studentsCache.length : studentSet.size;
             document.getElementById('statTotalViolations').textContent = rows.length;
 
             const studentMap = {};
@@ -841,46 +894,32 @@
         function renderStudentsTable() {
             const tbody = document.getElementById('studentsTableBody');
             const keyword = (document.getElementById('searchStudentInput').value || '').toLowerCase();
+            const classFilter = document.getElementById('filterStudentClass').value.toLowerCase();
             const sem = document.getElementById('dashboardSemesterFilter').value || 'Semester 1';
-            const rows = getFilteredDataBySemester(rawDataCache, sem);
-
-            const studentMap = {};
-            rows.forEach(r => {
-                const nameFull = r[1] || '';
-                const pts = Math.abs(parseInt(r[3]) || 0);
-                if (!studentMap[nameFull]) studentMap[nameFull] = { total: 0, count: 0 };
-                studentMap[nameFull].total += pts;
-                studentMap[nameFull].count += 1;
+            const rows = rawDataCache.filter(r => {
+                const semCol = r[5] || 'Semester 1';
+                return semCol.toLowerCase().includes(sem.toLowerCase());
             });
 
-            let combinedList = [...localStudentsList];
-            Object.keys(studentMap).forEach(nameFull => {
-                let nameOnly = nameFull;
-                let classOnly = 'VII A';
-                if (nameFull.includes('(')) {
-                    const p = nameFull.split('(');
-                    nameOnly = p[0].trim();
-                    classOnly = p[1].replace(')', '').trim();
-                }
-                if (!combinedList.some(s => s.name.toLowerCase() === nameOnly.toLowerCase())) {
-                    combinedList.push({ name: nameOnly, class: classOnly });
-                }
+            const filtered = studentsCache.filter(st => {
+                const name = (st.nama || '').toLowerCase();
+                const nis = (st.nis || '').toLowerCase();
+                const kelas = (st.kelas || '').toLowerCase();
+                const matchesKeyword = name.includes(keyword) || nis.includes(keyword) || kelas.includes(keyword);
+                const matchesClass = classFilter === '' || kelas.includes(classFilter);
+                return matchesKeyword && matchesClass;
             });
-
-            const filtered = combinedList.filter(s => s.name.toLowerCase().includes(keyword));
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">Tidak ada siswa ditemukan.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">Tidak ada data siswa ditemukan di Google Sheets.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map((st, idx) => {
                 let totalPts = 0;
-                let countViolations = 0;
                 rows.forEach(r => {
-                    if ((r[1] || '').toLowerCase().includes(st.name.toLowerCase())) {
+                    if ((r[1] || '').toLowerCase().includes(st.nama.toLowerCase())) {
                         totalPts += Math.abs(parseInt(r[3]) || 0);
-                        countViolations += 1;
                     }
                 });
 
@@ -893,13 +932,14 @@
                 return `
                     <tr class="hover:bg-slate-50 transition">
                         <td class="px-4 py-3 text-slate-500 font-medium">${idx + 1}</td>
-                        <td class="px-4 py-3 font-semibold text-slate-800">${st.name}</td>
-                        <td class="px-4 py-3 text-slate-600">${st.class}</td>
-                        <td class="px-4 py-3 text-center text-slate-600">${countViolations}x</td>
+                        <td class="px-4 py-3 text-slate-600 font-mono">${st.nis || '-'}<br><span class="text-[10px] text-slate-400">${st.nisn || ''}</span></td>
+                        <td class="px-4 py-3 font-semibold text-slate-800">${st.nama}</td>
+                        <td class="px-4 py-3 text-slate-600">${st.kelas || '-'}</td>
+                        <td class="px-4 py-3 text-slate-600">${st.orangTua || '-'}</td>
                         <td class="px-4 py-3 text-center"><span class="bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full text-xs font-bold">${totalPts} Poin</span></td>
                         <td class="px-4 py-3 text-center">${spBadge}</td>
                         <td class="px-4 py-3 text-center">
-                            <button onclick="quickAddViolationFor('${st.name}', '${st.class}')" class="text-indigo-600 hover:text-indigo-800 font-medium text-xs bg-indigo-50 px-2.5 py-1 rounded-lg">Catat Kasus</button>
+                            <button onclick="quickAddViolationFor('${st.nama}', '${st.kelas}')" class="text-indigo-600 hover:text-indigo-800 font-medium text-xs bg-indigo-50 px-2.5 py-1 rounded-lg">Catat Kasus</button>
                         </td>
                     </tr>
                 `;
@@ -916,32 +956,71 @@
             document.getElementById('addStudentModal').classList.add('hidden');
         }
 
-        function saveNewStudent() {
-            const name = document.getElementById('newStudentName').value.trim();
-            const grade = document.getElementById('newStudentGrade').value;
-            const parallel = document.getElementById('newStudentParallel').value.trim().toUpperCase();
-            if (!name) { showToast('Nama siswa wajib diisi!', 'error'); return; }
+        async function saveNewStudent() {
+            const nis = document.getElementById('newStudentNis').value.trim();
+            const nisn = document.getElementById('newStudentNisn').value.trim();
+            const nama = document.getElementById('newStudentName').value.trim();
+            const kelas = document.getElementById('newStudentClass').value.trim().toUpperCase();
+            const orangTua = document.getElementById('newStudentParent').value.trim();
 
-            localStudentsList.push({ name, class: `${grade} ${parallel}` });
-            localStorage.setItem('local_students_list', JSON.stringify(localStudentsList));
+            if (!nama) { showToast('Nama siswa wajib diisi!', 'error'); return; }
+
+            const payload = {
+                action: "addSiswa",
+                nis: nis,
+                nisn: nisn,
+                nama: nama,
+                kelas: kelas,
+                orangTua: orangTua
+            };
+
+            if (SCRIPT_URL) {
+                try {
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                } catch (e) { console.error(e); }
+            }
+
+            studentsCache.push({ id: 'SIS-' + Date.now(), nis, nisn, nama, kelas, orangTua });
+            updateStudentDatalist();
             closeAddStudentModal();
-            showToast('Siswa berhasil ditambahkan!');
+            showToast('Siswa berhasil ditambahkan ke Google Sheets!');
             renderStudentsTable();
+
+            document.getElementById('newStudentNis').value = '';
+            document.getElementById('newStudentNisn').value = '';
             document.getElementById('newStudentName').value = '';
+            document.getElementById('newStudentClass').value = '';
+            document.getElementById('newStudentParent').value = '';
+
+            if (SCRIPT_URL) setTimeout(fetchAllData, 1000);
         }
 
         function quickAddViolationFor(name, classStr) {
             switchTab('input');
             document.getElementById('name').value = name;
-            const parts = classStr.split(' ');
-            if (parts.length >= 2) {
-                document.getElementById('gradeLevel').value = parts[0];
-                document.getElementById('classParallel').value = parts[1];
+            if (classStr) {
+                const parts = classStr.split(' ');
+                if (parts.length >= 2) {
+                    document.getElementById('gradeLevel').value = parts[0];
+                    document.getElementById('classParallel').value = parts[1];
+                } else {
+                    document.getElementById('gradeLevel').value = classStr;
+                }
             }
         }
 
         function applyGlobalFilter() {
-            const rows = getFilteredDataBySemester(rawDataCache, document.getElementById('globalSemesterFilter').value);
+            const sem = document.getElementById('globalSemesterFilter').value;
+            const rows = rawDataCache.filter(r => {
+                if (sem === 'Semua') return true;
+                const semCol = r[5] || 'Semester 1';
+                return semCol.toLowerCase().includes(sem.toLowerCase());
+            });
             renderHistoryTable(rows);
         }
 
@@ -986,7 +1065,13 @@
         function filterHistoryTable() {
             const kw = document.getElementById('searchInput').value.toLowerCase();
             const gradeFilter = document.getElementById('filterGrade').value;
-            const rows = getFilteredDataBySemester(rawDataCache, document.getElementById('globalSemesterFilter').value);
+            const sem = document.getElementById('globalSemesterFilter').value;
+            
+            const rows = rawDataCache.filter(r => {
+                if (sem === 'Semua') return true;
+                const semCol = r[5] || 'Semester 1';
+                return semCol.toLowerCase().includes(sem.toLowerCase());
+            });
 
             const filtered = rows.filter(r => {
                 const nameCol = (r[1] || '').toLowerCase();
@@ -1001,7 +1086,7 @@
 
         function triggerBackup() {
             const backupData = {
-                students: localStudentsList,
+                students: studentsCache,
                 records: rawDataCache,
                 officials: schoolOfficials,
                 version: "1.0",
@@ -1024,8 +1109,8 @@
                 try {
                     const parsed = JSON.parse(e.target.result);
                     if (parsed.students) {
-                        localStudentsList = parsed.students;
-                        localStorage.setItem('local_students_list', JSON.stringify(localStudentsList));
+                        studentsCache = parsed.students;
+                        updateStudentDatalist();
                     }
                     if (parsed.records) {
                         rawDataCache = parsed.records;
@@ -1054,7 +1139,11 @@
 
         function downloadPDF() {
             const activeSem = document.getElementById('globalSemesterFilter').value;
-            const rows = getFilteredDataBySemester(rawDataCache, activeSem);
+            const rows = rawDataCache.filter(r => {
+                if (activeSem === 'Semua') return true;
+                const semCol = r[5] || 'Semester 1';
+                return semCol.toLowerCase().includes(activeSem.toLowerCase());
+            });
 
             if (rows.length === 0) {
                 showToast('Tidak ada data untuk diunduh pada semester ini!', 'error');
