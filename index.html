@@ -115,8 +115,8 @@
           <h2 class="font-bold text-lg mb-4">Keterangan Status</h2>
           <div class="space-y-3 text-sm">
             <div class="flex justify-between"><span>0–19</span><span class="font-semibold text-green-600">Aman</span></div>
-            <div class="flex justify-between"><span>20–34</span><span class="font-semibold text-yellow-600">SP I</span></div>
-            <div class="flex justify-between"><span>35–49</span><span class="font-semibold text-orange-600">SP II</span></div>
+            <div class="flex justify-between"><span>20–30</span><span class="font-semibold text-yellow-600">SP I</span></div>
+            <div class="flex justify-between"><span>31–49</span><span class="font-semibold text-orange-600">SP II</span></div>
             <div class="flex justify-between"><span>50–99</span><span class="font-semibold text-red-600">SP III</span></div>
             <div class="flex justify-between"><span>≥100</span><span class="font-semibold text-red-800">SP Akhir</span></div>
           </div>
@@ -754,6 +754,13 @@ function openSPForm() {
   document.getElementById("spRincian").value = currentStudentDetail.data.map(r => `${r.tanggal} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`).join("\n");
   document.getElementById("spKeterangan").value = "";
   document.getElementById("spPetugas").value = "";
+  const pdfBtn = document.getElementById("spPdfBtn");
+  const isSP1 = level === "SP I";
+  pdfBtn.disabled = !isSP1;
+  pdfBtn.title = isSP1 ? "Buat PDF SP I" : "Fitur PDF sementara khusus SP I";
+  pdfBtn.classList.toggle("opacity-50", !isSP1);
+  pdfBtn.classList.toggle("cursor-not-allowed", !isSP1);
+  pdfBtn.textContent = isSP1 ? "Simpan & Buat PDF SP I" : "PDF tersedia untuk SP I";
   document.getElementById("spModal").classList.remove("hidden");
 }
 
@@ -797,6 +804,157 @@ async function submitSPForm(event) {
   } finally {
     btn.disabled = false;
     btn.textContent = "Simpan Draft SP";
+  }
+}
+
+
+function formatTanggalIndonesia(dateString) {
+  if (!dateString) return "...................... 20...";
+  const d = new Date(dateString + "T00:00:00");
+  const bulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  return `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function drawWrapped(doc, text, x, y, maxWidth, lineHeight=5) {
+  const lines = doc.splitTextToSize(String(text || ""), maxWidth);
+  doc.text(lines, x, y);
+  return y + lines.length * lineHeight;
+}
+
+function createSP1PDF() {
+  if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
+
+  const nama = document.getElementById("spNama").value.trim();
+  const nis = document.getElementById("spNIS").value.trim();
+  const nisn = document.getElementById("spNISN").value.trim();
+  const kelas = document.getElementById("spKelas").value.trim();
+  const totalPoin = normalizePoints(document.getElementById("spTotalPoin").value);
+  const nomor = document.getElementById("spNomor").value.trim();
+  const tanggal = document.getElementById("spTanggal").value;
+  const rincian = document.getElementById("spRincian").value.trim();
+
+  if (totalPoin < 20 || totalPoin > 30) {
+    throw new Error("PDF SP I hanya dapat dibuat untuk total poin 20–30.");
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+  const pageWidth = 210;
+  const left = 22;
+  const right = 188;
+  let y = 18;
+
+  // Kop surat mengikuti identitas pada template SP Tingkat I.
+  doc.setFont("times", "bold");
+  doc.setFontSize(12);
+  doc.text("PEMERINTAH KABUPATEN MERANGIN", pageWidth/2, y, {align:"center"}); y += 6;
+  doc.setFontSize(11);
+  doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", pageWidth/2, y, {align:"center"}); y += 6;
+  doc.setFontSize(14);
+  doc.text("SMP NEGERI 37 MERANGIN", pageWidth/2, y, {align:"center"}); y += 5;
+  doc.setFont("times", "normal");
+  doc.setFontSize(9);
+  doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", pageWidth/2, y, {align:"center"});
+  y += 3;
+  doc.setLineWidth(0.5);
+  doc.line(left, y, right, y);
+  y += 13;
+
+  doc.setFont("times", "bold");
+  doc.setFontSize(13);
+  doc.text("SURAT PERJANJIAN TINGKAT I", pageWidth/2, y, {align:"center"});
+  y += 8;
+
+  doc.setFont("times", "normal");
+  doc.setFontSize(11);
+  if (nomor) {
+    doc.text("Nomor: " + nomor, left, y);
+    y += 7;
+  }
+  doc.text("Yang bertanda tangan di bawah ini:", left, y);
+  y += 7;
+
+  const labelX = left;
+  const colonX = 67;
+  const valueX = 72;
+  doc.text("Nama Siswa", labelX, y); doc.text(":", colonX, y); doc.text(nama || "-", valueX, y); y += 6;
+  doc.text("NIS", labelX, y); doc.text(":", colonX, y); doc.text(nis || "-", valueX, y); y += 6;
+  doc.text("NISN", labelX, y); doc.text(":", colonX, y); doc.text(nisn || "-", valueX, y); y += 6;
+  doc.text("Kelas", labelX, y); doc.text(":", colonX, y); doc.text(kelas || "-", valueX, y); y += 6;
+  doc.text("Total Poin Pelanggaran", labelX, y); doc.text(":", colonX, y); doc.text(totalPoin + " Poin (Batas SP: 20 - 30)", valueX, y); y += 8;
+
+  doc.setFont("times", "bold");
+  doc.text("Rincian Pelanggaran:", left, y);
+  y += 6;
+  doc.setFont("times", "normal");
+  const detailLines = rincian ? rincian.split(/\n+/).map((x,i)=>`${i+1}. ${x.replace(/^\d+\.\s*/,"")}`) : ["Tidak ada rincian pelanggaran."];
+  for (const line of detailLines) {
+    y = drawWrapped(doc, line, left+4, y, 160, 5);
+    y += 1;
+    if (y > 255) { doc.addPage(); y = 20; }
+  }
+  y += 5;
+
+  doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", left, y); y += 7;
+  y = drawWrapped(doc, "1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", left, y, 166, 5); y += 2;
+  y = drawWrapped(doc, "2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.", left, y, 166, 5); y += 2;
+  y = drawWrapped(doc, "3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.", left, y, 166, 5); y += 7;
+
+  y = drawWrapped(doc, "Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.", left, y, 166, 5);
+  y += 13;
+
+  doc.text("Pulau Rengas, " + formatTanggalIndonesia(tanggal), right, y, {align:"right"});
+  y += 10;
+  doc.text("Mengetahui,", left+25, y);
+  doc.text("Siswa yang bersangkutan,", 135, y, {align:"center"});
+  y += 6;
+  doc.text("Wali Kelas,", left+25, y);
+  y += 22;
+  doc.text("(...........................)", left+25, y);
+  doc.text("( " + (nama || "...........................") + " )", 135, y, {align:"center"});
+
+  const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
+  doc.save(`SP-I-${safeName}.pdf`);
+}
+
+async function saveDraftAndCreateSP1PDF() {
+  const btn = document.getElementById("spPdfBtn");
+  btn.disabled = true;
+  btn.textContent = "Menyiapkan PDF...";
+  try {
+    // Simpan data surat terlebih dahulu agar dokumen tercatat di Surat_SP.
+    const payload = {
+      action: "addSuratSP",
+      id: "",
+      nomorSurat: document.getElementById("spNomor").value.trim(),
+      tanggalSurat: document.getElementById("spTanggal").value,
+      namaSiswa: document.getElementById("spNama").value.trim(),
+      nis: document.getElementById("spNIS").value.trim(),
+      nisn: document.getElementById("spNISN").value.trim(),
+      kelas: document.getElementById("spKelas").value.trim(),
+      jenisSP: document.getElementById("spJenis").value,
+      totalPoin: normalizePoints(document.getElementById("spTotalPoin").value),
+      dasarPelanggaran: document.getElementById("spDasar").value.trim(),
+      rincianPelanggaran: document.getElementById("spRincian").value.trim(),
+      keterangan: document.getElementById("spKeterangan").value.trim(),
+      petugas: document.getElementById("spPetugas").value.trim(),
+      status: "PDF Dibuat",
+      filePDF: ""
+    };
+
+    const response = await fetch(CONFIG.API_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload) });
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message || "Gagal menyimpan surat SP");
+
+    createSP1PDF();
+    toast("SP I berhasil dibuat dan dicatat di Surat_SP.");
+  } catch (err) {
+    console.error(err);
+    toast("PDF SP I gagal dibuat: " + err.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Simpan & Buat PDF SP I";
   }
 }
 
@@ -926,6 +1084,91 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script>
+
+<!-- MODAL FORM SURAT SP -->
+<div id="spModal" class="hidden fixed inset-0 z-[60] bg-slate-900/50 p-4 overflow-y-auto no-print" onclick="closeSPFormOnBackdrop(event)">
+  <div class="max-w-3xl mx-auto mt-8 card overflow-hidden" onclick="event.stopPropagation()">
+    <div class="p-5 border-b flex items-start justify-between gap-3">
+      <div>
+        <p class="text-xs text-slate-500">Dokumen Surat Peringatan</p>
+        <h3 class="text-xl font-bold">Surat Perjanjian Tingkat I</h3>
+        <p class="text-sm text-slate-500 mt-1">Data akan diambil dari data siswa dan riwayat pelanggaran.</p>
+      </div>
+      <button type="button" onclick="closeSPForm()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Tutup</button>
+    </div>
+
+    <form id="spForm" class="p-5 space-y-4" onsubmit="submitSPForm(event)">
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">Nomor Surat</label>
+          <input id="spNomor" class="input" placeholder="Contoh: 421.3/123/SMPN37/2026">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Tanggal Surat *</label>
+          <input id="spTanggal" type="date" class="input" required>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-semibold mb-1">Nama Siswa *</label>
+          <input id="spNama" class="input bg-slate-50" readonly required>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Kelas *</label>
+          <input id="spKelas" class="input bg-slate-50" readonly required>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">NIS</label>
+          <input id="spNIS" class="input" placeholder="NIS">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">NISN</label>
+          <input id="spNISN" class="input" placeholder="NISN">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Jenis SP</label>
+          <input id="spJenis" class="input bg-slate-50" readonly>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">Total Poin</label>
+          <input id="spTotalPoin" class="input bg-slate-50 font-bold" readonly>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Petugas</label>
+          <input id="spPetugas" class="input" placeholder="Nama petugas">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold mb-1">Dasar Pelanggaran</label>
+        <textarea id="spDasar" class="input min-h-20"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold mb-1">Rincian Pelanggaran</label>
+        <textarea id="spRincian" class="input min-h-32"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold mb-1">Keterangan</label>
+        <textarea id="spKeterangan" class="input min-h-20" placeholder="Keterangan tambahan (opsional)"></textarea>
+      </div>
+
+      <div class="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+        <button id="spSubmitBtn" type="submit" class="btn bg-slate-700 hover:bg-slate-800 text-white">Simpan Draft SP</button>
+        <button id="spPdfBtn" type="button" onclick="saveDraftAndCreateSP1PDF()" class="btn bg-blue-600 hover:bg-blue-700 text-white">Simpan & Buat PDF SP I</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- DETAIL SISWA MODAL -->
 <div id="studentDetailModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 p-4 overflow-y-auto no-print" onclick="closeStudentDetail(event)">
   <div class="max-w-4xl mx-auto mt-8 card overflow-hidden" onclick="event.stopPropagation()">
