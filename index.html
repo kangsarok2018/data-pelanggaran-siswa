@@ -262,11 +262,18 @@
 
 const CONFIG = {
   // Isi URL Web App Google Apps Script, contoh: https://script.google.com/macros/s/XXXX/exec
-  API_URL: "",
+  // GANTI nilai ini setelah Web App Apps Script selesai di-deploy.
+  // Contoh: https://script.google.com/macros/s/DEPLOYMENT_ID/exec
+  API_URL: "https://script.google.com/macros/s/AKfycbxud-_aXirMsc9uxAGLT4RLgfpk5hFDhf6T7EXiKAed0CMpQheneM79hLdC18S2KzTVqg/exec",
   APP_NAME: "Sistem Poin Pelanggaran Siswa",
   SCHOOL_NAME: "SMP Negeri 37 Merangin",
-  USE_LOCAL_FALLBACK: true
+  USE_LOCAL_FALLBACK: false
+  // Mode produksi: semua baca/tulis wajib melalui Apps Script.
 };
+
+function hasApiUrl_() {
+  return /^https:\/\/script\.google\.com\/macros\/s\/[^\s/]+\/exec(?:\?.*)?$/.test(String(CONFIG.API_URL || "").trim());
+}
 
 const VIOLATIONS = [
   { category:"I. Kedisiplinan", type:"Terlambat datang ke sekolah", points:5 },
@@ -377,46 +384,56 @@ function detectSemester(dateString) {
 }
 
 /* ---------- Data ---------- */
+async function testApiConnection_() {
+  if (!hasApiUrl_()) throw new Error("API_URL belum dikonfigurasi.");
+  const response = await fetch(CONFIG.API_URL + "?action=health", { method:"GET", cache:"no-store" });
+  if (!response.ok) throw new Error("Health HTTP " + response.status);
+  const result = await response.json();
+  if (result.success !== true) throw new Error(result.message || "API tidak aktif.");
+  return result;
+}
+
 async function loadData() {
-  if (!CONFIG.API_URL) {
-    loadLocal();
+  if (!hasApiUrl_()) {
+    records = [];
     students = [];
     renderAll();
+    toast("API_URL belum dikonfigurasi.", "error");
     return;
   }
 
   try {
     const [pelanggaranResponse, siswaResponse] = await Promise.all([
-      fetch(CONFIG.API_URL, { method:"GET" }).catch(() => null),
-      fetch(CONFIG.API_URL + "?action=siswa", { method:"GET" }).catch(() => null)
+      fetch(CONFIG.API_URL + "?action=pelanggaran", { method:"GET", cache:"no-store" }),
+      fetch(CONFIG.API_URL + "?action=siswa", { method:"GET", cache:"no-store" })
     ]);
 
-    if (!pelanggaranResponse || !pelanggaranResponse.ok) {
-      loadLocal();
-      students = [];
-      renderAll();
-      return;
-    }
+    if (!pelanggaranResponse.ok) throw new Error("Endpoint pelanggaran HTTP " + pelanggaranResponse.status);
+    if (!siswaResponse.ok) throw new Error("Endpoint siswa HTTP " + siswaResponse.status);
 
     const pelanggaranJson = await pelanggaranResponse.json();
-    const data = Array.isArray(pelanggaranJson) ? pelanggaranJson : (pelanggaranJson.data || []);
+    const siswaJson = await siswaResponse.json();
+
+    if (pelanggaranJson.success !== true) throw new Error(pelanggaranJson.message || "API pelanggaran gagal.");
+    if (siswaJson.success !== true) throw new Error(siswaJson.message || "API siswa gagal.");
+
+    const data = Array.isArray(pelanggaranJson.data) ? pelanggaranJson.data : [];
+    const siswaData = Array.isArray(siswaJson.data) ? siswaJson.data : [];
+
     records = data.map(normalizeRecord);
+    students = siswaData.map(normalizeStudent).filter(s => s.nama);
 
-    if (siswaResponse && siswaResponse.ok) {
-      const siswaJson = await siswaResponse.json();
-      const siswaData = Array.isArray(siswaJson) ? siswaJson : (Array.isArray(siswaJson.data) ? siswaJson.data : []);
-      students = siswaData.map(normalizeStudent).filter(s => s.nama);
-    } else {
-      students = [];
-    }
-
+    // Cache hanya sebagai data terakhir untuk debugging/offline inspection;
+    // cache TIDAK pernah menjadi sumber data ketika API gagal.
     saveLocal();
     renderAll();
-    toast(`Data diperbarui: ${students.length} siswa, ${records.length} pelanggaran.`);
+    toast(`Terhubung ke server: ${students.length} siswa, ${records.length} pelanggaran.`);
   } catch (err) {
-    console.warn("Using local fallback", err);
-    loadLocal();
+    console.error("API load failed:", err);
+    records = [];
+    students = [];
     renderAll();
+    toast("Gagal mengambil data dari server: " + (err.message || err), "error");
   }
 }
 
@@ -446,7 +463,7 @@ function normalizeRecord(r) {
 }
 
 async function saveRecord(record) {
-  if (!CONFIG.API_URL) {
+  if (!hasApiUrl_()) {
     records.push(record);
     saveLocal();
     return { ok:true, record };
@@ -469,13 +486,7 @@ async function saveRecord(record) {
     saveLocal();
     return { ok:true, record:saved };
   } catch (err) {
-    console.error(err);
-    if (CONFIG.USE_LOCAL_FALLBACK) {
-      records.push(record);
-      saveLocal();
-      toast("Server gagal menerima data. Data disimpan sementara di perangkat.", "warning");
-      return { ok:true, record, localOnly:true };
-    }
+    console.error("API saveRecord failed:", err);
     return { ok:false, error:err };
   }
 }
@@ -798,22 +809,19 @@ async function submitSPForm(event) {
     filePDF: ""
   };
   try {
-    if (CONFIG.API_URL) {
+    if (hasApiUrl_()) {
       const response = await fetch(CONFIG.API_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload) });
       if (!response.ok) throw new Error("HTTP " + response.status);
       const result = await response.json();
       if (!result.success) throw new Error(result.message || "Gagal menyimpan surat SP");
       toast("Surat SP berhasil disimpan sebagai Draft.");
     } else {
-      saveSPDraftLocal(payload);
-      toast("Surat SP berhasil disimpan sebagai Draft lokal.", "warning");
+      throw new Error("API_URL belum dikonfigurasi.");
     }
     closeSPForm();
   } catch (err) {
-    console.error(err);
-    saveSPDraftLocal(payload);
-    toast("Server gagal. Draft SP disimpan secara lokal.", "warning");
-    closeSPForm();
+    console.error("API addSuratSP failed:", err);
+    toast("Draft Surat SP gagal disimpan ke server: " + (err.message || err), "error");
   } finally {
     btn.disabled = false;
     btn.textContent = "Simpan Draft SP";
@@ -1437,7 +1445,7 @@ async function saveAndDownloadSPPDF() {
       currentSPPDFBlob = getCurrentSPPDF();
     }
 
-    if (!currentSPSaved && CONFIG.API_URL) {
+    if (!currentSPSaved && hasApiUrl_()) {
       const pdfBase64 = await blobToBase64_(currentSPPDFBlob);
       const payload = {
         action: "publishSuratSP",
@@ -1470,14 +1478,15 @@ async function saveAndDownloadSPPDF() {
       if (!result.success) throw new Error(result.message || "Gagal menyimpan PDF " + level);
 
       currentSPSaved = true;
+    } else if (!hasApiUrl_()) {
+      throw new Error("API_URL belum dikonfigurasi.");
     }
 
     downloadSPPDF();
-    toast(level + " berhasil diunduh.");
+    toast(level + " berhasil diterbitkan dan PDF berhasil diunduh.");
   } catch (err) {
-    console.error(err);
-    downloadSPPDF();
-    toast(level + " diunduh (mode offline).", "warning");
+    console.error("API publishSuratSP failed:", err);
+    toast("Surat SP belum diterbitkan. PDF tidak dianggap tersimpan ke server: " + (err.message || err), "error");
   } finally {
     btn.disabled = false;
     btn.textContent = "Simpan & Download PDF";
