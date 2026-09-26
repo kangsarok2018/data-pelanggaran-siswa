@@ -821,7 +821,12 @@ function drawWrapped(doc, text, x, y, maxWidth, lineHeight=5) {
   return y + lines.length * lineHeight;
 }
 
-function createSP1PDF() {
+let currentSP1PDFBlob = null;
+let currentSP1PDFUrl = null;
+let currentSP1PDFFilename = "SP-I-Siswa.pdf";
+let currentSP1Saved = false;
+
+function buildSP1PDF() {
   if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
 
   const nama = document.getElementById("spNama").value.trim();
@@ -844,7 +849,6 @@ function createSP1PDF() {
   const right = 188;
   let y = 18;
 
-  // Kop surat mengikuti identitas pada template SP Tingkat I.
   doc.setFont("times", "bold");
   doc.setFontSize(12);
   doc.text("PEMERINTAH KABUPATEN MERANGIN", pageWidth/2, y, {align:"center"}); y += 6;
@@ -914,47 +918,101 @@ function createSP1PDF() {
   doc.text("( " + (nama || "...........................") + " )", 135, y, {align:"center"});
 
   const safeName = (nama || "Siswa").replace(/[^a-z0-9_-]+/gi,"-");
-  doc.save(`SP-I-${safeName}.pdf`);
+  return {
+    blob: doc.output("blob"),
+    filename: `SP-I-${safeName}.pdf`
+  };
 }
 
-async function saveDraftAndCreateSP1PDF() {
-  const btn = document.getElementById("spPdfBtn");
+function previewSP1PDF() {
+  const btn = document.getElementById("spPreviewBtn");
   btn.disabled = true;
-  btn.textContent = "Menyiapkan PDF...";
+  btn.textContent = "Menyiapkan preview...";
   try {
-    // Simpan data surat terlebih dahulu agar dokumen tercatat di Surat_SP.
-    const payload = {
-      action: "addSuratSP",
-      id: "",
-      nomorSurat: document.getElementById("spNomor").value.trim(),
-      tanggalSurat: document.getElementById("spTanggal").value,
-      namaSiswa: document.getElementById("spNama").value.trim(),
-      nis: document.getElementById("spNIS").value.trim(),
-      nisn: document.getElementById("spNISN").value.trim(),
-      kelas: document.getElementById("spKelas").value.trim(),
-      jenisSP: document.getElementById("spJenis").value,
-      totalPoin: normalizePoints(document.getElementById("spTotalPoin").value),
-      dasarPelanggaran: document.getElementById("spDasar").value.trim(),
-      rincianPelanggaran: document.getElementById("spRincian").value.trim(),
-      keterangan: document.getElementById("spKeterangan").value.trim(),
-      petugas: document.getElementById("spPetugas").value.trim(),
-      status: "PDF Dibuat",
-      filePDF: ""
-    };
-
-    const response = await fetch(CONFIG.API_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload) });
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    const result = await response.json();
-    if (!result.success) throw new Error(result.message || "Gagal menyimpan surat SP");
-
-    createSP1PDF();
-    toast("SP I berhasil dibuat dan dicatat di Surat_SP.");
+    const pdf = buildSP1PDF();
+    if (currentSP1PDFUrl) URL.revokeObjectURL(currentSP1PDFUrl);
+    currentSP1PDFBlob = pdf.blob;
+    currentSP1PDFFilename = pdf.filename;
+    currentSP1Saved = false;
+    currentSP1PDFUrl = URL.createObjectURL(pdf.blob);
+    document.getElementById("spPreviewFrame").src = currentSP1PDFUrl;
+    document.getElementById("spPreviewTitle").textContent = "Preview " + pdf.filename;
+    document.getElementById("spPreviewModal").classList.remove("hidden");
   } catch (err) {
     console.error(err);
-    toast("PDF SP I gagal dibuat: " + err.message, "error");
+    toast("Preview PDF gagal: " + err.message, "error");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Simpan & Buat PDF SP I";
+    btn.textContent = "Preview PDF";
+  }
+}
+
+function closeSPPreview() {
+  document.getElementById("spPreviewModal").classList.add("hidden");
+  const frame = document.getElementById("spPreviewFrame");
+  if (frame) frame.src = "about:blank";
+}
+
+function downloadSP1PDF() {
+  if (!currentSP1PDFBlob) {
+    previewSP1PDF();
+    return;
+  }
+  const url = URL.createObjectURL(currentSP1PDFBlob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = currentSP1PDFFilename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function saveAndDownloadSP1PDF() {
+  const btn = document.getElementById("spSaveDownloadBtn");
+  btn.disabled = true;
+  btn.textContent = "Menyimpan...";
+  try {
+    if (!currentSP1PDFBlob) {
+      const pdf = buildSP1PDF();
+      currentSP1PDFBlob = pdf.blob;
+      currentSP1PDFFilename = pdf.filename;
+    }
+
+    if (!currentSP1Saved) {
+      const payload = {
+        action: "addSuratSP",
+        id: "",
+        nomorSurat: document.getElementById("spNomor").value.trim(),
+        tanggalSurat: document.getElementById("spTanggal").value,
+        namaSiswa: document.getElementById("spNama").value.trim(),
+        nis: document.getElementById("spNIS").value.trim(),
+        nisn: document.getElementById("spNISN").value.trim(),
+        kelas: document.getElementById("spKelas").value.trim(),
+        jenisSP: document.getElementById("spJenis").value,
+        totalPoin: normalizePoints(document.getElementById("spTotalPoin").value),
+        dasarPelanggaran: document.getElementById("spDasar").value.trim(),
+        rincianPelanggaran: document.getElementById("spRincian").value.trim(),
+        keterangan: document.getElementById("spKeterangan").value.trim(),
+        petugas: document.getElementById("spPetugas").value.trim(),
+        status: "PDF Dibuat",
+        filePDF: ""
+      };
+      const response = await fetch(CONFIG.API_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload) });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message || "Gagal menyimpan surat SP");
+      currentSP1Saved = true;
+    }
+
+    downloadSP1PDF();
+    toast("SP I berhasil disimpan dan diunduh.");
+  } catch (err) {
+    console.error(err);
+    toast("SP I gagal disimpan: " + err.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Simpan & Download PDF";
   }
 }
 
@@ -1163,9 +1221,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <div class="flex flex-col sm:flex-row justify-end gap-2 pt-2">
         <button id="spSubmitBtn" type="submit" class="btn bg-slate-700 hover:bg-slate-800 text-white">Simpan Draft SP</button>
-        <button id="spPdfBtn" type="button" onclick="saveDraftAndCreateSP1PDF()" class="btn bg-blue-600 hover:bg-blue-700 text-white">Simpan & Buat PDF SP I</button>
+        <button id="spPreviewBtn" type="button" onclick="previewSP1PDF()" class="btn bg-blue-600 hover:bg-blue-700 text-white">Preview PDF</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- PREVIEW PDF SP I -->
+<div id="spPreviewModal" class="hidden fixed inset-0 z-[80] bg-slate-900/80 p-3 md:p-6 no-print">
+  <div class="max-w-6xl mx-auto h-[calc(100vh-1.5rem)] md:h-[calc(100vh-3rem)] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+    <div class="p-4 border-b flex items-center justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-xs text-slate-500">Preview Dokumen</p>
+        <h3 id="spPreviewTitle" class="font-bold truncate">Preview SP I</h3>
+      </div>
+      <button type="button" onclick="closeSPPreview()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Tutup</button>
+    </div>
+    <div class="flex-1 bg-slate-200 p-2 md:p-4 min-h-0">
+      <iframe id="spPreviewFrame" title="Preview PDF SP I" class="w-full h-full bg-white rounded-lg border" src="about:blank"></iframe>
+    </div>
+    <div class="p-3 border-t flex flex-col sm:flex-row justify-end gap-2">
+      <button type="button" onclick="closeSPPreview()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700">Kembali</button>
+      <button type="button" onclick="downloadSP1PDF()" class="btn bg-slate-700 hover:bg-slate-800 text-white">Download PDF</button>
+      <button id="spSaveDownloadBtn" type="button" onclick="saveAndDownloadSP1PDF()" class="btn bg-blue-600 hover:bg-blue-700 text-white">Simpan & Download PDF</button>
+    </div>
   </div>
 </div>
 
