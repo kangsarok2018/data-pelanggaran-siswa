@@ -788,28 +788,64 @@ function drawWrapped(doc, text, x, y, maxWidth, lineHeight=5) {
   return y + lines.length * lineHeight;
 }
 
-function drawKopSurat(doc) {
-  const left = 20;
-  const right = 190;
+// Fungsi pembantu untuk memuat gambar logo secara aman (menggunakan Data URL bawaan)
+function loadImageAsDataUrl(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.onload = function() {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      try {
+        resolve(canvas.toDataURL("image/png"));
+      } catch (e) {
+        resolve(null);
+      }
+    };
+    img.onerror = function() { resolve(null); };
+    img.src = url;
+  });
+}
+
+async function drawKopSurat(doc) {
+  const left = 22;
+  const right = 188;
   let y = 14;
 
-  // Gambar Logo Kabupaten Merangin (Kiri) menggunakan Base64 SVG/Placeholder atau gambar embedded jika tersedia
+  // Render logo kiri (Merangin) dan kanan (Dinas Pendidikan) menggunakan fallback canvas base64 yang andal
   try {
-    doc.addImage("https://i.ibb.co.com/84j7qgQ4/Lambang-Kabupaten-Merangin.jpg", "JPEG", left, y, 16, 20);
+    const logoMerangin = await loadImageAsDataUrl("https://i.ibb.co.com/84j7qgQ4/Lambang-Kabupaten-Merangin.jpg");
+    if (logoMerangin) {
+      doc.addImage(logoMerangin, "JPEG", left, y, 16, 20);
+    } else {
+      doc.setDrawColor(120, 120, 120);
+      doc.rect(left, y, 16, 20);
+      doc.setFontSize(7);
+      doc.text("Logo", left + 8, y + 11, {align:"center"});
+    }
   } catch (e) {
     doc.setDrawColor(120, 120, 120);
     doc.rect(left, y, 16, 20);
   }
 
-  // Gambar Logo Dinas Pendidikan / Tut Wuri Handayani (Kanan)
   try {
-    doc.addImage("https://i.ibb.co.com/6h2M6zK/lambang-dinas-endidikan.png", "PNG", right - 16, y, 16, 20);
+    const logoDinas = await loadImageAsDataUrl("https://i.ibb.co.com/6h2M6zK/lambang-dinas-endidikan.png");
+    if (logoDinas) {
+      doc.addImage(logoDinas, "PNG", right - 16, y, 16, 20);
+    } else {
+      doc.setDrawColor(120, 120, 120);
+      doc.rect(right - 16, y, 16, 20);
+      doc.setFontSize(7);
+      doc.text("Logo", right - 8, y + 11, {align:"center"});
+    }
   } catch (e) {
     doc.setDrawColor(120, 120, 120);
     doc.rect(right - 16, y, 16, 20);
   }
 
-  // Teks Kop Surat di Tengah
   doc.setFont("times", "bold");
   doc.setFontSize(12);
   doc.text("PEMERINTAH KABUPATEN MERANGIN", 105, y + 3, { align: "center" });
@@ -832,7 +868,7 @@ let currentSP1PDFUrl = null;
 let currentSP1PDFFilename = "SP-I-Siswa.pdf";
 let currentSP1Saved = false;
 
-function buildSP1PDF() {
+async function buildSP1PDF() {
   if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
 
   const nama = document.getElementById("spNama").value.trim();
@@ -853,7 +889,7 @@ function buildSP1PDF() {
   const left = 22;
   const right = 188;
   
-  let y = drawKopSurat(doc);
+  let y = await drawKopSurat(doc);
 
   doc.setFont("times", "bold");
   doc.setFontSize(13);
@@ -908,15 +944,15 @@ function buildSP1PDF() {
   doc.text("Siswa yang bersangkutan,", 135, y, {align:"center"});
   y += 6;
   doc.text("Wali Kelas,", left+25, y);
-  y += 12;
+  y += 8;
   doc.setFont("times", "normal");
   doc.setFontSize(9);
-  doc.setTextColor(140, 140, 140);
+  doc.setTextColor(150, 150, 150);
   doc.text("Materai Rp 10.000", 135, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
   doc.setFont("times", "normal");
   doc.setFontSize(11);
-  y += 10;
+  y += 12;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 135, y, {align:"center"});
 
@@ -927,7 +963,7 @@ function buildSP1PDF() {
   };
 }
 
-function buildSP2PDF() {
+async function buildSP2PDF() {
   if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
 
   const nama = document.getElementById("spNama").value.trim();
@@ -948,7 +984,7 @@ function buildSP2PDF() {
   const left = 22;
   const right = 188;
   
-  let y = drawKopSurat(doc);
+  let y = await drawKopSurat(doc);
 
   doc.setFont("times", "bold");
   doc.setFontSize(13);
@@ -1011,22 +1047,22 @@ function buildSP2PDF() {
   y += 6;
 
   doc.text("Guru BK,", left+25, y);
-  y += 12;
+  y += 8;
   doc.setFont("times", "normal");
   doc.setFontSize(9);
-  doc.setTextColor(140, 140, 140);
+  doc.setTextColor(150, 150, 150);
   doc.text("Materai Rp 10.000", 145, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
   doc.setFont("times", "normal");
   doc.setFontSize(11);
-  y += 6;
+  y += 12;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
   y += 10;
 
   doc.text("Wali Kelas,", left+25, y);
   doc.text("Orang Tua/Wali,", 145, y, {align:"center"});
-  y += 18;
+  y += 16;
   doc.text("(...........................)", left+25, y);
   doc.text("(...........................)", 145, y, {align:"center"});
 
@@ -1037,7 +1073,7 @@ function buildSP2PDF() {
   };
 }
 
-function buildSP3PDF() {
+async function buildSP3PDF() {
   if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
 
   const nama = document.getElementById("spNama").value.trim();
@@ -1058,7 +1094,7 @@ function buildSP3PDF() {
   const left = 22;
   const right = 188;
   
-  let y = drawKopSurat(doc);
+  let y = await drawKopSurat(doc);
 
   doc.setFont("times", "bold");
   doc.setFontSize(13);
@@ -1141,12 +1177,12 @@ function buildSP3PDF() {
   y += 6;
   doc.setFont("times", "normal");
   doc.setFontSize(9);
-  doc.setTextColor(140, 140, 140);
+  doc.setTextColor(150, 150, 150);
   doc.text("Materai Rp 10.000", 145, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
   doc.setFont("times", "normal");
   doc.setFontSize(11);
-  y += 8;
+  y += 10;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
 
@@ -1157,7 +1193,7 @@ function buildSP3PDF() {
   };
 }
 
-function buildSP4PDF() {
+async function buildSP4PDF() {
   if (!currentStudentDetail) throw new Error("Data siswa belum dipilih.");
 
   const nama = document.getElementById("spNama").value.trim();
@@ -1178,7 +1214,7 @@ function buildSP4PDF() {
   const left = 22;
   const right = 188;
   
-  let y = drawKopSurat(doc);
+  let y = await drawKopSurat(doc);
 
   doc.setFont("times", "bold");
   doc.setFontSize(13);
@@ -1245,7 +1281,7 @@ function buildSP4PDF() {
   y += 6;
   doc.setFont("times", "normal");
   doc.setFontSize(9);
-  doc.setTextColor(140, 140, 140);
+  doc.setTextColor(150, 150, 150);
   doc.text("Materai Rp 10.000", 145, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
   doc.setFont("times", "normal");
@@ -1270,7 +1306,7 @@ function buildSP4PDF() {
   const kepalaSekolahNama = "HENDRIADI, S.Pd.I., M.Pd.I";
   const headmasterCenterX = 145;
   const nameWidth = doc.getTextWidth(kepalaSekolahNama);
-  const underlinePadding = 6;
+  const underlinePadding = 4;
   doc.setFont("times", "bold");
   doc.text(kepalaSekolahNama, headmasterCenterX, y, {align:"center"});
   doc.setLineWidth(0.4);
@@ -1287,24 +1323,24 @@ function buildSP4PDF() {
   };
 }
 
-function getCurrentSPPDF() {
+async function getCurrentSPPDF() {
   const level = document.getElementById("spJenis").value.trim();
   if (level.includes("SP IV") || level.includes("IV (Akhir)")) {
-    return buildSP4PDF();
+    return await buildSP4PDF();
   }
   if (level === "SP III") {
-    return buildSP3PDF();
+    return await buildSP3PDF();
   }
   if (level === "SP II") {
-    return buildSP2PDF();
+    return await buildSP2PDF();
   }
   if (level === "SP I") {
-    return buildSP1PDF();
+    return await buildSP1PDF();
   }
   throw new Error("Jenis surat perjanjian tidak dikenal.");
 }
 
-function previewSP1PDF() {
+async function previewSP1PDF() {
   const btn = document.getElementById("spPreviewBtn");
   if (btn) {
     btn.disabled = true;
@@ -1312,7 +1348,7 @@ function previewSP1PDF() {
   }
 
   try {
-    const pdf = getCurrentSPPDF();
+    const pdf = await getCurrentSPPDF();
     if (currentSP1PDFUrl) URL.revokeObjectURL(currentSP1PDFUrl);
 
     currentSP1PDFBlob = pdf.blob;
@@ -1380,7 +1416,7 @@ async function saveAndDownloadSP1PDF() {
 
   try {
     if (!currentSP1PDFBlob) {
-      const pdf = getCurrentSPPDF();
+      const pdf = await getCurrentSPPDF();
       currentSP1PDFBlob = pdf.blob;
       currentSP1PDFFilename = pdf.filename;
     }
