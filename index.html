@@ -375,19 +375,28 @@ async function loadData() {
   }
 
   try {
-    const [pelanggaranResponse, siswaResponse] = await Promise.all([
-      fetch(CONFIG.API_URL, { method:"GET" }),
-      fetch(CONFIG.API_URL + "?action=siswa", { method:"GET" })
+    // Fetch violations and students gracefully
+    const [pelanggaranRes, siswaRes] = await Promise.allSettled([
+      fetch(CONFIG.API_URL, { method: "GET" }),
+      fetch(CONFIG.API_URL + "?action=siswa", { method: "GET" })
     ]);
 
-    if (!pelanggaranResponse.ok) throw new Error("Pelanggaran HTTP " + pelanggaranResponse.status);
-    if (!siswaResponse.ok) throw new Error("Siswa HTTP " + siswaResponse.status);
+    let data = [];
+    let siswaData = [];
 
-    const pelanggaranJson = await pelanggaranResponse.json();
-    const siswaJson = await siswaResponse.json();
+    if (pelanggaranRes.status === "fulfilled" && pelanggaranRes.value.ok) {
+      try {
+        const json = await pelanggaranRes.value.json();
+        data = Array.isArray(json) ? json : (json.data || []);
+      } catch (e) { console.warn("Failed to parse violations JSON", e); }
+    }
 
-    const data = Array.isArray(pelanggaranJson) ? pelanggaranJson : (pelanggaranJson.data || []);
-    const siswaData = Array.isArray(siswaJson) ? siswaJson : (siswaJson.data || []);
+    if (siswaRes.status === "fulfilled" && siswaRes.value.ok) {
+      try {
+        const json = await siswaRes.value.json();
+        siswaData = Array.isArray(json) ? json : (json.data || []);
+      } catch (e) { console.warn("Failed to parse students JSON", e); }
+    }
 
     records = data.map(normalizeRecord);
     students = siswaData.map(normalizeStudent).filter(s => s.nama);
@@ -398,7 +407,7 @@ async function loadData() {
     console.error(err);
     loadLocal();
     renderAll();
-    toast("Data server belum dapat dimuat. Periksa koneksi API/Siswa.", "warning");
+    toast("Data server belum dapat dimuat. Menggunakan data lokal.", "warning");
   }
 }
 
@@ -811,14 +820,38 @@ function loadImageAsBase64(url) {
   });
 }
 
+// Vector-based high precision SVG logo generators for reliable PDF embedding
+function getTutWuriLogoBase64() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="200" height="200">
+    <polygon points="250,15 480,100 480,350 250,485 20,350 20,100" fill="#00a8ef" stroke="#000" stroke-width="14"/>
+    <path d="M120,380 C180,330 220,330 250,370 C280,330 320,330 380,380 C360,250 300,180 250,150 C200,180 140,250 120,380 Z" fill="#fff" stroke="#000" stroke-width="10"/>
+    <path d="M220,400 L250,460 L280,400 Z" fill="#fff" stroke="#000" stroke-width="8"/>
+    <path d="M232,270 C232,230 250,200 250,200 C250,200 268,230 268,270 C268,310 232,310 232,270 Z" fill="#ffde00" stroke="#000" stroke-width="8"/>
+  </svg>`;
+  return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg)));
+}
+
+function getMeranginCrestBase64() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 600" width="200" height="240">
+    <path d="M250,10 L480,50 C480,350 400,530 250,580 C100,530 20,350 20,50 Z" fill="#71b5eb" stroke="#d00" stroke-width="16"/>
+    <path d="M250,70 L420,100 C420,320 360,450 250,510 C140,450 80,320 80,100 Z" fill="#67a9e2"/>
+    <rect x="130" y="240" width="240" height="90" fill="#f47b20" stroke="#000" stroke-width="8"/>
+    <rect x="170" y="160" width="160" height="80" fill="#fff" stroke="#000" stroke-width="8"/>
+    <path d="M140,240 L250,140 L360,240 Z" fill="#29abe2" stroke="#000" stroke-width="8"/>
+    <path d="M230,220 L270,220 L270,390 L250,420 L230,390 Z" fill="#4a2511" stroke="#000" stroke-width="8"/>
+    <path d="M70,500 C150,550 350,550 430,500 L380,570 C300,600 200,600 120,570 Z" fill="#fff" stroke="#000" stroke-width="8"/>
+  </svg>`;
+  return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg)));
+}
+
 async function drawKopSurat(doc) {
   const left = 22;
   const right = 188;
   let y = 12;
 
-  // Dinas Pendidikan logo on the left, Merangin logo on the right
-  const logoDinasUrl = "https://drive.google.com/uc?export=view&id=1EarfDWHY5R-bYRt6XHivghlQUPaeaoVm";
-  const logoMeranginUrl = "https://drive.google.com/uc?export=view&id=1aH8oaFzppA2--5Y6cHJoyGohVOdahpuW";
+  // Position: Dinas Pendidikan logo on the LEFT, Kabupaten Merangin logo on the RIGHT
+  const logoDinasUrl = getTutWuriLogoBase64();
+  const logoMeranginUrl = getMeranginCrestBase64();
 
   const [imgDinas, imgMerangin] = await Promise.all([
     loadImageAsBase64(logoDinasUrl),
@@ -826,17 +859,17 @@ async function drawKopSurat(doc) {
   ]);
 
   if (imgDinas) {
-    doc.addImage(imgDinas, "PNG", left, y, 16, 20);
+    doc.addImage(imgDinas, "PNG", left, y, 18, 20);
   } else {
     doc.setDrawColor(120, 120, 120);
-    doc.rect(left, y, 16, 20);
+    doc.rect(left, y, 18, 20);
   }
 
   if (imgMerangin) {
-    doc.addImage(imgMerangin, "PNG", right - 16, y, 16, 20);
+    doc.addImage(imgMerangin, "PNG", right - 18, y, 16, 20);
   } else {
     doc.setDrawColor(120, 120, 120);
-    doc.rect(right - 16, y, 16, 20);
+    doc.rect(right - 18, y, 16, 20);
   }
 
   doc.setFont("times", "bold");
@@ -937,15 +970,15 @@ async function buildSP1PDF() {
   doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
   y += 6;
   doc.text("Wali Kelas,", left+25, y);
-  y += 14;
+  y += 10;
   doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(150, 150, 150);
+  doc.setFontSize(8.5);
+  doc.setTextColor(180, 180, 180);
   doc.text("Materai Rp 10.000", 145, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
   doc.setFont("times", "normal");
   doc.setFontSize(11);
-  y += 8;
+  y += 10;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
 
@@ -1058,8 +1091,8 @@ async function buildSP3PDF() {
   doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
   y += 6;
   doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(150, 150, 150);
+  doc.setFontSize(8.5);
+  doc.setTextColor(180, 180, 180);
   doc.text("Materai Rp 10.000", 145, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
   doc.setFont("times", "normal");
@@ -1160,13 +1193,13 @@ async function buildSP2PDF() {
   doc.text("Guru BK,", left+25, y);
   y += 8;
   doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(150, 150, 150);
+  doc.setFontSize(8.5);
+  doc.setTextColor(180, 180, 180);
   doc.text("Materai Rp 10.000", 145, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
   doc.setFont("times", "normal");
   doc.setFontSize(11);
-  y += 13;
+  y += 10;
 
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
@@ -1271,13 +1304,13 @@ async function buildSP4PDF() {
   doc.text("Siswa yang bersangkutan,", 145, y, {align:"center"});
   y += 6;
   doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(150, 150, 150);
+  doc.setFontSize(8.5);
+  doc.setTextColor(180, 180, 180);
   doc.text("Materai Rp 10.000", 145, y, {align:"center"});
   doc.setTextColor(0, 0, 0);
   doc.setFont("times", "normal");
   doc.setFontSize(11);
-  y += 12;
+  y += 10;
   doc.text("(...........................)", left+25, y);
   doc.text("( " + (nama || "...........................") + " )", 145, y, {align:"center"});
   y += 8;
