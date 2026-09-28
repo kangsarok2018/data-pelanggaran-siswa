@@ -1683,18 +1683,79 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script><script>
-function loadSchoolSettings(){
-  try {
-    const s=JSON.parse(localStorage.getItem("smpn37_school_settings_v1")||"{}");
-    ["settingKepsek","settingNipKepsek","settingWaka","settingNipWaka","settingBp","settingNipBp","settingWali","settingNipWali"].forEach(id=>{const el=document.getElementById(id); if(el) el.value=s[id]||"";});
-    const urlEl=document.getElementById("scriptUrlInput"); if(urlEl) urlEl.value=localStorage.getItem("smpn37_api_url_v1")||CONFIG.API_URL||"";
-  } catch(e){ console.warn(e); }
+function getLocalSchoolSettings_(){
+  try { return JSON.parse(localStorage.getItem("smpn37_school_settings_v1")||"{}"); }
+  catch(e){ return {}; }
 }
-function saveSchoolSettings(){
+function applySchoolSettings_(s){
+  const data=s||{};
+  ["settingKepsek","settingNipKepsek","settingWaka","settingNipWaka","settingBp","settingNipBp","settingWali","settingNipWali"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value=data[id]||"";
+  });
+}
+function mapPenandaTanganToSettings_(rows){
+  const data={};
+  (rows||[]).forEach(r=>{
+    const j=String(r.jabatan||"").trim().toLowerCase();
+    const nama=String(r.nama||"").trim();
+    const nip=String(r.nip||"").trim();
+    if(j==="kepala sekolah") { data.settingKepsek=nama; data.settingNipKepsek=nip; }
+    else if(j==="waka kesiswaan") { data.settingWaka=nama; data.settingNipWaka=nip; }
+    else if(j==="guru bp/bk" || j==="guru bp / bk" || j==="guru bk") { data.settingBp=nama; data.settingNipBp=nip; }
+    else if(j==="wali kelas") { data.settingWali=nama; data.settingNipWali=nip; }
+  });
+  return data;
+}
+function schoolSettingsToRows_(s){
+  return [
+    {id:"",jabatan:"Kepala Sekolah",nama:String(s.settingKepsek||"").trim(),nip:String(s.settingNipKepsek||"").trim()},
+    {id:"",jabatan:"Waka Kesiswaan",nama:String(s.settingWaka||"").trim(),nip:String(s.settingNipWaka||"").trim()},
+    {id:"",jabatan:"Guru BP/BK",nama:String(s.settingBp||"").trim(),nip:String(s.settingNipBp||"").trim()},
+    {id:"",jabatan:"Wali Kelas",nama:String(s.settingWali||"").trim(),nip:String(s.settingNipWali||"").trim()}
+  ];
+}
+async function loadSchoolSettings(){
+  try {
+    const local=getLocalSchoolSettings_();
+    applySchoolSettings_(local);
+    const url=String(CONFIG.API_URL||localStorage.getItem("smpn37_api_url_v1")||"").trim();
+    if(!url) return;
+    const res=await fetch(url+"?action=penandatangan",{method:"GET"});
+    const json=await res.json();
+    if(!res.ok || json.success===false) throw new Error(json.message||"Gagal mengambil data penandatangan");
+    const remote=mapPenandaTanganToSettings_(json.data||[]);
+    const hasRemote=Object.keys(remote).some(k=>String(remote[k]||"").trim());
+    if(hasRemote){
+      const merged=Object.assign({},local,remote);
+      localStorage.setItem("smpn37_school_settings_v1",JSON.stringify(merged));
+      applySchoolSettings_(merged);
+    }
+  } catch(e){ console.warn("Gagal memuat Penanda_tangan dari server:",e); }
+  const urlEl=document.getElementById("scriptUrlInput");
+  if(urlEl) urlEl.value=localStorage.getItem("smpn37_api_url_v1")||CONFIG.API_URL||"";
+}
+async function saveSchoolSettings(){
   const data={};
   ["settingKepsek","settingNipKepsek","settingWaka","settingNipWaka","settingBp","settingNipBp","settingWali","settingNipWali"].forEach(id=>{const el=document.getElementById(id); if(el) data[id]=el.value.trim();});
-  localStorage.setItem("smpn37_school_settings_v1",JSON.stringify(data));
-  toast("Konfigurasi pejabat sekolah berhasil disimpan.");
+  const url=String(CONFIG.API_URL||localStorage.getItem("smpn37_api_url_v1")||"").trim();
+  const btn=document.querySelector('button[onclick="saveSchoolSettings()"]');
+  if(btn){btn.disabled=true;btn.textContent="Menyimpan...";}
+  try {
+    if(!url) throw new Error("URL Google Apps Script belum diatur.");
+    const response=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"savePenandatangan",data:schoolSettingsToRows_(data)})});
+    if(!response.ok) throw new Error("HTTP "+response.status);
+    const result=await response.json();
+    if(!result.success) throw new Error(result.message||"Gagal menyimpan penandatangan");
+    localStorage.setItem("smpn37_school_settings_v1",JSON.stringify(data));
+    applySchoolSettings_(data);
+    toast("Pejabat sekolah berhasil disimpan ke Google Sheets.");
+  } catch(e) {
+    localStorage.setItem("smpn37_school_settings_v1",JSON.stringify(data));
+    toast("Gagal menyimpan ke Google Sheets. Data tetap disimpan di browser: "+e.message,"error");
+  } finally {
+    if(btn){btn.disabled=false;btn.textContent="Simpan Pejabat Sekolah";}
+  }
 }
 async function saveAndConnectScript(){
   const input=document.getElementById("scriptUrlInput");
