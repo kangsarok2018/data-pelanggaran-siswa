@@ -107,7 +107,6 @@
 
     <main class="lg:col-span-9 space-y-6 w-full overflow-hidden">
 
-      <!-- DASHBOARD TAB -->
       <section id="tab-dashboard" class="tab-content space-y-6">
         <div class="card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -190,7 +189,6 @@
         </div>
       </section>
 
-      <!-- DATA SISWA TAB -->
       <section id="tab-siswa" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -228,7 +226,6 @@
         </div>
       </section>
 
-      <!-- INPUT PELANGGARAN TAB -->
       <section id="tab-input" class="tab-content hidden">
         <div class="card p-4 sm:p-6 max-w-2xl mx-auto space-y-6">
           <div>
@@ -311,7 +308,6 @@
         </div>
       </section>
 
-      <!-- RIWAYAT & SANKSI TAB -->
       <section id="tab-riwayat" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-5">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
@@ -348,7 +344,6 @@
         </div>
       </section>
 
-      <!-- MENU SURAT PERINGATAN (SP) TAB -->
       <section id="tab-sp" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-5">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
@@ -392,7 +387,6 @@
         </div>
       </section>
 
-      <!-- KATEGORI & POIN TAB -->
       <section id="tab-kategori" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-5">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -411,7 +405,6 @@
         <div id="kategoriCardsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </section>
 
-      <!-- PENGATURAN SEKOLAH TAB -->
       <section id="tab-pengaturan" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-6 max-w-2xl mx-auto space-y-6">
           <div>
@@ -1059,7 +1052,7 @@
 
       let list = [...studentsList];
       if (filterKls !== "Semua") {
-        list = list.filter(s => s.kelas.toLowerCase().includes(filterKls.toLowerCase()));
+        list = list.filter(s => String(s.kelas).trim().toLowerCase() === String(filterKls).trim().toLowerCase());
       }
       if (search) {
         list = list.filter(s => `${s.nama} ${s.nis} ${s.nisn}`.toLowerCase().includes(search));
@@ -1227,8 +1220,8 @@
       `;
 
       if (d.type === 1) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:20px;">${c("Wali Kelas", d.wali, d.nipWali)}${c("Siswa", d.nama, "", true)}</div>`;
-      if (d.type === 2) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:15px;">${c("Guru BP/BK", d.bk, d.nipBk)}${c("Wali Kelas", d.wali, d.nipWali)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:10px;">${c("", "", "")}${c("Siswa", d.nama, "", true)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">${c("", "", "")}${c("Orang Tua/Wali", d.orangTua)}</div>`;
-      if (d.type === 3) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:10px;">${c("Wali Kelas", d.wali, d.nipWali)}${c("Guru BP/BK", d.bk, d.nipBk)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Pembina OSIS", d.osis, d.nipOsis)}${c("Waka Kesiswaan", d.waka, d.nipWaka)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Orang Tua/Wali", d.orangTua)}${c("Siswa", d.nama, "", true)}</div>`;
+      if (d.type === 2) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:15px;">${c("Guru BP/BK", d.bk, d.nipBk)}${c("Siswa", d.nama, "", true)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">${c("Wali Kelas", d.wali, d.nipWali)}${c("Orang Tua/Wali", d.orangTua)}</div>`;
+      if (d.type === 3) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:10px;">${c("Guru BP/BK", d.bk, d.nipBk)}${c("Wali Kelas", d.wali, d.nipWali)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Pembina OSIS", d.osis, d.nipOsis)}${c("Waka Kesiswaan", d.waka, d.nipWaka)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Orang Tua/Wali", d.orangTua)}${c("Siswa", d.nama, "", true)}</div>`;
       return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">${c("Waka Kesiswaan", d.waka, d.nipWaka)}${c("Siswa", d.nama, "", true)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Guru BP/BK", d.bk, d.nipBk)}${c("Orang Tua/Wali", d.orangTua)}</div><div>${c("Wali Kelas", d.wali, d.nipWali)}</div><div style="text-align:center; margin-top:0;">Mengetahui,<br>Kepala SMP Negeri 37 Merangin<div style="padding-top:45px; font-weight:bold; text-decoration:underline;">${esc(d.kepala || "................................")}</div><div>${d.nipKepala ? "NIP. " + esc(d.nipKepala) : ""}</div></div>`;
     }
 
@@ -1351,6 +1344,7 @@
     }
 
     function buildPDF(d) {
+      const { jsPDF } = window.jspdf;
       let doc = new jsPDF({ unit: "mm", format: "a4" }), W = 210, m = 17, w = 176, y = 15;
       doc.setFont("times", "bold");
       doc.setFontSize(12);
@@ -1413,16 +1407,13 @@
         sigPdf(doc, x2, y, cw, "Siswa", d.nama, "", true);
       } else if (d.type === 2) {
         sigPdf(doc, x1, y, cw, "Guru BP/BK", d.bk, d.nipBk);
-        sigPdf(doc, x2, y, cw, "Wali Kelas", d.wali, d.nipWali);
-        y += 44;
-        sigPdf(doc, x1, y, cw, "", "", "");
         sigPdf(doc, x2, y, cw, "Siswa", d.nama, "", true);
-        y += 40;
-        sigPdf(doc, x1, y, cw, "", "", "");
+        y += 44;
+        sigPdf(doc, x1, y, cw, "Wali Kelas", d.wali, d.nipWali);
         sigPdf(doc, x2, y, cw, "Orang Tua/Wali", d.orangTua, "");
       } else if (d.type === 3) {
-        sigPdf(doc, x1, y, cw, "Wali Kelas", d.wali, d.nipWali);
-        sigPdf(doc, x2, y, cw, "Guru BP/BK", d.bk, d.nipBk);
+        sigPdf(doc, x1, y, cw, "Guru BP/BK", d.bk, d.nipBk);
+        sigPdf(doc, x2, y, cw, "Wali Kelas", d.wali, d.nipWali);
         y += 44;
         sigPdf(doc, x1, y, cw, "Pembina OSIS", d.osis, d.nipOsis);
         sigPdf(doc, x2, y, cw, "Waka Kesiswaan", d.waka, d.nipWaka);
