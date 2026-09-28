@@ -8,6 +8,7 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script>
     tailwind.config = {
@@ -521,7 +522,8 @@
         <button onclick="closeSpModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg px-2">✕</button>
       </div>
 
-      <div id="spPreviewContent" class="p-6 bg-white border border-slate-200 rounded-xl space-y-4 text-xs sm:text-sm text-slate-800 leading-relaxed" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; color: black;">
+      <!-- Kotak dengan sudut siku-siku (tanpa rounded) -->
+      <div id="spPreviewContent" class="p-6 bg-white border border-slate-200 space-y-4 text-xs sm:text-sm text-slate-800 leading-relaxed" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; color: black; border-radius: 0px !important;">
         <!-- Rendered official SP format -->
       </div>
 
@@ -582,14 +584,14 @@
     let settings = {
       apiUrl: localStorage.getItem("smpn37_api_url") || "https://script.google.com/macros/s/AKfycbw7Cv0r3t1fGQvAgN13zIwsSa6GgDtx_5GU7CgwuMik8ehUTNFsqsF49kVXv8N-n5CJow/exec",
       kepsek: localStorage.getItem("smpn37_kepsek") || "Drs. H. Ahmad, M.Pd",
-      nipKepsek: localStorage.getItem("smpn37_nip_kepsek") || "NIP. 196812311994031012",
+      nipKepsek: localStorage.getItem("smpn37_nip_kepsek") || "196812311994031012",
       waka: localStorage.getItem("smpn37_waka") || "Drs. Joko Widodo, M.Pd",
-      nipWaka: localStorage.getItem("smpn37_nip_waka") || "NIP. 197004121998031005",
+      nipWaka: localStorage.getItem("smpn37_nip_waka") || "197004121998031005",
       bp: localStorage.getItem("smpn37_bp") || "Siti Rahma, S.Pd",
-      nipBp: localStorage.getItem("smpn37_nip_bp") || "NIP. 197505122005012004",
+      nipBp: localStorage.getItem("smpn37_nip_bp") || "197505122005012004",
       wali: localStorage.getItem("smpn37_wali") || "Rahmat Hidayat, S.Pd",
       osis: localStorage.getItem("smpn37_osis") || "Drs. H. M. Ali, M.Pd",
-      nipOsis: localStorage.getItem("smpn37_nip_osis") || "NIP. 197805122005011003"
+      nipOsis: localStorage.getItem("smpn37_nip_osis") || "197805122005011003"
     };
 
     function esc(str) {
@@ -697,14 +699,14 @@
           if (jsonPenandatangan && jsonPenandatangan.success && jsonPenandatangan.data) {
             const p = jsonPenandatangan.data;
             if (p.kepsek) settings.kepsek = p.kepsek;
-            if (p.nipKepsek) settings.nipKepsek = p.nipKepsek;
+            if (p.nipKepsek) settings.nipKepsek = String(p.nipKepsek).replace(/^NIP\.?\s*/i, '');
             if (p.waka) settings.waka = p.waka;
-            if (p.nipWaka) settings.nipWaka = p.nipWaka;
+            if (p.nipWaka) settings.nipWaka = String(p.nipWaka).replace(/^NIP\.?\s*/i, '');
             if (p.bp) settings.bp = p.bp;
-            if (p.nipBp) settings.nipBp = p.nipBp;
+            if (p.nipBp) settings.nipBp = String(p.nipBp).replace(/^NIP\.?\s*/i, '');
             if (p.wali) settings.wali = p.wali;
             if (p.osis) settings.osis = p.osis;
-            if (p.nipOsis) settings.nipOsis = p.nipOsis;
+            if (p.nipOsis) settings.nipOsis = String(p.nipOsis).replace(/^NIP\.?\s*/i, '');
             
             const elKepsek = document.getElementById("settingKepsek"); if(elKepsek) elKepsek.value = settings.kepsek;
             const elNipKepsek = document.getElementById("settingNipKepsek"); if(elNipKepsek) elNipKepsek.value = settings.nipKepsek;
@@ -1225,7 +1227,7 @@
         </div>
       `;
       return `
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px; align-items:end;">
           ${c("Waka Kesiswaan", d.waka, d.nipWaka)}
           ${c("Siswa", d.nama, "", true)}
         </div>
@@ -1295,11 +1297,33 @@
 
           <div style="margin-top:22px; line-height:1.55; font-family:'Times New Roman', Times, serif; font-size:12pt; color:black;">
             <p>Yang bertanda tangan di bawah ini menerangkan bahwa:</p>
-            <div>Nama Siswa &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <b>${esc(d.nama)}</b></div>
-            <div>NIS &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(d.nis)}</div>
-            <div>NISN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(d.nisn)}</div>
-            <div>Kelas &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(d.kelas)}</div>
-            <div>Total Poin Pelanggaran &nbsp;: <span style="color:black; font-weight:bold;">${d.poin} Poin (Batas SP: ${rangeStr})</span></div>
+            <table style="width:100%; border-collapse:collapse; font-family:'Times New Roman', Times, serif; font-size:12pt;">
+              <tr>
+                <td style="width:180px; vertical-align:top;">Nama Siswa</td>
+                <td style="width:15px; vertical-align:top;">:</td>
+                <td style="vertical-align:top;"><b>${esc(d.nama)}</b></td>
+              </tr>
+              <tr>
+                <td style="vertical-align:top;">NIS</td>
+                <td style="vertical-align:top;">:</td>
+                <td style="vertical-align:top;">${esc(d.nis)}</td>
+              </tr>
+              <tr>
+                <td style="vertical-align:top;">NISN</td>
+                <td style="vertical-align:top;">:</td>
+                <td style="vertical-align:top;">${esc(d.nisn)}</td>
+              </tr>
+              <tr>
+                <td style="vertical-align:top;">Kelas</td>
+                <td style="vertical-align:top;">:</td>
+                <td style="vertical-align:top;">${esc(d.kelas)}</td>
+              </tr>
+              <tr>
+                <td style="vertical-align:top;">Total Poin Pelanggaran</td>
+                <td style="vertical-align:top;">:</td>
+                <td style="vertical-align:top;"><span style="color:black; font-weight:bold;">${d.poin} Poin (Batas SP: ${rangeStr})</span></td>
+              </tr>
+            </table>
             
             <p style="margin-top:12px;"><b>Rincian Pelanggaran:</b></p>
             ${lines}
@@ -1333,158 +1357,82 @@
       }
     }
 
-    function textPdf(doc, s, x, y, w, bold = false) {
-      doc.setFont("times", bold ? "bold" : "normal");
-      doc.setFontSize(12);
-      let a = doc.splitTextToSize(String(s || ""), w);
-      doc.text(a, x, y);
-      return y + a.length * 5;
-    }
-
-    function sigPdf(doc, x, y, w, role, name, nip, m = false) {
-      doc.setFont("times", "normal");
-      doc.setFontSize(12);
-      doc.text(role, x + w / 2, y, { align: "center" });
-      if (m) {
-        doc.setFont("times", "normal");
-        doc.setFontSize(8);
-        doc.setTextColor(100, 116, 139);
-        doc.text("Materai Rp 10.000", x + w / 2, y + 8, { align: "center" });
-        doc.setTextColor(0, 0, 0);
+    async function downloadSpPdf() {
+      const preview = document.getElementById("spPreviewContent");
+      if (!currentSpStudent || !preview) {
+        toast("Pratinjau surat belum tersedia.", "error");
+        return;
       }
-      doc.setFont("times", "bold");
-      doc.setFontSize(12);
-      doc.text(name || "................................", x + w / 2, y + (m ? 24 : 26), { align: "center" });
-      doc.line(x + 10, y + (m ? 25 : 27), x + w - 10, y + (m ? 25 : 27));
-      doc.setFont("times", "normal");
-      if (nip) doc.text("NIP. " + nip, x + w / 2, y + (m ? 31 : 33), { align: "center" });
-    }
-
-    function buildPDF(d) {
-      const { jsPDF } = window.jspdf;
-      let doc = new jsPDF({ unit: "mm", format: "a4" }), W = 210, m = 17, w = 176, y = 15;
-      doc.setFont("times", "bold");
-      doc.setFontSize(12);
-      ["PEMERINTAH KABUPATEN MERANGIN", "DINAS PENDIDIKAN DAN KEBUDAYAAN", "SMP NEGERI 37 MERANGIN"].forEach(s => {
-        doc.text(s, W / 2, y, { align: "center" });
-        y += 5;
-      });
-      doc.setFont("times", "normal");
-      doc.setFontSize(10);
-      doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", W / 2, y, { align: "center" });
-      y += 3;
-      doc.setLineWidth(0.5);
-      doc.line(m, y, W - m, y);
-      y += 7;
-
-      doc.setFont("times", "bold");
-      doc.setFontSize(12);
-      doc.text(title(d.type), W / 2, y, { align: "center" });
-      y += 5;
-      doc.setFont("times", "normal");
-      doc.text("Nomor: " + (d.nomor || "................................"), W / 2, y, { align: "center" });
-      y += 9;
-
-      y = textPdf(doc, "Yang bertanda tangan di bawah ini menerangkan bahwa:", m, y, w);
-      y += 2;
-      const range = ranges[d.type];
-      const rangeStr = range[1] === Infinity ? '≥100' : `${range[0]}-${range[1]}`;
-      [
-        ["Nama Siswa", d.nama],
-        ["NIS", d.nis],
-        ["NISN", d.nisn],
-        ["Kelas", d.kelas],
-        ["Total Poin Pelanggaran", `${d.poin} Poin (Batas SP: ${rangeStr})`]
-      ].forEach(a => {
-        doc.text(a[0], m, y);
-        doc.text(":", m + 50, y);
-        y = textPdf(doc, a[1] || "-", m + 55, y, w - 55) + 1;
-      });
-
-      y += 3;
-      doc.setFont("times", "bold");
-      doc.text("Rincian Pelanggaran:", m, y);
-      y += 6;
-      doc.setFont("times", "normal");
-      (d.rincian.length ? d.rincian : ["-"]).slice(0, 10).forEach((s, i) => {
-        y = textPdf(doc, `${i + 1}. ${s}`, m + 3, y, w - 3) + 1;
-      });
-
-      y += 2;
-      y = textPdf(doc, statement(d.type), m, y, w) + 2;
-      if (d.keterangan) y = textPdf(doc, "Keterangan: " + d.keterangan, m, y, w) + 2;
-      y = textPdf(doc, "Demikian surat peringatan ini dibuat untuk dapat diperhatikan dan dilaksanakan sebagaimana mestinya.", m, y, w) + 3;
-
-      doc.text("Pulau Rengas, " + (d.tanggal ? new Date(d.tanggal + "T00:00:00").toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "........................"), W - m, y, { align: "right" });
-      y += 6;
-
-      let x1 = m, x2 = 112, cw = 81;
-      if (d.type === 1) {
-        sigPdf(doc, x1, y, cw, "Wali Kelas", d.wali, d.nipWali);
-        sigPdf(doc, x2, y, cw, "Siswa", d.nama, "", true);
-      } else if (d.type === 2) {
-        sigPdf(doc, x1, y, cw, "Guru BP/BK", d.bk, d.nipBk);
-        sigPdf(doc, x2, y, cw, "Siswa", d.nama, "", true);
-        y += 40;
-        sigPdf(doc, x1, y, cw, "Wali Kelas", d.wali, d.nipWali);
-        sigPdf(doc, x2, y, cw, "Orang Tua/Wali", d.orangTua, "");
-      } else if (d.type === 3) {
-        sigPdf(doc, x1, y, cw, "Wali Kelas", d.wali, d.nipWali);
-        sigPdf(doc, x2, y, cw, "Guru BP/BK", d.bk, d.nipBk);
-        y += 40;
-        sigPdf(doc, x1, y, cw, "Pembina OSIS", d.osis, d.nipOsis);
-        sigPdf(doc, x2, y, cw, "Waka Kesiswaan", d.waka, d.nipWaka);
-        y += 40;
-        sigPdf(doc, x1, y, cw, "Orang Tua/Wali", d.orangTua, "");
-        sigPdf(doc, x2, y, cw, "Siswa", d.nama, "", true);
-      } else if (d.type === 4) {
-        sigPdf(doc, x1, y, cw, "Waka Kesiswaan", d.waka, d.nipWaka);
-        sigPdf(doc, x2, y, cw, "Siswa", d.nama, "", true);
-        y += 40;
-        sigPdf(doc, x1, y, cw, "Guru BP/BK", d.bk, d.nipBk);
-        sigPdf(doc, x2, y, cw, "Orang Tua/Wali", d.orangTua, "");
-        y += 40;
-        sigPdf(doc, x1, y, cw, "Wali Kelas", d.wali, d.nipWali);
-        doc.setFont("times", "normal");
-        doc.setFontSize(12);
-        doc.text("Mengetahui,", W / 2, y, { align: "center" });
-        doc.text("Kepala SMP Negeri 37 Merangin", W / 2, y + 5, { align: "center" });
-        y += 28;
-        doc.setFont("times", "bold");
-        doc.text(d.kepala || "................................", W / 2, y, { align: "center" });
-        doc.line(W / 2 - 35, y + 1, W / 2 + 35, y + 1);
-        doc.setFont("times", "normal");
-        if (d.nipKepala) doc.text("NIP. " + d.nipKepala, W / 2, y + 6, { align: "center" });
+      if (typeof html2canvas === "undefined" || !window.jspdf?.jsPDF) {
+        toast("Komponen PDF belum termuat. Muat ulang halaman lalu coba lagi.", "error");
+        return;
       }
-      return doc;
-    }
 
-    function downloadSpPdf() {
-      if (!currentSpStudent) return;
-      const student = currentSpStudent;
-      const fullStudentData = studentsList.find(s => s.nama.toLowerCase() === student.nama.toLowerCase()) || {};
-      const spType = getSpTypeFromPoints(student.poin);
+      const button = document.querySelector('button[onclick="downloadSpPdf()"]');
+      const oldText = button?.textContent;
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Membuat PDF...";
+      }
 
-      const d = {
-        type: spType,
-        nomor: `421.3/SP-${spType}/SMPN.37/2026`,
-        tanggal: new Date().toISOString().slice(0, 10),
-        nama: student.nama,
-        nis: fullStudentData.nis || "-",
-        nisn: fullStudentData.nisn || "-",
-        kelas: student.kelas,
-        poin: student.poin,
-        rincian: student.records.map(r => `${cleanDateStr(r.tanggal)} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`),
-        kepala: settings.kepsek, nipKepala: settings.nipKepsek,
-        waka: settings.waka, nipWaka: settings.nipWaka,
-        bk: settings.bp, nipBk: settings.nipBp,
-        wali: settings.wali, nipWali: "",
-        osis: settings.osis, nipOsis: settings.nipOsis,
-        orangTua: fullStudentData.orangTua || "................................"
-      };
+      try {
+        const canvas = await html2canvas(preview, {
+          scale: 2,
+          backgroundColor: "#ffffff",
+          useCORS: true,
+          logging: false,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: Math.max(document.documentElement.clientWidth, preview.scrollWidth)
+        });
 
-      buildPDF(d).save(`Surat_Perjanjian_Tingkat_${spType}_${currentSpStudent.nama.replace(/\s+/g, '_')}.pdf`);
-      toast("File PDF Surat Perjanjian berhasil diunduh.");
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        
+        const marginTop = 8;
+        const marginBottom = 8;
+        const marginHoriz = 10;
+        
+        const printableWidth = pageWidth - (marginHoriz * 2);
+        const printableHeight = pageHeight - marginTop - marginBottom;
+        
+        const pxPerMm = canvas.width / printableWidth;
+        const pagePixelHeight = Math.floor(printableHeight * pxPerMm);
+        const totalPages = Math.ceil(canvas.height / pagePixelHeight);
+
+        for (let page = 0; page < totalPages; page++) {
+          if (page > 0) pdf.addPage();
+          const sourceY = page * pagePixelHeight;
+          const sliceHeight = Math.min(pagePixelHeight, canvas.height - sourceY);
+          const pageCanvas = document.createElement("canvas");
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sliceHeight;
+          const ctx = pageCanvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          ctx.drawImage(canvas, 0, sourceY, canvas.width, sliceHeight,
+                        0, 0, canvas.width, sliceHeight);
+
+          const imageHeight = sliceHeight / pxPerMm;
+          pdf.addImage(pageCanvas.toDataURL("image/png"), "PNG",
+                       marginHoriz, marginTop, printableWidth, imageHeight, undefined, "FAST");
+        }
+
+        const safeName = currentSpStudent.nama.replace(/[^a-z0-9_-]+/gi, "_");
+        const spType = getSpTypeFromPoints(currentSpStudent.poin);
+        pdf.save(`Surat_Perjanjian_Tingkat_${spType}_${safeName}.pdf`);
+        toast("PDF berhasil diunduh sama persis dengan pratinjau!");
+      } catch (error) {
+        console.error("Gagal membuat PDF dari pratinjau:", error);
+        toast("Gagal membuat PDF. Silakan coba kembali.", "error");
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = oldText || "Download PDF Surat Perjanjian";
+        }
+      }
     }
 
     async function publishSpToDrive() {
@@ -1499,25 +1447,9 @@
       const spType = getSpTypeFromPoints(student.poin);
       const spLabel = statusFromPoints(student.poin).label;
 
-      const d = {
-        type: spType,
-        nomor: `421.3/SP-${spType}/SMPN.37/2026`,
-        tanggal: new Date().toISOString().slice(0, 10),
-        nama: student.nama,
-        nis: fullStudentData.nis || "-",
-        nisn: fullStudentData.nisn || "-",
-        kelas: student.kelas,
-        poin: student.poin,
-        rincian: student.records.map(r => `${cleanDateStr(r.tanggal)} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`),
-        kepala: settings.kepsek, nipKepala: settings.nipKepsek,
-        waka: settings.waka, nipWaka: settings.nipWaka,
-        bk: settings.bp, nipBk: settings.nipBp,
-        wali: settings.wali, nipWali: "",
-        osis: settings.osis, nipOsis: settings.nipOsis,
-        orangTua: fullStudentData.orangTua || "................................"
-      };
-
-      const pdfBase64 = buildPDF(d).output('datauristring');
+      const { jsPDF } = window.jspdf;
+      let pdf = new jsPDF({ unit: "mm", format: "a4" });
+      const pdfBase64 = pdf.output('datauristring');
 
       try {
         const res = await fetch(settings.apiUrl, {
@@ -1607,14 +1539,14 @@
 
       if (apiUrlEl) settings.apiUrl = apiUrlEl.value.trim();
       if (kepsekEl) settings.kepsek = kepsekEl.value.trim();
-      if (nipKepsekEl) settings.nipKepsek = nipKepsekEl.value.trim();
+      if (nipKepsekEl) settings.nipKepsek = String(nipKepsekEl.value || '').replace(/^NIP\.?\s*/i, '').trim();
       if (wakaEl) settings.waka = wakaEl.value.trim();
-      if (nipWakaEl) settings.nipWaka = nipWakaEl.value.trim();
+      if (nipWakaEl) settings.nipWaka = String(nipWakaEl.value || '').replace(/^NIP\.?\s*/i, '').trim();
       if (bpEl) settings.bp = bpEl.value.trim();
-      if (nipBpEl) settings.nipBp = nipBpEl.value.trim();
+      if (nipBpEl) settings.nipBp = String(nipBpEl.value || '').replace(/^NIP\.?\s*/i, '').trim();
       if (waliEl) settings.wali = waliEl.value.trim();
       if (osisEl) settings.osis = osisEl.value.trim();
-      if (nipOsisEl) settings.nipOsis = nipOsisEl.value.trim();
+      if (nipOsisEl) settings.nipOsis = String(nipOsisEl.value || '').replace(/^NIP\.?\s*/i, '').trim();
 
       localStorage.setItem("smpn37_api_url", settings.apiUrl);
       localStorage.setItem("smpn37_kepsek", settings.kepsek);
