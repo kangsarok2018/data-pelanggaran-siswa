@@ -8,7 +8,6 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 
   <script>
     tailwind.config = {
@@ -480,7 +479,6 @@
     </main>
   </div>
 
-  <!-- ADD STUDENT MODAL -->
   <div id="studentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
@@ -520,7 +518,6 @@
     </div>
   </div>
 
-  <!-- SP PREVIEW MODAL -->
   <div id="spModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b pb-3">
@@ -615,7 +612,7 @@
       const p = normalizePoints(points);
       if (p >= 100) return { label: "SP Akhir (Tindakan Tegas)", roman: "IV", type: 4, cls: "bg-red-100 text-red-800", level: 4, range: "≥100" };
       if (p >= 50) return { label: "SP III", roman: "III", type: 3, cls: "bg-red-100 text-red-700", level: 3, range: "50-99" };
-      if (p >= 35) return { label: "SP II", roman: "II", type: 2, cls: "bg-orange-100 text-orange-700", level: 2, range: "31-49" };
+      if (p >= 31) return { label: "SP II", roman: "II", type: 2, cls: "bg-orange-100 text-orange-700", level: 2, range: "31-49" };
       if (p >= 20) return { label: "SP I", roman: "I", type: 1, cls: "bg-yellow-100 text-yellow-700", level: 1, range: "20-30" };
       return { label: "Aman", roman: "0", type: 0, cls: "bg-emerald-100 text-emerald-700", level: 0, range: "0-19" };
     }
@@ -786,7 +783,6 @@
       if (!classSelect || !studentInput) return;
 
       const selectedClass = classSelect.value;
-
       selectedStudentName = "";
       studentInput.value = "";
 
@@ -824,12 +820,10 @@
       if (!itemsContainer) return;
       
       let filtered = studentsList.filter(s => String(s.kelas).trim().toLowerCase() === String(className).trim().toLowerCase());
-
       if (query) {
         const q = query.toLowerCase();
         filtered = filtered.filter(s => s.nama.toLowerCase().includes(q) || String(s.nis).includes(q));
       }
-
       filtered.sort((a,b) => a.nama.localeCompare(b.nama));
 
       if (!filtered.length) {
@@ -852,11 +846,7 @@
       const classSelect = document.getElementById("inputClassSelect");
       const nameFilter = document.getElementById("studentNameFilter");
       if (!classSelect || !nameFilter) return;
-      
-      const selectedClass = classSelect.value;
-      const query = nameFilter.value.trim();
-      if (!selectedClass) return;
-      buildCustomStudentDropdown(selectedClass, query);
+      buildCustomStudentDropdown(classSelect.value, nameFilter.value.trim());
     }
 
     function selectStudent(nama) {
@@ -867,7 +857,6 @@
     }
 
     document.addEventListener("click", (e) => {
-      const dropdown = document.getElementById("studentDropdownList");
       const studentInput = document.getElementById("studentSearchInput");
       const wrapper = studentInput ? studentInput.parentElement : null;
       if (wrapper && !wrapper.contains(e.target)) {
@@ -1162,10 +1151,7 @@
 
       grid.innerHTML = cats.map(cat => {
         const list = VIOLATIONS.filter(v => v.category === cat);
-        const previewText = list.map(v => {
-          const parts = v.type.split(" ");
-          return parts[0] + " " + v.points;
-        }).join(" • ");
+        const previewText = list.map(v => `${v.type} ${v.points}`).join(" • ");
 
         return `
           <div class="card p-5 space-y-2 hover:border-indigo-300 transition">
@@ -1184,13 +1170,13 @@
       renderKategoriTable();
     }
 
-    // Official SP Generator helpers matching exact provided script structure
+    // Exact requested Surat Peringatan generation logic matching user's exact templates
     const ranges = { 1: [20, 30], 2: [31, 49], 3: [50, 99], 4: [100, Infinity] };
 
     function getSpTypeFromPoints(poin) {
       if (poin >= 100) return 4;
       if (poin >= 50) return 3;
-      if (poin >= 35) return 2;
+      if (poin >= 31) return 2;
       if (poin >= 20) return 1;
       return 1;
     }
@@ -1211,22 +1197,18 @@
 
     function signaturesHtml(d) {
       const c = (role, name, nip, m = false) => `
-        <div style="text-align:center; min-height:105px;">
+        <div style="text-align:center; min-height:95px;">
           <div>${esc(role)}</div>
           ${m ? `<div style="font-size:8pt; color:#64748b; margin-top:2px;">Materai Rp 10.000</div>` : `<div style="height:14px;"></div>`}
-          <div style="padding-top:${m ? '30px' : '55px'}; font-weight:bold; text-decoration:underline;">${esc(name || "................................")}</div>
+          <div style="padding-top:${m ? '22px' : '45px'}; font-weight:bold; text-decoration:underline;">${esc(name || "................................")}</div>
           <div>${nip ? "NIP. " + esc(nip) : ""}</div>
         </div>
       `;
 
       if (d.type === 1) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:20px;">${c("Wali Kelas", d.wali, d.nipWali)}${c("Siswa", d.nama, "", true)}</div>`;
       if (d.type === 2) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:15px;">${c("Guru BP/BK", d.bk, d.nipBk)}${c("Siswa", d.nama, "", true)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">${c("Wali Kelas", d.wali, d.nipWali)}${c("Orang Tua/Wali", d.orangTua)}</div>`;
-      if (d.type === 3) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:10px;">${c("Guru BP/BK", d.bk, d.nipBk)}${c("Wali Kelas", d.wali, d.nipWali)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Pembina OSIS", d.osis, d.nipOsis)}${c("Waka Kesiswaan", d.waka, d.nipWaka)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Orang Tua/Wali", d.orangTua)}${c("Siswa", d.nama, "", true)}</div>`;
-      return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">${c("Waka Kesiswaan", d.waka, d.nipWaka)}${c("Siswa", d.nama, "", true)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Guru BP/BK", d.bk, d.nipBk)}${c("Orang Tua/Wali", d.orangTua)}</div><div>${c("Wali Kelas", d.wali, d.nipWali)}</div><div style="text-align:center; margin-top:0;">Mengetahui,<br>Kepala SMP Negeri 37 Merangin<div style="padding-top:45px; font-weight:bold; text-decoration:underline;">${esc(d.kepala || "................................")}</div><div>${d.nipKepala ? "NIP. " + esc(d.nipKepala) : ""}</div></div>`;
-    }
-
-    function esc(x) {
-      return String(x || "").replace(/[&<>"]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m]));
+      if (d.type === 3) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:10px;">${c("Wali Kelas", d.wali, d.nipWali)}${c("Guru BP/BK", d.bk, d.nipBk)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Pembina OSIS", d.osis, d.nipOsis)}${c("Waka Kesiswaan", d.waka, d.nipWaka)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Orang Tua/Wali", d.orangTua)}${c("Siswa", d.nama, "", true)}</div>`;
+      return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">${c("Waka Kesiswaan", d.waka, d.nipWaka)}${c("Siswa", d.nama, "", true)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Guru BP/BK", d.bk, d.nipBk)}${c("Orang Tua/Wali", d.orangTua)}</div><div>${c("Wali Kelas", d.wali, d.nipWali)}</div><div style="text-align:center; margin-top:0;">Mengetahui,<br>Kepala SMP Negeri 37 Merangin<div style="padding-top:40px; font-weight:bold; text-decoration:underline;">${esc(d.kepala || "................................")}</div><div>${d.nipKepala ? "NIP. " + esc(d.nipKepala) : ""}</div></div>`;
     }
 
     function openSpModal(namaSiswa, kelas) {
@@ -1263,6 +1245,7 @@
       const subEl = document.getElementById("spModalSubtitle"); if(subEl) subEl.textContent = `Siswa: ${student.nama} (${student.kelas}) - Total Poin: ${student.poin}`;
 
       const lines = d.rincian.map((x, i) => `<div>${i + 1}. ${esc(x)}</div>`).join("") || "<div>-</div>";
+      const rangeStr = range[1] === Infinity ? '≥100' : `${range[0]}-${range[1]}`;
 
       const previewContent = document.getElementById("spPreviewContent");
       if (previewContent) {
@@ -1282,7 +1265,7 @@
             <div>NIS &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(d.nis)}</div>
             <div>NISN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(d.nisn)}</div>
             <div>Kelas &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(d.kelas)}</div>
-            <div>Total Poin Pelanggaran &nbsp;: <span style="color:black; font-weight:bold;">${d.poin} Poin (Batas SP: ${range[1] === Infinity ? '≥100' : range[0] + '-' + range[1]})</span></div>
+            <div>Total Poin Pelanggaran &nbsp;: <span style="color:black; font-weight:bold;">${d.poin} Poin (Batas SP: ${rangeStr})</span></div>
             
             <p style="margin-top:12px;"><b>Rincian Pelanggaran:</b></p>
             ${lines}
@@ -1332,15 +1315,15 @@
         doc.setFont("times", "normal");
         doc.setFontSize(8);
         doc.setTextColor(100, 116, 139);
-        doc.text("Materai Rp 10.000", x + w / 2, y + 21, { align: "center" });
+        doc.text("Materai Rp 10.000", x + w / 2, y + 17, { align: "center" });
         doc.setTextColor(0, 0, 0);
       }
       doc.setFont("times", "bold");
       doc.setFontSize(12);
-      doc.text(name || "................................", x + w / 2, y + 28, { align: "center" });
-      doc.line(x + 10, y + 29, x + w - 10, y + 29);
+      doc.text(name || "................................", x + w / 2, y + 25, { align: "center" });
+      doc.line(x + 10, y + 26, x + w - 10, y + 26);
       doc.setFont("times", "normal");
-      if (nip) doc.text("NIP. " + nip, x + w / 2, y + 35, { align: "center" });
+      if (nip) doc.text("NIP. " + nip, x + w / 2, y + 32, { align: "center" });
     }
 
     function buildPDF(d) {
@@ -1371,13 +1354,13 @@
       y = textPdf(doc, "Yang bertanda tangan di bawah ini menerangkan bahwa:", m, y, w);
       y += 2;
       const range = ranges[d.type];
-      const rangeStr = range[1] === Infinity ? '≥100' : range[0] + '-' + range[1];
+      const rangeStr = range[1] === Infinity ? '≥100' : `${range[0]}-${range[1]}`;
       [
         ["Nama Siswa", d.nama],
         ["NIS", d.nis],
         ["NISN", d.nisn],
         ["Kelas", d.kelas],
-        ["Total Poin Pelanggaran", d.poin + " Poin (Batas SP: " + rangeStr + ")"]
+        ["Total Poin Pelanggaran", `${d.poin} Poin (Batas SP: ${rangeStr})`]
       ].forEach(a => {
         doc.text(a[0], m, y);
         doc.text(":", m + 50, y);
@@ -1390,7 +1373,7 @@
       y += 6;
       doc.setFont("times", "normal");
       (d.rincian.length ? d.rincian : ["-"]).slice(0, 10).forEach((s, i) => {
-        y = textPdf(doc, (i + 1) + ". " + s, m + 3, y, w - 3) + 1;
+        y = textPdf(doc, `${i + 1}. ${s}`, m + 3, y, w - 3) + 1;
       });
 
       y += 2;
@@ -1398,7 +1381,7 @@
       if (d.keterangan) y = textPdf(doc, "Keterangan: " + d.keterangan, m, y, w) + 2;
       y = textPdf(doc, "Demikian surat peringatan ini dibuat untuk dapat diperhatikan dan dilaksanakan sebagaimana mestinya.", m, y, w) + 3;
 
-      doc.text("Merangin, " + (d.tanggal ? new Date(d.tanggal + "T00:00:00").toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "........................"), W - m, y, { align: "right" });
+      doc.text("Pulau Rengas, " + (d.tanggal ? new Date(d.tanggal + "T00:00:00").toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "........................"), W - m, y, { align: "right" });
       y += 6;
 
       let x1 = m, x2 = 112, cw = 81;
@@ -1408,16 +1391,16 @@
       } else if (d.type === 2) {
         sigPdf(doc, x1, y, cw, "Guru BP/BK", d.bk, d.nipBk);
         sigPdf(doc, x2, y, cw, "Siswa", d.nama, "", true);
-        y += 44;
+        y += 40;
         sigPdf(doc, x1, y, cw, "Wali Kelas", d.wali, d.nipWali);
         sigPdf(doc, x2, y, cw, "Orang Tua/Wali", d.orangTua, "");
       } else if (d.type === 3) {
-        sigPdf(doc, x1, y, cw, "Guru BP/BK", d.bk, d.nipBk);
-        sigPdf(doc, x2, y, cw, "Wali Kelas", d.wali, d.nipWali);
-        y += 44;
+        sigPdf(doc, x1, y, cw, "Wali Kelas", d.wali, d.nipWali);
+        sigPdf(doc, x2, y, cw, "Guru BP/BK", d.bk, d.nipBk);
+        y += 40;
         sigPdf(doc, x1, y, cw, "Pembina OSIS", d.osis, d.nipOsis);
         sigPdf(doc, x2, y, cw, "Waka Kesiswaan", d.waka, d.nipWaka);
-        y += 44;
+        y += 40;
         sigPdf(doc, x1, y, cw, "Orang Tua/Wali", d.orangTua, "");
         sigPdf(doc, x2, y, cw, "Siswa", d.nama, "", true);
       } else if (d.type === 4) {
@@ -1431,7 +1414,7 @@
         y += 2;
         doc.text("Mengetahui,", W / 2, y, { align: "center" });
         doc.text("Kepala SMP Negeri 37 Merangin", W / 2, y + 5, { align: "center" });
-        y += 37;
+        y += 35;
         doc.setFont("times", "bold");
         doc.text(d.kepala || "................................", W / 2, y, { align: "center" });
         doc.line(W / 2 - 30, y + 1, W / 2 + 30, y + 1);
@@ -1507,9 +1490,14 @@
           body: JSON.stringify({
             action: "publishSuratSP",
             namaSiswa: currentSpStudent.nama,
+            nis: fullStudentData.nis || "-",
+            nisn: fullStudentData.nisn || "-",
             kelas: currentSpStudent.kelas,
             jenisSP: statusFromPoints(currentSpStudent.poin).label,
             totalPoin: currentSpStudent.poin,
+            dasarPelanggaran: student.records[0]?.pelanggaran || "-",
+            rincianPelanggaran: student.records.map(r => r.pelanggaran).join("; "),
+            petugas: settings.bp || "Guru BK",
             pdfBase64: pdfBase64,
             fileName: `SP_${currentSpStudent.nama}.pdf`
           })
@@ -1519,7 +1507,7 @@
           toast("Surat Perjanjian berhasil diterbitkan dan disimpan ke Google Drive!");
           closeSpModal();
         } else {
-          toast("Gagal mempublish surat ke Drive.", "error");
+          toast("Gagal mempublish surat ke Drive: " + (json.message || ''), "error");
         }
       } catch (e) {
         toast("Terjadi kesalahan koneksi saat upload.", "error");
