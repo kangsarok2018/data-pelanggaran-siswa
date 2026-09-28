@@ -13,6 +13,57 @@
 
 
 <style>
+/* ===== Button UI Refresh ===== */
+button,
+.btn,
+label.cursor-pointer {
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, .10), inset 0 1px 0 rgba(255,255,255,.12);
+  background-image: linear-gradient(to bottom, rgba(255,255,255,.10), rgba(255,255,255,0));
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease, background-color .16s ease;
+}
+button:hover,
+.btn:hover,
+label.cursor-pointer:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, .14), inset 0 1px 0 rgba(255,255,255,.16);
+  filter: brightness(1.04);
+}
+button:active,
+.btn:active,
+label.cursor-pointer:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(15, 23, 42, .12), inset 0 1px 2px rgba(0,0,0,.08);
+}
+button:focus-visible,
+.btn:focus-visible,
+label.cursor-pointer:focus-within {
+  outline: 3px solid rgba(99, 102, 241, .22);
+  outline-offset: 2px;
+}
+/* Sidebar buttons: keep them clean while adding depth */
+.nav-btn {
+  border: 1px solid transparent;
+}
+.nav-btn:not(.bg-indigo-50) {
+  box-shadow: 0 2px 5px rgba(15,23,42,.05);
+}
+.nav-btn:hover {
+  background-image: linear-gradient(to right, rgba(99,102,241,.05), rgba(99,102,241,0));
+}
+/* Icon-only / close buttons stay compact */
+.sp-close {
+  box-shadow: 0 4px 10px rgba(15,23,42,.12);
+}
+/* Make the main action buttons visually stronger */
+.btn-primary,
+button.bg-indigo-600,
+button.bg-purple-600,
+button.bg-blue-600,
+button.bg-emerald-600 {
+  box-shadow: 0 5px 12px rgba(79,70,229,.20), inset 0 1px 0 rgba(255,255,255,.18);
+}
+
 /* Tab visibility: one menu = one content area */
 .tab-content.hidden, .hidden { display:none !important; }
 
