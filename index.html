@@ -7,7 +7,7 @@
   <title>Sistem Poin Pelanggaran Siswa - SMP Negeri 37 Merangin</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <script>
     tailwind.config = {
@@ -79,7 +79,6 @@
   </header>
 
   <div class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-    
     <aside id="sidebarNav" class="no-print hidden sm:block lg:col-span-3 card p-3 space-y-1 sticky top-20 z-30 bg-white shadow-lg sm:shadow-sm">
       <button class="nav-btn active" data-tab="dashboard">
         <span class="text-lg">📊</span> <span>Dashboard</span>
@@ -105,7 +104,6 @@
     </aside>
 
     <main class="lg:col-span-9 space-y-6 w-full overflow-hidden">
-
       <section id="tab-dashboard" class="tab-content space-y-6">
         <div class="card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -393,11 +391,6 @@
               <h2 class="text-lg sm:text-xl font-bold">Daftar Kategori & Poin Pelanggaran</h2>
               <p class="text-xs sm:text-sm text-slate-500">Daftar ini mengikuti konfigurasi aplikasi yang aktif.</p>
             </div>
-            <div>
-              <select id="filterCategoryCard" class="input text-xs sm:text-sm" onchange="renderKategoriTable()">
-                <option value="Semua">Semua Kategori</option>
-              </select>
-            </div>
           </div>
         </div>
 
@@ -599,7 +592,7 @@
       nipOsis: localStorage.getItem("smpn37_nip_osis") || "NIP. 197805122005011003"
     };
 
-    function escapeHTML(str) {
+    function esc(str) {
       return String(str ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
@@ -628,17 +621,18 @@
       setTimeout(() => el.remove(), 3500);
     }
 
-    function detectSemester(dateStr) {
-      if (!dateStr) return "Semester 1 (Ganjil)";
-      const cleanDate = dateStr.split(" ")[0];
-      const m = new Date(cleanDate + "T00:00:00").getMonth() + 1;
-      return (m >= 7 && m <= 12) ? "Semester 1 (Ganjil)" : "Semester 2 (Genap)";
-    }
-
     function cleanDateStr(val) {
       if (!val) return "";
       const s = String(val).trim();
-      return s.split(" ")[0];
+      return s.split("T")[0].split(" ")[0];
+    }
+
+    function detectSemester(dateStr) {
+      if (!dateStr) return "Semester 1 (Ganjil)";
+      const cleanDate = cleanDateStr(dateStr);
+      if (!cleanDate) return "Semester 1 (Ganjil)";
+      const m = new Date(cleanDate + "T00:00:00").getMonth() + 1;
+      return (m >= 7 && m <= 12) ? "Semester 1 (Ganjil)" : "Semester 2 (Genap)";
     }
 
     function saveLocal() {
@@ -756,13 +750,7 @@
       if (!select) return;
       const cats = [...new Set(VIOLATIONS.map(v => v.category))];
       select.innerHTML = '<option value="">-- Pilih Kategori --</option>' +
-        cats.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");
-
-      const filterCard = document.getElementById("filterCategoryCard");
-      if (filterCard) {
-        filterCard.innerHTML = '<option value="Semua">Semua Kategori</option>' +
-          cats.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");
-      }
+        cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
     }
 
     function populateViolationTypes() {
@@ -774,7 +762,7 @@
       const cat = catEl.value;
       const list = VIOLATIONS.filter(v => v.category === cat);
       select.innerHTML = '<option value="">-- Pilih Jenis Pelanggaran --</option>' +
-        list.map(v => `<option value="${escapeHTML(v.type)}" data-points="${v.points}">${escapeHTML(v.type)} (Poin: ${v.points})</option>`).join("");
+        list.map(v => `<option value="${esc(v.type)}" data-points="${v.points}">${esc(v.type)} (Poin: ${v.points})</option>`).join("");
       if (pointsEl) pointsEl.value = "0";
     }
 
@@ -839,12 +827,12 @@
       }
 
       itemsContainer.innerHTML = filtered.map(s => `
-        <div class="p-2.5 hover:bg-indigo-50 cursor-pointer flex items-center justify-between transition" onclick="selectStudent('${escapeHTML(s.nama)}')">
+        <div class="p-2.5 hover:bg-indigo-50 cursor-pointer flex items-center justify-between transition" onclick="selectStudent('${esc(s.nama)}')">
           <div>
-            <p class="font-semibold text-xs text-slate-900">${escapeHTML(s.nama)}</p>
-            <p class="text-[10px] text-slate-500">NIS: ${escapeHTML(s.nis || '-')}</p>
+            <p class="font-semibold text-xs text-slate-900">${esc(s.nama)}</p>
+            <p class="text-[10px] text-slate-500">NIS: ${esc(s.nis || '-')}</p>
           </div>
-          <span class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600">${escapeHTML(s.kelas)}</span>
+          <span class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600">${esc(s.kelas)}</span>
         </div>
       `).join("");
     }
@@ -999,10 +987,10 @@
         } else {
           recentBody.innerHTML = recent.map(r => `
             <tr class="border-b hover:bg-slate-50">
-              <td class="py-2.5 pr-3 font-medium">${escapeHTML(cleanDateStr(r.tanggal))}</td>
-              <td class="py-2.5 pr-3 font-semibold text-slate-900">${escapeHTML(r.nama)}</td>
-              <td class="py-2.5 pr-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-xs font-semibold">${escapeHTML(r.kelas)}</span></td>
-              <td class="py-2.5 pr-3 text-slate-600">${escapeHTML(r.pelanggaran)}</td>
+              <td class="py-2.5 pr-3 font-medium">${esc(cleanDateStr(r.tanggal))}</td>
+              <td class="py-2.5 pr-3 font-semibold text-slate-900">${esc(r.nama)}</td>
+              <td class="py-2.5 pr-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-xs font-semibold">${esc(r.kelas)}</span></td>
+              <td class="py-2.5 pr-3 text-slate-600">${esc(r.pelanggaran)}</td>
               <td class="py-2.5 text-right font-bold text-red-600">+${r.poin}</td>
             </tr>
           `).join("");
@@ -1022,8 +1010,8 @@
                 <div class="flex items-center gap-3">
                   <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center">${i+1}</div>
                   <div>
-                    <p class="font-semibold text-xs text-slate-900">${escapeHTML(s.nama)}</p>
-                    <p class="text-[11px] text-slate-500">${escapeHTML(s.kelas)} · ${s.pelanggaran} kasus</p>
+                    <p class="font-semibold text-xs text-slate-900">${esc(s.nama)}</p>
+                    <p class="text-[11px] text-slate-500">${esc(s.kelas)} · ${s.pelanggaran} kasus</p>
                   </div>
                 </div>
                 <div class="text-right">
@@ -1062,10 +1050,10 @@
       tbody.innerHTML = list.map((s, i) => `
         <tr class="border-b hover:bg-slate-50">
           <td class="p-2 sm:p-3">${i+1}</td>
-          <td class="p-2 sm:p-3 font-mono text-xs">${escapeHTML(s.nis)} / ${escapeHTML(s.nisn || '-')}</td>
-          <td class="p-2 sm:p-3 font-semibold text-slate-900">${escapeHTML(s.nama)}</td>
-          <td class="p-2 sm:p-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-xs font-semibold">${escapeHTML(s.kelas)}</span></td>
-          <td class="p-2 sm:p-3 text-slate-600">${escapeHTML(s.orangTua || '-')}</td>
+          <td class="p-2 sm:p-3 font-mono text-xs">${esc(s.nis)} / ${esc(s.nisn || '-')}</td>
+          <td class="p-2 sm:p-3 font-semibold text-slate-900">${esc(s.nama)}</td>
+          <td class="p-2 sm:p-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-xs font-semibold">${esc(s.kelas)}</span></td>
+          <td class="p-2 sm:p-3 text-slate-600">${esc(s.orangTua || '-')}</td>
           <td class="p-2 sm:p-3 text-center">
             <button onclick="deleteStudent('${s.id}')" class="text-red-600 hover:text-red-800 text-xs font-semibold px-2 py-1 bg-red-50 rounded">Hapus</button>
           </td>
@@ -1101,13 +1089,13 @@
         return `
           <tr class="border-b hover:bg-slate-50">
             <td class="p-2 sm:p-3">${i+1}</td>
-            <td class="p-2 sm:p-3 font-semibold text-slate-900">${escapeHTML(s.nama)}</td>
-            <td class="p-2 sm:p-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-xs font-semibold">${escapeHTML(s.kelas)}</span></td>
+            <td class="p-2 sm:p-3 font-semibold text-slate-900">${esc(s.nama)}</td>
+            <td class="p-2 sm:p-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-xs font-semibold">${esc(s.kelas)}</span></td>
             <td class="p-2 sm:p-3 text-center">${s.pelanggaran}</td>
             <td class="p-2 sm:p-3 text-center font-bold text-red-600">${s.poin}</td>
             <td class="p-2 sm:p-3 text-center"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${st.cls}">${st.label}</span></td>
             <td class="p-2 sm:p-3 text-center">
-              <button onclick="openSpModal('${escapeHTML(s.nama)}', '${escapeHTML(s.kelas)}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-xs transition shadow-sm">
+              <button onclick="openSpModal('${esc(s.nama)}', '${esc(s.kelas)}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-xs transition shadow-sm">
                 Cetak Surat SP
               </button>
             </td>
@@ -1134,13 +1122,13 @@
 
       tbody.innerHTML = list.map(r => `
         <tr class="border-b hover:bg-slate-50">
-          <td class="p-2 sm:p-3 text-xs font-medium">${escapeHTML(cleanDateStr(r.tanggal))}</td>
-          <td class="p-2 sm:p-3 font-semibold text-slate-900">${escapeHTML(r.nama)}</td>
-          <td class="p-2 sm:p-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-xs font-semibold">${escapeHTML(r.kelas)}</span></td>
-          <td class="p-2 sm:p-3 text-slate-700">${escapeHTML(r.pelanggaran)}</td>
+          <td class="p-2 sm:p-3 text-xs font-medium">${esc(cleanDateStr(r.tanggal))}</td>
+          <td class="p-2 sm:p-3 font-semibold text-slate-900">${esc(r.nama)}</td>
+          <td class="p-2 sm:p-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-xs font-semibold">${esc(r.kelas)}</span></td>
+          <td class="p-2 sm:p-3 text-slate-700">${esc(r.pelanggaran)}</td>
           <td class="p-2 sm:p-3 text-center font-bold text-red-600">+${r.poin}</td>
-          <td class="p-2 sm:p-3 text-xs text-slate-500">${escapeHTML(r.semester)}</td>
-          <td class="p-2 sm:p-3 text-xs text-slate-600">${escapeHTML(r.keterangan || '-')}</td>
+          <td class="p-2 sm:p-3 text-xs text-slate-500">${esc(r.semester)}</td>
+          <td class="p-2 sm:p-3 text-xs text-slate-600">${esc(r.keterangan || '-')}</td>
         </tr>
       `).join("");
     }
@@ -1148,13 +1136,7 @@
     function renderKategoriTable() {
       const grid = document.getElementById("kategoriCardsGrid");
       if (!grid) return;
-      const filterCatEl = document.getElementById("filterCategoryCard");
-      const filterCat = filterCatEl ? filterCatEl.value : "Semua";
-      let cats = [...new Set(VIOLATIONS.map(v => v.category))];
-
-      if (filterCat !== "Semua") {
-        cats = cats.filter(c => c === filterCat);
-      }
+      const cats = [...new Set(VIOLATIONS.map(v => v.category))];
 
       grid.innerHTML = cats.map(cat => {
         const list = VIOLATIONS.filter(v => v.category === cat);
@@ -1162,8 +1144,8 @@
 
         return `
           <div class="card p-5 space-y-2 hover:border-indigo-300 transition">
-            <h3 class="font-bold text-base text-indigo-900">${escapeHTML(cat)}</h3>
-            <p class="text-xs text-slate-500 leading-relaxed">${escapeHTML(previewText)}</p>
+            <h3 class="font-bold text-base text-indigo-900">${esc(cat)}</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">${esc(previewText)}</p>
           </div>
         `;
       }).join("");
@@ -1177,7 +1159,7 @@
       renderKategoriTable();
     }
 
-    // Official Surat Peringatan generation logic matching user's exact templates
+    // Exact official Surat Peringatan generation matching user template
     const ranges = { 1: [20, 30], 2: [31, 49], 3: [50, 99], 4: [100, Infinity] };
 
     function getSpTypeFromPoints(poin) {
@@ -1204,18 +1186,63 @@
 
     function signaturesHtml(d) {
       const c = (role, name, nip, m = false) => `
-        <div style="text-align:center; min-height:95px;">
+        <div style="text-align:center; min-height:105px;">
           <div>${esc(role)}</div>
           ${m ? `<div style="font-size:8pt; color:#64748b; margin-top:2px;">Materai Rp 10.000</div>` : `<div style="height:14px;"></div>`}
-          <div style="padding-top:${m ? '22px' : '45px'}; font-weight:bold; text-decoration:underline;">${esc(name || "................................")}</div>
+          <div style="padding-top:${m ? '4px' : '40px'}; font-weight:bold; text-decoration:underline;">${esc(name || "................................")}</div>
           <div>${nip ? "NIP. " + esc(nip) : ""}</div>
         </div>
       `;
 
-      if (d.type === 1) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:20px;">${c("Wali Kelas", d.wali, d.nipWali)}${c("Siswa", d.nama, "", true)}</div>`;
-      if (d.type === 2) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:15px;">${c("Guru BP/BK", d.bk, d.nipBk)}${c("Siswa", d.nama, "", true)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">${c("Wali Kelas", d.wali, d.nipWali)}${c("Orang Tua/Wali", d.orangTua)}</div>`;
-      if (d.type === 3) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:10px;">${c("Wali Kelas", d.wali, d.nipWali)}${c("Guru BP/BK", d.bk, d.nipBk)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Pembina OSIS", d.osis, d.nipOsis)}${c("Waka Kesiswaan", d.waka, d.nipWaka)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Orang Tua/Wali", d.orangTua)}${c("Siswa", d.nama, "", true)}</div>`;
-      return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">${c("Waka Kesiswaan", d.waka, d.nipWaka)}${c("Siswa", d.nama, "", true)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Guru BP/BK", d.bk, d.nipBk)}${c("Orang Tua/Wali", d.orangTua)}</div><div>${c("Wali Kelas", d.wali, d.nipWali)}</div><div style="text-align:center; margin-top:0;">Mengetahui,<br>Kepala SMP Negeri 37 Merangin<div style="padding-top:40px; font-weight:bold; text-decoration:underline;">${esc(d.kepala || "................................")}</div><div>${d.nipKepala ? "NIP. " + esc(d.nipKepala) : ""}</div></div>`;
+      if (d.type === 1) return `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:20px;">
+          ${c("Wali Kelas", d.wali, d.nipWali)}
+          ${c("Siswa", d.nama, "", true)}
+        </div>
+      `;
+      if (d.type === 2) return `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:15px;">
+          ${c("Guru BP/BK", d.bk, d.nipBk)}
+          ${c("Siswa", d.nama, "", true)}
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">
+          ${c("Wali Kelas", d.wali, d.nipWali)}
+          ${c("Orang Tua/Wali", d.orangTua, "", false)}
+        </div>
+      `;
+      if (d.type === 3) return `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:10px;">
+          ${c("Wali Kelas", d.wali, d.nipWali)}
+          ${c("Guru BP/BK", d.bk, d.nipBk)}
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">
+          ${c("Pembina OSIS", d.osis, d.nipOsis)}
+          ${c("Waka Kesiswaan", d.waka, d.nipWaka)}
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">
+          ${c("Orang Tua/Wali", d.orangTua, "", false)}
+          ${c("Siswa", d.nama, "", true)}
+        </div>
+      `;
+      return `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">
+          ${c("Waka Kesiswaan", d.waka, d.nipWaka)}
+          ${c("Siswa", d.nama, "", true)}
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">
+          ${c("Guru BP/BK", d.bk, d.nipBk)}
+          ${c("Orang Tua/Wali", d.orangTua, "", false)}
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">
+          ${c("Wali Kelas", d.wali, d.nipWali)}
+          <div></div>
+        </div>
+        <div style="text-align:center; margin-top:0;">
+          Mengetahui,<br>Kepala SMP Negeri 37 Merangin
+          <div style="padding-top:40px; font-weight:bold; text-decoration:underline;">${esc(d.kepala || "................................")}</div>
+          <div>${d.nipKepala ? "NIP. " + esc(d.nipKepala) : ""}</div>
+        </div>
+      `;
     }
 
     function openSpModal(namaSiswa, kelas) {
@@ -1228,6 +1255,7 @@
       const fullStudentData = studentsList.find(s => s.nama.toLowerCase() === student.nama.toLowerCase()) || {};
       const spType = getSpTypeFromPoints(student.poin);
       const range = ranges[spType];
+      const rangeStr = range[1] === Infinity ? '≥100' : `${range[0]}-${range[1]}`;
 
       const d = {
         type: spType,
@@ -1252,7 +1280,6 @@
       const subEl = document.getElementById("spModalSubtitle"); if(subEl) subEl.textContent = `Siswa: ${student.nama} (${student.kelas}) - Total Poin: ${student.poin}`;
 
       const lines = d.rincian.map((x, i) => `<div>${i + 1}. ${esc(x)}</div>`).join("") || "<div>-</div>";
-      const rangeStr = range[1] === Infinity ? '≥100' : `${range[0]}-${range[1]}`;
 
       const previewContent = document.getElementById("spPreviewContent");
       if (previewContent) {
@@ -1322,15 +1349,15 @@
         doc.setFont("times", "normal");
         doc.setFontSize(8);
         doc.setTextColor(100, 116, 139);
-        doc.text("Materai Rp 10.000", x + w / 2, y + 17, { align: "center" });
+        doc.text("Materai Rp 10.000", x + w / 2, y + 8, { align: "center" });
         doc.setTextColor(0, 0, 0);
       }
       doc.setFont("times", "bold");
       doc.setFontSize(12);
-      doc.text(name || "................................", x + w / 2, y + 25, { align: "center" });
-      doc.line(x + 10, y + 26, x + w - 10, y + 26);
+      doc.text(name || "................................", x + w / 2, y + (m ? 24 : 26), { align: "center" });
+      doc.line(x + 10, y + (m ? 25 : 27), x + w - 10, y + (m ? 25 : 27));
       doc.setFont("times", "normal");
-      if (nip) doc.text("NIP. " + nip, x + w / 2, y + 32, { align: "center" });
+      if (nip) doc.text("NIP. " + nip, x + w / 2, y + (m ? 31 : 33), { align: "center" });
     }
 
     function buildPDF(d) {
@@ -1418,15 +1445,16 @@
         sigPdf(doc, x2, y, cw, "Orang Tua/Wali", d.orangTua, "");
         y += 40;
         sigPdf(doc, x1, y, cw, "Wali Kelas", d.wali, d.nipWali);
-        y += 2;
+        doc.setFont("times", "normal");
+        doc.setFontSize(12);
         doc.text("Mengetahui,", W / 2, y, { align: "center" });
         doc.text("Kepala SMP Negeri 37 Merangin", W / 2, y + 5, { align: "center" });
-        y += 35;
+        y += 28;
         doc.setFont("times", "bold");
         doc.text(d.kepala || "................................", W / 2, y, { align: "center" });
-        doc.line(W / 2 - 30, y + 1, W / 2 + 30, y + 1);
+        doc.line(W / 2 - 35, y + 1, W / 2 + 35, y + 1);
         doc.setFont("times", "normal");
-        if (d.nipKepala) doc.text("NIP. " + d.nipKepala, W / 2, y + 7, { align: "center" });
+        if (d.nipKepala) doc.text("NIP. " + d.nipKepala, W / 2, y + 6, { align: "center" });
       }
       return doc;
     }
@@ -1447,7 +1475,7 @@
         kelas: student.kelas,
         poin: student.poin,
         rincian: student.records.map(r => `${cleanDateStr(r.tanggal)} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`),
-        kepala: settings.kepsek, nipKepsala: settings.nipKepsek,
+        kepala: settings.kepsek, nipKepala: settings.nipKepsek,
         waka: settings.waka, nipWaka: settings.nipWaka,
         bk: settings.bp, nipBk: settings.nipBp,
         wali: settings.wali, nipWali: "",
@@ -1469,6 +1497,7 @@
       const student = currentSpStudent;
       const fullStudentData = studentsList.find(s => s.nama.toLowerCase() === student.nama.toLowerCase()) || {};
       const spType = getSpTypeFromPoints(student.poin);
+      const spLabel = statusFromPoints(student.poin).label;
 
       const d = {
         type: spType,
@@ -1500,7 +1529,7 @@
             nis: fullStudentData.nis || "-",
             nisn: fullStudentData.nisn || "-",
             kelas: currentSpStudent.kelas,
-            jenisSP: statusFromPoints(currentSpStudent.poin).label,
+            jenisSP: spLabel,
             totalPoin: currentSpStudent.poin,
             dasarPelanggaran: student.records[0]?.pelanggaran || "-",
             rincianPelanggaran: student.records.map(r => `${cleanDateStr(r.tanggal)} - ${r.pelanggaran}`).join("; "),
