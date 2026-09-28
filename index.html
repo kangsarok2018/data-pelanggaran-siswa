@@ -107,7 +107,6 @@
 
     <main class="lg:col-span-9 space-y-6 w-full overflow-hidden">
 
-      <!-- DASHBOARD TAB -->
       <section id="tab-dashboard" class="tab-content space-y-6">
         <div class="card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -190,7 +189,6 @@
         </div>
       </section>
 
-      <!-- SISWA TAB -->
       <section id="tab-siswa" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -228,7 +226,6 @@
         </div>
       </section>
 
-      <!-- INPUT TAB -->
       <section id="tab-input" class="tab-content hidden">
         <div class="card p-4 sm:p-6 max-w-2xl mx-auto space-y-6">
           <div>
@@ -256,7 +253,6 @@
                   <input id="studentSearchInput" type="text" class="input text-xs sm:text-sm bg-white cursor-pointer" placeholder="-- Pilih Kelas Dahulu --" onclick="toggleStudentDropdown(event)" readonly required disabled>
                   <div class="absolute right-3 top-2.5 text-slate-400 pointer-events-none">▼</div>
                 </div>
-                <!-- Custom Dropdown Container -->
                 <div id="studentDropdownList" class="hidden absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
                   <div class="p-2 border-b sticky top-0 bg-white">
                     <input id="studentNameFilter" type="text" class="input text-xs" placeholder="Ketik nama untuk mencari..." oninput="filterCustomStudentDropdown()" onclick="event.stopPropagation()">
@@ -312,7 +308,6 @@
         </div>
       </section>
 
-      <!-- RIWAYAT TAB -->
       <section id="tab-riwayat" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-5">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
@@ -349,7 +344,6 @@
         </div>
       </section>
 
-      <!-- MENU SURAT PERINGATAN (SP) TAB -->
       <section id="tab-sp" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-5">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
@@ -393,7 +387,6 @@
         </div>
       </section>
 
-      <!-- KATEGORI & POIN TAB (Card Grid Layout) -->
       <section id="tab-kategori" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-5">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -409,12 +402,9 @@
           </div>
         </div>
 
-        <div id="kategoriCardsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- Dynamically populated category cards -->
-        </div>
+        <div id="kategoriCardsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </section>
 
-      <!-- PENGATURAN SEKOLAH TAB -->
       <section id="tab-pengaturan" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-6 max-w-2xl mx-auto space-y-6">
           <div>
@@ -484,7 +474,6 @@
     </main>
   </div>
 
-  <!-- ADD STUDENT MODAL -->
   <div id="studentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
@@ -524,25 +513,24 @@
     </div>
   </div>
 
-  <!-- SP MODAL -->
   <div id="spModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b pb-3">
         <div>
-          <h3 id="spModalTitle" class="text-base sm:text-lg font-bold text-slate-800">Penerbitan Surat Peringatan (SP)</h3>
-          <p id="spModalSubtitle" class="text-xs text-slate-500">Dokumen Resmi Sekolah SMP Negeri 37 Merangin</p>
+          <h3 id="spModalTitle" class="text-base sm:text-lg font-bold text-slate-800">Pratinjau Surat Perjanjian</h3>
+          <p id="spModalSubtitle" class="text-xs text-slate-500">SMP Negeri 37 Merangin</p>
         </div>
         <button onclick="closeSpModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg px-2">✕</button>
       </div>
 
-      <div id="spPreviewContent" class="p-4 sm:p-6 bg-slate-50 border border-slate-200 rounded-xl space-y-4 text-xs sm:text-sm text-slate-700">
-        <!-- Rendered SP Letter Preview -->
+      <div id="spPreviewContent" class="p-6 bg-white border border-slate-200 rounded-xl space-y-4 text-xs sm:text-sm text-slate-800 leading-relaxed" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
+        <!-- Rendered official SP format matching uploaded PDF -->
       </div>
 
       <div class="flex flex-wrap justify-end gap-2 pt-2 border-t">
         <button onclick="closeSpModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium text-xs sm:text-sm transition">Tutup</button>
         <button onclick="downloadSpPdf()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-xs sm:text-sm transition flex items-center gap-2">
-          <span>Download PDF Surat SP</span>
+          <span>Download PDF Surat Perjanjian</span>
         </button>
         <button id="publishSpBtn" onclick="publishSpToDrive()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium text-xs sm:text-sm transition flex items-center gap-2">
           <span>Publish & Simpan ke GDrive</span>
@@ -625,11 +613,11 @@
 
     function statusFromPoints(points) {
       const p = normalizePoints(points);
-      if (p >= 100) return { label: "SP Akhir (Tindakan Tegas)", cls: "bg-red-100 text-red-800", level: 4 };
-      if (p >= 50) return { label: "SP III", cls: "bg-red-100 text-red-700", level: 3 };
-      if (p >= 35) return { label: "SP II", cls: "bg-orange-100 text-orange-700", level: 2 };
-      if (p >= 20) return { label: "SP I", cls: "bg-yellow-100 text-yellow-700", level: 1 };
-      return { label: "Aman", cls: "bg-emerald-100 text-emerald-700", level: 0 };
+      if (p >= 100) return { label: "SP Akhir (Tindakan Tegas)", roman: "IV", cls: "bg-red-100 text-red-800", level: 4 };
+      if (p >= 50) return { label: "SP III", roman: "III", cls: "bg-red-100 text-red-700", level: 3 };
+      if (p >= 35) return { label: "SP II", roman: "II", cls: "bg-orange-100 text-orange-700", level: 2 };
+      if (p >= 20) return { label: "SP I", roman: "I", cls: "bg-yellow-100 text-yellow-700", level: 1 };
+      return { label: "Aman", roman: "0", cls: "bg-emerald-100 text-emerald-700", level: 0 };
     }
 
     function toast(msg, type="success") {
@@ -1111,14 +1099,14 @@
       grid.innerHTML = cats.map(cat => {
         const list = VIOLATIONS.filter(v => v.category === cat);
         const previewText = list.map(v => {
-          const shortName = v.type.replace(/^\d+[\.\)]\s*/, "").split(" ")[0] + ` (${v.points})`;
-          return shortName;
+          const parts = v.type.split(" ");
+          return parts[0] + " " + v.points;
         }).join(" • ");
 
         return `
           <div class="card p-5 space-y-2 hover:border-indigo-300 transition">
             <h3 class="font-bold text-base text-indigo-900">${escapeHTML(cat)}</h3>
-            <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">${escapeHTML(previewText)}</p>
+            <p class="text-xs text-slate-500 leading-relaxed">${escapeHTML(previewText)}</p>
           </div>
         `;
       }).join("");
@@ -1141,106 +1129,70 @@
       }
       currentSpStudent = student;
       const st = statusFromPoints(student.poin);
-      let jenisSp = st.label;
-      if (jenisSp.includes("SP I")) jenisSp = "SP I";
-      else if (jenisSp.includes("SP II")) jenisSp = "SP II";
-      else if (jenisSp.includes("SP III")) jenisSp = "SP III";
-      else if (jenisSp.includes("Akhir")) jenisSp = "SP IV (Akhir)";
+      const romanLevel = st.roman || "I";
 
-      document.getElementById("spModalTitle").textContent = `Penerbitan Surat Peringatan (${jenisSp})`;
+      document.getElementById("spModalTitle").textContent = `SURAT PERJANJIAN TINGKAT ${romanLevel}`;
       document.getElementById("spModalSubtitle").textContent = `Siswa: ${student.nama} (${student.kelas}) - Total Poin: ${student.poin}`;
 
       const fullStudentData = studentsList.find(s => s.nama.toLowerCase() === student.nama.toLowerCase()) || {};
 
+      let batasPoinRange = "20-30";
+      if (romanLevel === "II") batasPoinRange = "31-49";
+      else if (romanLevel === "III") batasPoinRange = "50-99";
+      else if (romanLevel === "IV" || romanLevel === "Akhir") batasPoinRange = "≥100";
+
       const preview = document.getElementById("spPreviewContent");
       preview.innerHTML = `
-        <div class="text-center font-bold pb-4 border-b space-y-1">
-          <p class="text-xs sm:text-sm uppercase tracking-wider text-slate-500">PEMERINTAH KABUPATEN MERANGIN</p>
-          <p class="text-sm sm:text-base uppercase tracking-wide text-indigo-900">DINAS PENDIDIKAN DAN KEBUDAYAAN</p>
-          <p class="text-base sm:text-lg uppercase font-extrabold text-slate-900">SMP NEGERI 37 MERANGIN</p>
-          <p class="text-[11px] font-normal text-slate-500">Alamat: Kabupaten Merangin, Jambi</p>
+        <div class="text-center font-bold pb-3 border-b-2 border-slate-800 space-y-0.5" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
+          <p class="uppercase tracking-wider">PEMERINTAH KABUPATEN MERANGIN</p>
+          <p class="uppercase tracking-wide">DINAS PENDIDIKAN DAN KEBUDAYAAN</p>
+          <p class="uppercase font-extrabold">SMP NEGERI 37 MERANGIN</p>
+          <p class="font-normal text-xs">Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351</p>
         </div>
 
-        <div class="text-center py-2">
-          <p class="font-bold underline text-xs sm:text-sm tracking-wide">SURAT PERINGATAN (${jenisSp.toUpperCase()})</p>
-          <p class="text-[11px] text-slate-500">Nomor: 421.3 / ${Math.floor(Math.random()*899+100)} / SMPN.37 / ${new Date().getFullYear()}</p>
+        <div class="text-center py-2" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
+          <p class="font-bold underline tracking-wide">SURAT PERJANJIAN TINGKAT ${romanLevel}</p>
         </div>
 
-        <div class="space-y-2 text-xs sm:text-sm">
-          <p>Diberitahukan dengan hormat kepada Orang Tua / Wali murid dari:</p>
-          <div class="pl-4 border-l-2 border-indigo-600 space-y-1 bg-white p-3 rounded-lg shadow-sm">
-            <p><b>Nama Siswa:</b> ${escapeHTML(student.nama)}</p>
-            <p><b>NIS / NISN:</b> ${escapeHTML(fullStudentData.nis || '-')} / ${escapeHTML(fullStudentData.nisn || '-')}</p>
-            <p><b>Kelas:</b> ${escapeHTML(student.kelas)}</p>
-            <p><b>Akumulasi Poin Pelanggaran:</b> <span class="text-red-600 font-bold">${student.poin} Poin</span></p>
-            <p><b>Status Sanksi:</b> <span class="px-2 py-0.5 rounded ${st.cls}">${st.label}</span></p>
-          </div>
+        <div class="space-y-3" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
+          <p>Yang bertanda tangan di bawah ini:</p>
+          <table class="w-full ml-2 space-y-1" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
+            <tr><td class="w-48 font-medium py-0.5">Nama Siswa</td><td>: <b>${escapeHTML(student.nama)}</b></td></tr>
+            <tr><td class="font-medium py-0.5">NIS</td><td>: ${escapeHTML(fullStudentData.nis || '-')}</td></tr>
+            <tr><td class="font-medium py-0.5">NISN</td><td>: ${escapeHTML(fullStudentData.nisn || '-')}</td></tr>
+            <tr><td class="font-medium py-0.5">Kelas</td><td>: ${escapeHTML(student.kelas)}</td></tr>
+            <tr><td class="font-medium py-0.5">Total Poin Pelanggaran</td><td>: <span style="color: black !important; font-weight: bold;">${student.poin} Poin</span> (Batas SP: ${batasPoinRange})</td></tr>
+          </table>
 
-          <p class="pt-2">Berdasarkan catatan tata tertib sekolah, siswa tersebut di atas telah mengumpulkan akumulasi poin pelanggaran yang mengharuskan pihak sekolah menerbitkan <b>${jenisSp}</b>, dengan rincian catatan pelanggaran sebagai berikut:</p>
-          
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border mt-2 bg-white rounded text-xs">
-              <thead>
-                <tr class="bg-slate-100 border-b text-slate-600">
-                  <th class="p-2">Tanggal</th>
-                  <th class="p-2">Jenis Pelanggaran</th>
-                  <th class="p-2 text-center">Poin</th>
-                  <th class="p-2">Keterangan</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${student.records.map(r => `
-                  <tr class="border-b">
-                    <td class="p-2">${escapeHTML(r.tanggal)}</td>
-                    <td class="p-2">${escapeHTML(r.pelanggaran)}</td>
-                    <td class="p-2 text-center font-bold text-red-600">${normalizePoints(r.poin)}</td>
-                    <td class="p-2 text-slate-500">${escapeHTML(r.keterangan || '-')}</td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
+          <p class="font-medium pt-1">Rincian Pelanggaran:</p>
+          <ol class="list-decimal pl-5 space-y-0.5">
+            ${student.records.map(r => `<li>${escapeHTML(r.tanggal)} - ${escapeHTML(r.pelanggaran)} (${normalizePoints(r.poin)} poin)</li>`).join("")}
+          </ol>
 
-          <p class="pt-2">Demikian surat peringatan ini diterbitkan agar mendapat perhatian, bimbingan, dan pengawasan lebih intensif dari Orang Tua/Wali di rumah demi perbaikan perilaku siswa yang bersangkutan.</p>
+          <p class="pt-2">Dengan ini menyatakan dengan sesungguhnya bahwa:</p>
+          <ol class="list-decimal pl-5 space-y-1">
+            <li>Saya menyadari telah melakukan pelanggaran tata tertib sekolah.</li>
+            <li>Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.</li>
+            <li>Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.</li>
+          </ol>
+
+          <p class="pt-1">Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.</p>
         </div>
 
-        <div class="pt-6 space-y-4 text-xs sm:text-sm">
-          <div class="grid grid-cols-2 gap-4 text-center">
+        <div class="pt-6 space-y-6" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
+          <div class="flex justify-between items-start pt-2">
             <div>
-              <p class="font-semibold">Mengetahui,</p>
-              <p class="font-semibold">Orang Tua / Wali Murid</p>
-              <div class="h-16"></div>
-              <p class="underline font-bold">( ${escapeHTML(fullStudentData.orangTua || '_______________________')} )</p>
-            </div>
-            <div>
-              <p class="font-semibold">Mengetahui,</p>
-              <p class="font-semibold">Wali Kelas</p>
+              <p>Mengetahui,</p>
+              <p class="font-semibold">Wali Kelas,</p>
               <div class="h-16"></div>
               <p class="underline font-bold">${escapeHTML(settings.wali)}</p>
             </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4 text-center pt-2">
-            <div>
-              <p class="font-semibold">Guru BP / BK</p>
+            <div class="text-right">
+              <p>Pulau Rengas, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</p>
+              <p class="font-semibold">Siswa yang bersangkutan,</p>
               <div class="h-16"></div>
-              <p class="underline font-bold">${escapeHTML(settings.bp)}</p>
-              <p>${escapeHTML(settings.nipBp)}</p>
+              <p class="underline font-bold">( ${escapeHTML(student.nama)} )</p>
             </div>
-            <div>
-              <p class="font-semibold">Waka Kesiswaan</p>
-              <div class="h-16"></div>
-              <p class="underline font-bold">${escapeHTML(settings.waka)}</p>
-              <p>${escapeHTML(settings.nipWaka)}</p>
-            </div>
-          </div>
-
-          <div class="text-center pt-2">
-            <p>Merangin, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</p>
-            <p class="font-semibold">Kepala SMPN 37 Merangin</p>
-            <div class="h-16"></div>
-            <p class="font-bold underline">${escapeHTML(settings.kepsek)}</p>
-            <p>${escapeHTML(settings.nipKepsek)}</p>
           </div>
         </div>
       `;
@@ -1258,63 +1210,92 @@
       if (!currentSpStudent) return;
       const student = currentSpStudent;
       const st = statusFromPoints(student.poin);
-      let jenisSp = st.label;
+      const romanLevel = st.roman || "I";
 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF("portrait", "mm", "a4");
 
-      doc.setFontSize(11);
+      doc.setFont("times", "bold");
+      doc.setFontSize(12);
       doc.text("PEMERINTAH KABUPATEN MERANGIN", 105, 12, { align: "center" });
-      doc.setFontSize(13);
-      doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", 105, 18, { align: "center" });
-      doc.setFontSize(15);
-      doc.text("SMP NEGERI 37 MERANGIN", 105, 25, { align: "center" });
-      doc.setFontSize(8);
-      doc.text("Alamat: Kabupaten Merangin, Jambi", 105, 30, { align: "center" });
-      doc.setLineWidth(0.4);
-      doc.line(14, 33, 196, 33);
+      doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", 105, 17, { align: "center" });
+      doc.setFontSize(14);
+      doc.text("SMP NEGERI 37 MERANGIN", 105, 23, { align: "center" });
+      doc.setFont("times", "normal");
+      doc.setFontSize(10);
+      doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", 105, 28, { align: "center" });
+      
+      doc.setLineWidth(0.5);
+      doc.line(14, 32, 196, 32);
 
-      doc.setFontSize(11);
-      doc.text(`SURAT PERINGATAN (${jenisSp.toUpperCase()})`, 105, 40, { align: "center" });
-      doc.setFontSize(9);
-      doc.text(`Nomor: 421.3 / SP / SMPN.37 / ${new Date().getFullYear()}`, 105, 45, { align: "center" });
+      doc.setFont("times", "bold");
+      doc.setFontSize(12);
+      doc.text(`SURAT PERJANJIAN TINGKAT ${romanLevel}`, 105, 40, { align: "center" });
 
-      doc.setFontSize(9);
-      doc.text("Diberitahukan dengan hormat kepada Orang Tua / Wali murid dari:", 14, 52);
-      doc.text(`Nama Siswa : ${student.nama}`, 18, 58);
-      doc.text(`Kelas          : ${student.kelas}`, 18, 63);
-      doc.text(`Total Poin   : ${student.poin} Poin (${st.label})`, 18, 68);
+      doc.setFont("times", "normal");
+      doc.setFontSize(12);
+      doc.text("Yang bertanda tangan di bawah ini:", 14, 48);
 
-      doc.text("Rincian Catatan Pelanggaran:", 14, 76);
+      const fullStudentData = studentsList.find(s => s.nama.toLowerCase() === student.nama.toLowerCase()) || {};
 
-      doc.autoTable({
-        startY: 79,
-        head: [["Tanggal", "Jenis Pelanggaran", "Poin", "Keterangan"]],
-        body: student.records.map(r => [r.tanggal, r.pelanggaran, normalizePoints(r.poin), r.keterangan || "-"]),
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [79, 70, 229] }
+      let startY = 54;
+      doc.text("Nama Siswa", 16, startY); doc.text(`: ${student.nama}`, 65, startY);
+      startY += 6;
+      doc.text("NIS", 16, startY); doc.text(`: ${fullStudentData.nis || '-'}`, 65, startY);
+      startY += 6;
+      doc.text("NISN", 16, startY); doc.text(`: ${fullStudentData.nisn || '-'}`, 65, startY);
+      startY += 6;
+      doc.text("Kelas", 16, startY); doc.text(`: ${student.kelas}`, 65, startY);
+      
+      startY += 6;
+      doc.text("Total Poin Pelanggaran", 16, startY);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`: ${student.poin} Poin`, 65, startY);
+      doc.setTextColor(0, 0, 0); // reset black
+
+      startY += 10;
+      doc.setFont("times", "bold");
+      doc.text("Rincian Pelanggaran:", 14, startY);
+      
+      startY += 4;
+      doc.setFont("times", "normal");
+      student.records.forEach((r, idx) => {
+        startY += 6;
+        doc.text(`${idx + 1}. ${r.tanggal} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`, 18, startY);
       });
 
-      let finalY = doc.lastAutoTable.finalY + 10;
-      
-      doc.setFontSize(8);
-      doc.text("Orang Tua / Wali Murid", 30, finalY);
-      doc.text("Wali Kelas", 150, finalY);
-      doc.text("( ___________________ )", 20, finalY + 22);
-      doc.text(settings.wali, 140, finalY + 22);
+      startY += 10;
+      doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", 14, startY);
 
-      doc.text("Guru BP / BK", 30, finalY + 30);
-      doc.text("Waka Kesiswaan", 150, finalY + 30);
-      doc.text(settings.bp, 24, finalY + 52);
-      doc.text(settings.waka, 140, finalY + 52);
+      startY += 6;
+      doc.text("1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", 18, startY);
+      startY += 6;
+      doc.text("2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran", 18, startY);
+      startY += 5;
+      doc.text("    lainnya di kemudian hari.", 18, startY);
+      startY += 6;
+      doc.text("3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan", 18, startY);
+      startY += 5;
+      doc.text("    pada tingkat selanjutnya sesuai aturan sekolah.", 18, startY);
 
-      doc.text(`Merangin, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`, 105, finalY + 62, { align: "center" });
-      doc.text("Kepala SMPN 37 Merangin", 105, finalY + 67, { align: "center" });
-      doc.text(settings.kepsek, 105, finalY + 86, { align: "center" });
-      doc.text(settings.nipKepsek, 105, finalY + 91, { align: "center" });
+      startY += 10;
+      doc.text("Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.", 14, startY);
 
-      doc.save(`Surat_${jenisSp.replace(/\s+/g, '_')}_${student.nama.replace(/\s+/g, '_')}.pdf`);
-      toast("File PDF Surat SP berhasil diunduh.");
+      startY += 15;
+      doc.text("Mengetahui,", 16, startY);
+      doc.text(`Pulau Rengas, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`, 135, startY);
+
+      startY += 5;
+      doc.text("Wali Kelas,", 16, startY);
+      doc.text("Siswa yang bersangkutan,", 135, startY);
+
+      startY += 22;
+      doc.setFont("times", "bold");
+      doc.text(settings.wali, 16, startY);
+      doc.text(`(${student.nama})`, 135, startY);
+
+      doc.save(`Surat_Perjanjian_Tingkat_${romanLevel}_${student.nama.replace(/\s+/g, '_')}.pdf`);
+      toast("File PDF Surat Perjanjian berhasil diunduh.");
     }
 
     async function publishSpToDrive() {
@@ -1322,11 +1303,11 @@
         toast("URL Apps Script belum dikonfigurasi untuk menyimpan ke Google Drive.", "error");
         return;
       }
-      toast("Mengunggah Surat SP ke Google Drive...", "warning");
+      toast("Mengunggah Surat Perjanjian ke Google Drive...", "warning");
       
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF("portrait", "mm", "a4");
-      doc.text("SURAT PERINGATAN SISWA - SMPN 37 MERANGIN", 14, 20);
+      doc.text("SURAT PERJANJIAN SISWA - SMPN 37 MERANGIN", 14, 20);
       doc.text(`Siswa: ${currentSpStudent.nama} (${currentSpStudent.kelas})`, 14, 30);
       doc.text(`Total Poin: ${currentSpStudent.poin}`, 14, 40);
       const pdfBase64 = doc.output('datauristring');
@@ -1347,7 +1328,7 @@
         });
         const json = await res.json();
         if (json && json.success) {
-          toast("Surat SP berhasil diterbitkan dan disimpan ke Google Drive!");
+          toast("Surat Perjanjian berhasil diterbitkan dan disimpan ke Google Drive!");
           closeSpModal();
         } else {
           toast("Gagal mempublish surat ke Drive.", "error");
@@ -1358,12 +1339,7 @@
     }
 
     function exportBackup() {
-      const data = {
-        records,
-        studentsList,
-        settings,
-        version: "2.0"
-      };
+      const data = { records, studentsList, settings, version: "2.0" };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
