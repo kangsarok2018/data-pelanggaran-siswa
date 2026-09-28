@@ -107,6 +107,7 @@
 
     <main class="lg:col-span-9 space-y-6 w-full overflow-hidden">
 
+      <!-- DASHBOARD TAB -->
       <section id="tab-dashboard" class="tab-content space-y-6">
         <div class="card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -189,6 +190,7 @@
         </div>
       </section>
 
+      <!-- DATA SISWA TAB -->
       <section id="tab-siswa" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -226,6 +228,7 @@
         </div>
       </section>
 
+      <!-- INPUT PELANGGARAN TAB -->
       <section id="tab-input" class="tab-content hidden">
         <div class="card p-4 sm:p-6 max-w-2xl mx-auto space-y-6">
           <div>
@@ -308,6 +311,7 @@
         </div>
       </section>
 
+      <!-- RIWAYAT & SANKSI TAB -->
       <section id="tab-riwayat" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-5">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
@@ -344,12 +348,13 @@
         </div>
       </section>
 
+      <!-- MENU SURAT PERINGATAN (SP) TAB -->
       <section id="tab-sp" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-5">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
             <div>
               <h2 class="text-lg sm:text-xl font-bold">Menu Surat Peringatan (SP) & Akumulasi Poin</h2>
-              <p class="text-xs sm:text-sm text-slate-500">Daftar siswa yang mencapai ambang batas sanksi SP (SP I, SP II, SP III, SP Akhir).</p>
+              <p class="text-xs sm:text-sm text-slate-500">Daftar siswa yang mencapai ambang batas sanksi SP (SP I, SP II, SP III, SP IV).</p>
             </div>
             <div class="flex flex-wrap gap-2">
               <select id="spSemester" class="input !w-auto text-xs sm:text-sm" onchange="renderSpMenu()">
@@ -359,10 +364,10 @@
               </select>
               <select id="spFilterLevel" class="input !w-auto text-xs sm:text-sm" onchange="renderSpMenu()">
                 <option value="Semua">Semua Tingkat SP</option>
-                <option value="1">SP I (≥20 Poin)</option>
-                <option value="2">SP II (≥35 Poin)</option>
-                <option value="3">SP III (≥50 Poin)</option>
-                <option value="4">SP Akhir (≥100 Poin)</option>
+                <option value="1">SP I (20-30 Poin)</option>
+                <option value="2">SP II (31-49 Poin)</option>
+                <option value="3">SP III (50-99 Poin)</option>
+                <option value="4">SP IV (≥100 Poin)</option>
               </select>
               <input id="searchSp" oninput="renderSpMenu()" class="input !w-full sm:!w-48 text-xs sm:text-sm" placeholder="Cari nama siswa...">
             </div>
@@ -387,12 +392,13 @@
         </div>
       </section>
 
+      <!-- KATEGORI & POIN TAB -->
       <section id="tab-kategori" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-5">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h2 class="text-lg sm:text-xl font-bold">Daftar Kategori & Poin Pelanggaran</h2>
-              <p class="text-xs sm:text-sm text-slate-500">Daftar ini mengikuti konfigurasi aplikasi dan tata tertib SMP Negeri 37 Merangin.</p>
+              <p class="text-xs sm:text-sm text-slate-500">Daftar ini mengikuti konfigurasi aplikasi yang aktif.</p>
             </div>
             <div>
               <select id="filterCategoryCard" class="input text-xs sm:text-sm" onchange="renderKategoriTable()">
@@ -405,6 +411,7 @@
         <div id="kategoriCardsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </section>
 
+      <!-- PENGATURAN SEKOLAH TAB -->
       <section id="tab-pengaturan" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-6 max-w-2xl mx-auto space-y-6">
           <div>
@@ -421,7 +428,7 @@
                   Simpan URL
                 </button>
               </div>
-              <p class="text-[11px] text-indigo-700">Simpan URL Web App Anda terlebih dahulu agar tombol test dan sinkronisasi tersambung sempurna.</p>
+              <p class="text-[11px] text-indigo-700">Tempel URL deploy Google Apps Script Anda di sini agar sinkron otomatis.</p>
             </div>
 
             <hr class="border-slate-100 my-4">
@@ -459,13 +466,19 @@
               </div>
             </div>
 
-            <div>
-              <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Wali Kelas (Default)</label>
-              <input id="settingWali" class="input text-xs sm:text-sm" placeholder="Nama Wali Kelas & Gelar">
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Wali Kelas (Default)</label>
+                <input id="settingWali" class="input text-xs sm:text-sm" placeholder="Nama Wali Kelas & Gelar">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Pembina OSIS</label>
+                <input id="settingOsis" class="input text-xs sm:text-sm" placeholder="Nama Pembina OSIS & Gelar">
+              </div>
             </div>
 
             <button onclick="saveSettings()" class="btn w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm shadow-md">
-              Simpan Data Penandatangan & Sinkron ke Sheet Penanda_tangan
+              Simpan Pengaturan
             </button>
           </div>
         </div>
@@ -474,6 +487,7 @@
     </main>
   </div>
 
+  <!-- ADD STUDENT MODAL -->
   <div id="studentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
@@ -513,6 +527,7 @@
     </div>
   </div>
 
+  <!-- SP PREVIEW MODAL -->
   <div id="spModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b pb-3">
@@ -523,8 +538,8 @@
         <button onclick="closeSpModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg px-2">✕</button>
       </div>
 
-      <div id="spPreviewContent" class="p-6 bg-white border border-slate-200 rounded-xl space-y-4 text-xs sm:text-sm text-slate-800 leading-relaxed" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
-        <!-- Rendered official SP format matching uploaded PDF -->
+      <div id="spPreviewContent" class="p-6 bg-white border border-slate-200 rounded-xl space-y-4 text-xs sm:text-sm text-slate-800 leading-relaxed" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; color: black;">
+        <!-- Rendered official SP format -->
       </div>
 
       <div class="flex flex-wrap justify-end gap-2 pt-2 border-t">
@@ -543,47 +558,37 @@
 
   <script>
     const VIOLATIONS = [
-      { category:"I. TERLAMBAT", type:"1.a. Masuk Sekolah Kurang dari 15 menit", points:2 },
-      { category:"I. TERLAMBAT", type:"1.b. Masuk Sekolah Lebih dari 15 menit", points:4 },
-      { category:"I. TERLAMBAT", type:"2. Kembali dan izin keluar melebihi dari ketentuan", points:2 },
+      { category:"I. Kedisiplinan", type:"Terlambat datang ke sekolah", points:5 },
+      { category:"I. Kedisiplinan", type:"Tidak mengikuti apel/upacara tanpa alasan", points:5 },
+      { category:"I. Kedisiplinan", type:"Meninggalkan sekolah tanpa izin", points:10 },
 
-      { category:"II. KEHADIRAN", type:"1. Tidak hadir di sekolah tanpa keterangan", points:5 },
-      { category:"II. KEHADIRAN", type:"2. Tidak hadir dan membuat surat keterangan palsu", points:5 },
-      { category:"II. KEHADIRAN", type:"3. Tidak mengikuti upacara bendera hari senin", points:2 },
-      { category:"II. KEHADIRAN", type:"4. Tidak mengikuti upacara hari-hari besar", points:5 },
-      { category:"II. KEHADIRAN", type:"5. Tidak mengikuti kegiatan keagamaan", points:5 },
+      { category:"II. Seragam dan Atribut", type:"Tidak memakai atribut lengkap", points:5 },
+      { category:"II. Seragam dan Atribut", type:"Memakai seragam tidak sesuai ketentuan", points:5 },
+      { category:"II. Seragam dan Atribut", type:"Rambut/penampilan tidak sesuai ketentuan", points:5 },
 
-      { category:"III. PAKAIAN", type:"1. Memakai pakaian seragam tidak sesuai dengan ketentuan", points:3 },
-      { category:"III. PAKAIAN", type:"2. Tidak memakai perlengkapan upacara", points:3 },
-      { category:"III. PAKAIAN", type:"3. Tidak memakai pakaian olahraga pada saat penjaskes", points:3 },
-      { category:"III. PAKAIAN", type:"4. Rambut diberi warna", points:5 },
-      { category:"III. PAKAIAN", type:"5. Siswa putra memakai perhiasan seperti anting-anting, gelang, kalung, bando", points:4 },
-      { category:"III. PAKAIAN", type:"6. Siswa putri memakai perhiasan yang berlebihan/tidak pada tempatnya", points:4 },
+      { category:"III. Kehadiran", type:"Tidak masuk tanpa keterangan", points:10 },
+      { category:"III. Kehadiran", type:"Membolos pada jam pelajaran", points:15 },
 
-      { category:"IV. KETERTIBAN", type:"1. Mencoret dinding atau merusak fasilitas sekolah", points:10 },
-      { category:"IV. KETERTIBAN", type:"2. Mencuri uang atau barang", points:50 },
-      { category:"IV. KETERTIBAN", type:"3. Membuat keributan didalam/diluar kelas pada saat belajar", points:5 },
-      { category:"IV. KETERTIBAN", type:"4. Meninggalkan kelas tanpa izin pada jam pelajaran berlangsung", points:5 },
-      { category:"IV. KETERTIBAN", type:"5. Keluar perkarangan sekolah tanpa izin guru piket", points:5 },
-      { category:"IV. KETERTIBAN", type:"6. Keluar kelas pada saat pergantian jam pelajaran tanpa izin dari guru", points:5 },
-      { category:"IV. KETERTIBAN", type:"7. Duduk atau bermain di area parkir", points:5 },
-      { category:"IV. KETERTIBAN", type:"8. Melompat pagar", points:10 },
-      { category:"IV. KETERTIBAN", type:"9. Membawa HP", points:20 },
+      { category:"IV. Ketertiban", type:"Mengganggu ketertiban kelas", points:5 },
+      { category:"IV. Ketertiban", type:"Tidak membawa perlengkapan belajar", points:3 },
+      { category:"IV. Ketertiban", type:"Bermain saat proses pembelajaran", points:5 },
 
-      { category:"V. ROKOK", type:"1. Membawa korek api", points:5 },
-      { category:"V. ROKOK", type:"2. Membawa rokok", points:10 },
-      { category:"V. ROKOK", type:"3. Merokok dilingkungan sekolah", points:15 },
-      { category:"V. ROKOK", type:"4. Siswa putri merokok/membawa rokok", points:30 },
+      { category:"V. Sikap dan Etika", type:"Berkata tidak sopan kepada warga sekolah", points:10 },
+      { category:"V. Sikap dan Etika", type:"Tidak menghormati guru/karyawan", points:10 },
+      { category:"V. Sikap dan Etika", type:"Berkelahi", points:25 },
 
-      { category:"VI. SENJATA", type:"1. Membawa senjata tajam, senjata api, bahan peledak dll", points:50 },
+      { category:"VI. Kebersihan", type:"Membuang sampah sembarangan", points:5 },
+      { category:"VI. Kebersihan", type:"Tidak melaksanakan piket", points:5 },
+      { category:"VI. Kebersihan", type:"Merusak kebersihan fasilitas sekolah", points:10 },
 
-      { category:"VII. MINUMAN KERAS/NARKOBA/PORNOGRAFI", type:"1. Membawa atau menggunakan minuman keras/narkoba", points:50 },
+      { category:"VII. Barang Terlarang", type:"Membawa barang yang dilarang sekolah", points:25 },
+      { category:"VII. Barang Terlarang", type:"Merokok di lingkungan sekolah", points:50 },
 
-      { category:"VIII. PERKELAHIAN", type:"1. Perkelahian antar siswa SMP Negeri 37 Merangin", points:50 },
-      { category:"VIII. PERKELAHIAN", type:"2. Perkelahian yang melibatkan orang luar", points:75 },
+      { category:"VIII. Kekerasan dan Perundungan", type:"Mengintimidasi/perundungan", points:25 },
+      { category:"VIII. Kekerasan dan Perundungan", type:"Melakukan kekerasan fisik", points:50 },
 
-      { category:"IX. MELAWAN GURU/STAF TATA USAHA", type:"1. Penghinaan secara lisan atau tertulis", points:75 },
-      { category:"IX. MELAWAN GURU/STAF TATA USAHA", type:"2. Ancaman, teror atau Pemukulan", points:100 }
+      { category:"IX. Pelanggaran Berat", type:"Membawa senjata/barang berbahaya", points:75 },
+      { category:"IX. Pelanggaran Berat", type:"Pelanggaran berat lainnya", points:100 }
     ];
 
     let records = [];
@@ -599,7 +604,9 @@
       nipWaka: localStorage.getItem("smpn37_nip_waka") || "NIP. 197004121998031005",
       bp: localStorage.getItem("smpn37_bp") || "Siti Rahma, S.Pd",
       nipBp: localStorage.getItem("smpn37_nip_bp") || "NIP. 197505122005012004",
-      wali: localStorage.getItem("smpn37_wali") || "Rahmat Hidayat, S.Pd"
+      wali: localStorage.getItem("smpn37_wali") || "Rahmat Hidayat, S.Pd",
+      osis: localStorage.getItem("smpn37_osis") || "Drs. H. M. Ali, M.Pd",
+      nipOsis: localStorage.getItem("smpn37_nip_osis") || "NIP. 197805122005011003"
     };
 
     function escapeHTML(str) {
@@ -613,11 +620,11 @@
 
     function statusFromPoints(points) {
       const p = normalizePoints(points);
-      if (p >= 100) return { label: "SP Akhir (Tindakan Tegas)", roman: "IV", cls: "bg-red-100 text-red-800", level: 4 };
-      if (p >= 50) return { label: "SP III", roman: "III", cls: "bg-red-100 text-red-700", level: 3 };
-      if (p >= 35) return { label: "SP II", roman: "II", cls: "bg-orange-100 text-orange-700", level: 2 };
-      if (p >= 20) return { label: "SP I", roman: "I", cls: "bg-yellow-100 text-yellow-700", level: 1 };
-      return { label: "Aman", roman: "0", cls: "bg-emerald-100 text-emerald-700", level: 0 };
+      if (p >= 100) return { label: "SP Akhir (Tindakan Tegas)", roman: "IV", type: 4, cls: "bg-red-100 text-red-800", level: 4, range: "≥100" };
+      if (p >= 50) return { label: "SP III", roman: "III", type: 3, cls: "bg-red-100 text-red-700", level: 3, range: "50-99" };
+      if (p >= 35) return { label: "SP II", roman: "II", type: 2, cls: "bg-orange-100 text-orange-700", level: 2, range: "31-49" };
+      if (p >= 20) return { label: "SP I", roman: "I", type: 1, cls: "bg-yellow-100 text-yellow-700", level: 1, range: "20-30" };
+      return { label: "Aman", roman: "0", type: 0, cls: "bg-emerald-100 text-emerald-700", level: 0, range: "0-19" };
     }
 
     function toast(msg, type="success") {
@@ -626,7 +633,8 @@
         type === "error" ? "bg-red-600 text-white" : type === "warning" ? "bg-amber-500 text-white" : "bg-slate-900 text-white"
       }`;
       el.textContent = msg;
-      document.getElementById("toastContainer").appendChild(el);
+      const container = document.getElementById("toastContainer");
+      if (container) container.appendChild(el);
       setTimeout(() => el.remove(), 3500);
     }
 
@@ -650,8 +658,8 @@
             { id: "S1", nis: "1001", nisn: "0081234561", nama: "Ahmad Fauzi", kelas: "VII A", orangTua: "Budi Santoso" },
             { id: "S2", nis: "1002", nisn: "0081234562", nama: "Siti Aminah", kelas: "VII A", orangTua: "Hasan Basri" },
             { id: "S3", nis: "1003", nisn: "0081234563", nama: "Budi Saputra", kelas: "VII B", orangTua: "Joko Susilo" },
-            { id: "S4", nis: "1019", nisn: "0081234579", nama: "Yusuf Wijaya", kelas: "VIII A", orangTua: "Herman" },
-            { id: "S5", nis: "1020", nisn: "0081234580", nama: "Satria Saputra", kelas: "VIII A", orangTua: "Suwarto" }
+            { id: "S4", nis: "1007", nisn: "3201000007", nama: "Irfan Kusuma", kelas: "VII A", orangTua: "Herman" },
+            { id: "S5", nis: "1032", nisn: "3201000032", nama: "Eko Setiawan", kelas: "IX A", orangTua: "Suwarto" }
           ];
         }
       } catch {
@@ -704,14 +712,18 @@
             if (p.bp) settings.bp = p.bp;
             if (p.nipBp) settings.nipBp = p.nipBp;
             if (p.wali) settings.wali = p.wali;
+            if (p.osis) settings.osis = p.osis;
+            if (p.nipOsis) settings.nipOsis = p.nipOsis;
             
-            document.getElementById("settingKepsek").value = settings.kepsek;
-            document.getElementById("settingNipKepsek").value = settings.nipKepsek;
-            document.getElementById("settingWaka").value = settings.waka;
-            document.getElementById("settingNipWaka").value = settings.nipWaka;
-            document.getElementById("settingBp").value = settings.bp;
-            document.getElementById("settingNipBp").value = settings.nipBp;
-            document.getElementById("settingWali").value = settings.wali;
+            const elKepsek = document.getElementById("settingKepsek"); if(elKepsek) elKepsek.value = settings.kepsek;
+            const elNipKepsek = document.getElementById("settingNipKepsek"); if(elNipKepsek) elNipKepsek.value = settings.nipKepsek;
+            const elWaka = document.getElementById("settingWaka"); if(elWaka) elWaka.value = settings.waka;
+            const elNipWaka = document.getElementById("settingNipWaka"); if(elNipWaka) elNipWaka.value = settings.nipWaka;
+            const elBp = document.getElementById("settingBp"); if(elBp) elBp.value = settings.bp;
+            const elNipBp = document.getElementById("settingNipBp"); if(elNipBp) elNipBp.value = settings.nipBp;
+            const elWali = document.getElementById("settingWali"); if(elWali) elWali.value = settings.wali;
+            const elOsis = document.getElementById("settingOsis"); if(elOsis) elOsis.value = settings.osis;
+            const elNipOsis = document.getElementById("settingNipOsis"); if(elNipOsis) elNipOsis.value = settings.nipOsis;
           }
 
           saveLocal();
@@ -723,7 +735,8 @@
     }
 
     async function testConnection() {
-      const url = document.getElementById("settingApiUrl").value.trim() || settings.apiUrl;
+      const urlInput = document.getElementById("settingApiUrl");
+      const url = (urlInput ? urlInput.value.trim() : "") || settings.apiUrl;
       if (!url) {
         toast("URL Apps Script belum diisi di Pengaturan Sekolah.", "warning");
         return;
@@ -743,6 +756,7 @@
 
     function populateCategories() {
       const select = document.getElementById("category");
+      if (!select) return;
       const cats = [...new Set(VIOLATIONS.map(v => v.category))];
       select.innerHTML = '<option value="">-- Pilih Kategori --</option>' +
         cats.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");
@@ -755,22 +769,30 @@
     }
 
     function populateViolationTypes() {
-      const cat = document.getElementById("category").value;
+      const catEl = document.getElementById("category");
       const select = document.getElementById("violationType");
+      const pointsEl = document.getElementById("points");
+      if (!catEl || !select) return;
+      
+      const cat = catEl.value;
       const list = VIOLATIONS.filter(v => v.category === cat);
       select.innerHTML = '<option value="">-- Pilih Jenis Pelanggaran --</option>' +
         list.map(v => `<option value="${escapeHTML(v.type)}" data-points="${v.points}">${escapeHTML(v.type)} (Poin: ${v.points})</option>`).join("");
-      document.getElementById("points").value = "0";
+      if (pointsEl) pointsEl.value = "0";
     }
 
     function updatePoints() {
       const opt = document.querySelector("#violationType option:checked");
-      document.getElementById("points").value = opt?.dataset?.points || 0;
+      const pointsEl = document.getElementById("points");
+      if (pointsEl) pointsEl.value = opt?.dataset?.points || 0;
     }
 
     function onInputClassChange() {
-      const selectedClass = document.getElementById("inputClassSelect").value;
+      const classSelect = document.getElementById("inputClassSelect");
       const studentInput = document.getElementById("studentSearchInput");
+      if (!classSelect || !studentInput) return;
+
+      const selectedClass = classSelect.value;
 
       selectedStudentName = "";
       studentInput.value = "";
@@ -788,21 +810,26 @@
     }
 
     function toggleStudentDropdown(e) {
-      e.stopPropagation();
+      if (e) e.stopPropagation();
       const dropdown = document.getElementById("studentDropdownList");
-      if (document.getElementById("studentSearchInput").disabled) return;
+      const studentInput = document.getElementById("studentSearchInput");
+      if (!dropdown || !studentInput || studentInput.disabled) return;
       dropdown.classList.toggle("hidden");
       if (!dropdown.classList.contains("hidden")) {
-        document.getElementById("studentNameFilter").focus();
+        const nameFilter = document.getElementById("studentNameFilter");
+        if (nameFilter) nameFilter.focus();
       }
     }
 
     function closeStudentDropdown() {
-      document.getElementById("studentDropdownList").classList.add("hidden");
+      const dropdown = document.getElementById("studentDropdownList");
+      if (dropdown) dropdown.classList.add("hidden");
     }
 
     function buildCustomStudentDropdown(className, query = "") {
       const itemsContainer = document.getElementById("studentDropdownItems");
+      if (!itemsContainer) return;
+      
       let filtered = studentsList.filter(s => String(s.kelas).trim().toLowerCase() === String(className).trim().toLowerCase());
 
       if (query) {
@@ -829,21 +856,27 @@
     }
 
     function filterCustomStudentDropdown() {
-      const selectedClass = document.getElementById("inputClassSelect").value;
-      const query = document.getElementById("studentNameFilter").value.trim();
+      const classSelect = document.getElementById("inputClassSelect");
+      const nameFilter = document.getElementById("studentNameFilter");
+      if (!classSelect || !nameFilter) return;
+      
+      const selectedClass = classSelect.value;
+      const query = nameFilter.value.trim();
       if (!selectedClass) return;
       buildCustomStudentDropdown(selectedClass, query);
     }
 
     function selectStudent(nama) {
       selectedStudentName = nama;
-      document.getElementById("studentSearchInput").value = nama;
+      const studentInput = document.getElementById("studentSearchInput");
+      if (studentInput) studentInput.value = nama;
       closeStudentDropdown();
     }
 
     document.addEventListener("click", (e) => {
       const dropdown = document.getElementById("studentDropdownList");
-      const wrapper = document.getElementById("studentSearchInput")?.parentElement;
+      const studentInput = document.getElementById("studentSearchInput");
+      const wrapper = studentInput ? studentInput.parentElement : null;
       if (wrapper && !wrapper.contains(e.target)) {
         closeStudentDropdown();
       }
@@ -851,14 +884,23 @@
 
     async function submitViolation(e) {
       e.preventDefault();
-      const kelas = document.getElementById("inputClassSelect").value;
+      const classSelect = document.getElementById("inputClassSelect");
+      const dateEl = document.getElementById("violationDate");
+      const semEl = document.getElementById("semester");
+      const catEl = document.getElementById("category");
+      const violEl = document.getElementById("violationType");
+      const pointsEl = document.getElementById("points");
+      const notesEl = document.getElementById("notes");
+      const saveBtn = document.getElementById("saveBtn");
+
+      const kelas = classSelect ? classSelect.value : "";
       const nama = selectedStudentName;
-      const tanggal = document.getElementById("violationDate").value;
-      const semester = document.getElementById("semester").value;
-      const kategori = document.getElementById("category").value;
-      const pelanggaran = document.getElementById("violationType").value;
-      const poin = normalizePoints(document.getElementById("points").value);
-      const keterangan = document.getElementById("notes").value.trim();
+      const tanggal = dateEl ? dateEl.value : "";
+      const semester = semEl ? semEl.value : "";
+      const kategori = catEl ? catEl.value : "";
+      const pelanggaran = violEl ? violEl.value : "";
+      const poin = normalizePoints(pointsEl ? pointsEl.value : 0);
+      const keterangan = notesEl ? notesEl.value.trim() : "";
 
       if (!kelas || !nama || !tanggal || !kategori || !pelanggaran || poin <= 0) {
         toast("Mohon lengkapi Kelas, Nama Siswa, dan Jenis Pelanggaran dengan benar.", "error");
@@ -870,9 +912,10 @@
         nama, kelas, tanggal, semester, kategori, pelanggaran, poin, keterangan
       };
 
-      const btn = document.getElementById("saveBtn");
-      btn.disabled = true;
-      btn.textContent = "Menyimpan ke Google Sheets...";
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Menyimpan ke Google Sheets...";
+      }
 
       let savedToCloud = false;
       if (settings.apiUrl) {
@@ -892,17 +935,24 @@
       records.push(record);
       saveLocal();
 
-      btn.disabled = false;
-      btn.textContent = "Simpan Pelanggaran ke Google Sheets";
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Simpan Pelanggaran ke Google Sheets";
+      }
 
-      document.getElementById("violationForm").reset();
+      const form = document.getElementById("violationForm");
+      if (form) form.reset();
       selectedStudentName = "";
-      document.getElementById("studentSearchInput").value = "";
-      document.getElementById("studentSearchInput").disabled = true;
-      document.getElementById("studentSearchInput").placeholder = "-- Pilih Kelas Dahulu --";
-      document.getElementById("violationDate").valueAsDate = new Date();
-      document.getElementById("semester").value = detectSemester(document.getElementById("violationDate").value);
-      document.getElementById("points").value = "0";
+      
+      const studentInput = document.getElementById("studentSearchInput");
+      if (studentInput) {
+        studentInput.value = "";
+        studentInput.disabled = true;
+        studentInput.placeholder = "-- Pilih Kelas Dahulu --";
+      }
+      if (dateEl) dateEl.valueAsDate = new Date();
+      if (semEl) semEl.value = detectSemester(dateEl ? dateEl.value : "");
+      if (pointsEl) pointsEl.value = "0";
 
       toast(savedToCloud ? "Berhasil disimpan & sinkron ke Google Sheets!" : "Tersimpan di perangkat (Mode Offline).");
       renderAll();
@@ -912,11 +962,14 @@
     function getFilteredRecords(tabContext = "global") {
       let sem = "Semua";
       if (tabContext === "global") {
-        sem = document.getElementById("globalSemester")?.value || "Semua";
+        const el = document.getElementById("globalSemester");
+        sem = el ? el.value : "Semua";
       } else if (tabContext === "history") {
-        sem = document.getElementById("historySemester")?.value || "Semua";
+        const el = document.getElementById("historySemester");
+        sem = el ? el.value : "Semua";
       } else if (tabContext === "sp") {
-        sem = document.getElementById("spSemester")?.value || "Semua";
+        const el = document.getElementById("spSemester");
+        sem = el ? el.value : "Semua";
       }
       if (sem === "Semua") return [...records];
       return records.filter(r => String(r.semester) === String(sem));
@@ -941,59 +994,68 @@
       const filtered = getFilteredRecords("global");
       const students = aggregateStudents("global");
 
-      document.getElementById("statStudents").textContent = studentsList.length;
-      document.getElementById("statViolations").textContent = filtered.length;
-      document.getElementById("statSP").textContent = students.filter(s => normalizePoints(s.poin) >= 20).length;
+      const statStudents = document.getElementById("statStudents"); if (statStudents) statStudents.textContent = studentsList.length;
+      const statViolations = document.getElementById("statViolations"); if (statViolations) statViolations.textContent = filtered.length;
+      const statSP = document.getElementById("statSP"); if (statSP) statSP.textContent = students.filter(s => normalizePoints(s.poin) >= 20).length;
 
       const nowMonth = new Date().toISOString().slice(0, 7);
       const monthCount = filtered.filter(r => r.tanggal && r.tanggal.startsWith(nowMonth)).length;
-      document.getElementById("statMonth").textContent = monthCount;
+      const statMonth = document.getElementById("statMonth"); if (statMonth) statMonth.textContent = monthCount;
 
       const recentBody = document.getElementById("recentViolationsBody");
-      const recent = [...filtered].sort((a,b) => String(b.tanggal).localeCompare(String(a.tanggal))).slice(0, 5);
-      if (!recent.length) {
-        recentBody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Belum ada catatan pelanggaran.</td></tr>`;
-      } else {
-        recentBody.innerHTML = recent.map(r => `
-          <tr class="border-b hover:bg-slate-50">
-            <td class="py-2.5 pr-3 font-medium">${escapeHTML(r.tanggal)}</td>
-            <td class="py-2.5 pr-3 font-semibold text-slate-900">${escapeHTML(r.nama)}</td>
-            <td class="py-2.5 pr-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-xs font-semibold">${escapeHTML(r.kelas)}</span></td>
-            <td class="py-2.5 pr-3 text-slate-600">${escapeHTML(r.pelanggaran)}</td>
-            <td class="py-2.5 text-right font-bold text-red-600">+${r.poin}</td>
-          </tr>
-        `).join("");
+      if (recentBody) {
+        const recent = [...filtered].sort((a,b) => String(b.tanggal).localeCompare(String(a.tanggal))).slice(0, 5);
+        if (!recent.length) {
+          recentBody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Belum ada catatan pelanggaran.</td></tr>`;
+        } else {
+          recentBody.innerHTML = recent.map(r => `
+            <tr class="border-b hover:bg-slate-50">
+              <td class="py-2.5 pr-3 font-medium">${escapeHTML(r.tanggal)}</td>
+              <td class="py-2.5 pr-3 font-semibold text-slate-900">${escapeHTML(r.nama)}</td>
+              <td class="py-2.5 pr-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-xs font-semibold">${escapeHTML(r.kelas)}</span></td>
+              <td class="py-2.5 pr-3 text-slate-600">${escapeHTML(r.pelanggaran)}</td>
+              <td class="py-2.5 text-right font-bold text-red-600">+${r.poin}</td>
+            </tr>
+          `).join("");
+        }
       }
 
       const topContainer = document.getElementById("topStudentsDashboard");
-      const top = students.slice(0, 5);
-      if (!top.length) {
-        topContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Belum ada pelanggaran tercatat.</p>`;
-      } else {
-        topContainer.innerHTML = top.map((s, i) => {
-          const st = statusFromPoints(s.poin);
-          return `
-            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50">
-              <div class="flex items-center gap-3">
-                <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center">${i+1}</div>
-                <div>
-                  <p class="font-semibold text-xs text-slate-900">${escapeHTML(s.nama)}</p>
-                  <p class="text-[11px] text-slate-500">${escapeHTML(s.kelas)} · ${s.pelanggaran} kasus</p>
+      if (topContainer) {
+        const top = students.slice(0, 5);
+        if (!top.length) {
+          topContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Belum ada pelanggaran tercatat.</p>`;
+        } else {
+          topContainer.innerHTML = top.map((s, i) => {
+            const st = statusFromPoints(s.poin);
+            return `
+              <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50">
+                <div class="flex items-center gap-3">
+                  <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center">${i+1}</div>
+                  <div>
+                    <p class="font-semibold text-xs text-slate-900">${escapeHTML(s.nama)}</p>
+                    <p class="text-[11px] text-slate-500">${escapeHTML(s.kelas)} · ${s.pelanggaran} kasus</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-red-600">${s.poin} Poin</span>
+                  <div class="text-[10px]"><span class="px-1.5 py-0.5 rounded ${st.cls}">${st.label}</span></div>
                 </div>
               </div>
-              <div class="text-right">
-                <span class="text-xs font-bold text-red-600">${s.poin} Poin</span>
-                <div class="text-[10px]"><span class="px-1.5 py-0.5 rounded ${st.cls}">${st.label}</span></div>
-              </div>
-            </div>
-          `;
-        }).join("");
+            `;
+          }).join("");
+        }
       }
     }
 
     function renderSiswa() {
-      const filterKls = document.getElementById("filterKelasSiswa").value;
-      const search = document.getElementById("searchSiswa").value.trim().toLowerCase();
+      const filterKlsEl = document.getElementById("filterKelasSiswa");
+      const searchSiswaEl = document.getElementById("searchSiswa");
+      const tbody = document.getElementById("siswaTableBody");
+      if (!tbody) return;
+
+      const filterKls = filterKlsEl ? filterKlsEl.value : "Semua";
+      const search = searchSiswaEl ? searchSiswaEl.value.trim().toLowerCase() : "";
 
       let list = [...studentsList];
       if (filterKls !== "Semua") {
@@ -1003,7 +1065,6 @@
         list = list.filter(s => `${s.nama} ${s.nis} ${s.nisn}`.toLowerCase().includes(search));
       }
 
-      const tbody = document.getElementById("siswaTableBody");
       if (!list.length) {
         tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Tidak ada data siswa.</td></tr>`;
         return;
@@ -1024,8 +1085,14 @@
     }
 
     function renderSpMenu() {
-      const search = document.getElementById("searchSp").value.trim().toLowerCase();
-      const filterLevel = document.getElementById("spFilterLevel").value;
+      const searchEl = document.getElementById("searchSp");
+      const filterLevelEl = document.getElementById("spFilterLevel");
+      const tbody = document.getElementById("spMenuBody");
+      if (!tbody) return;
+
+      const search = searchEl ? searchEl.value.trim().toLowerCase() : "";
+      const filterLevel = filterLevelEl ? filterLevelEl.value : "Semua";
+      
       let students = aggregateStudents("sp").filter(s => normalizePoints(s.poin) >= 20);
 
       if (filterLevel !== "Semua") {
@@ -1035,7 +1102,6 @@
         students = students.filter(s => `${s.nama} ${s.kelas}`.toLowerCase().includes(search));
       }
 
-      const tbody = document.getElementById("spMenuBody");
       if (!students.length) {
         tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Tidak ada siswa yang mencapai ambang batas SP.</td></tr>`;
         return;
@@ -1053,7 +1119,7 @@
             <td class="p-2 sm:p-3 text-center"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${st.cls}">${st.label}</span></td>
             <td class="p-2 sm:p-3 text-center">
               <button onclick="openSpModal('${escapeHTML(s.nama)}', '${escapeHTML(s.kelas)}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-xs transition shadow-sm">
-                📄 Cetak Surat SP
+                Cetak Surat SP
               </button>
             </td>
           </tr>
@@ -1062,13 +1128,16 @@
     }
 
     function renderHistory() {
-      const search = document.getElementById("searchHistory").value.trim().toLowerCase();
+      const searchEl = document.getElementById("searchHistory");
+      const tbody = document.getElementById("historyBody");
+      if (!tbody) return;
+
+      const search = searchEl ? searchEl.value.trim().toLowerCase() : "";
       let list = [...getFilteredRecords("history")].sort((a,b) => String(b.tanggal).localeCompare(String(a.tanggal)));
       if (search) {
         list = list.filter(r => `${r.nama} ${r.kelas} ${r.pelanggaran} ${r.kategori} ${r.keterangan}`.toLowerCase().includes(search));
       }
 
-      const tbody = document.getElementById("historyBody");
       if (!list.length) {
         tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Belum ada riwayat pelanggaran.</td></tr>`;
         return;
@@ -1089,7 +1158,9 @@
 
     function renderKategoriTable() {
       const grid = document.getElementById("kategoriCardsGrid");
-      const filterCat = document.getElementById("filterCategoryCard")?.value || "Semua";
+      if (!grid) return;
+      const filterCatEl = document.getElementById("filterCategoryCard");
+      const filterCat = filterCatEl ? filterCatEl.value : "Semua";
       let cats = [...new Set(VIOLATIONS.map(v => v.category))];
 
       if (filterCat !== "Semua") {
@@ -1120,181 +1191,290 @@
       renderKategoriTable();
     }
 
-    function openSpModal(namaSiswa, kelas) {
-      const students = aggregateStudents("sp");
-      const student = students.find(s => s.nama.toLowerCase() === namaSiswa.toLowerCase() && s.kelas.toLowerCase() === kelas.toLowerCase());
-      if (!student) {
-        toast("Data siswa tidak ditemukan.", "error");
-        return;
-      }
-      currentSpStudent = student;
-      const st = statusFromPoints(student.poin);
-      const romanLevel = st.roman || "I";
+    // Official SP Generator helpers matching exact provided script structure
+    const ranges = { 1: [20, 30], 2: [31, 49], 3: [50, 99], 4: [100, Infinity] };
 
-      document.getElementById("spModalTitle").textContent = `SURAT PERJANJIAN TINGKAT ${romanLevel}`;
-      document.getElementById("spModalSubtitle").textContent = `Siswa: ${student.nama} (${student.kelas}) - Total Poin: ${student.poin}`;
+    function getSpTypeFromPoints(poin) {
+      if (poin >= 100) return 4;
+      if (poin >= 50) return 3;
+      if (poin >= 35) return 2;
+      if (poin >= 20) return 1;
+      return 1;
+    }
 
-      const fullStudentData = studentsList.find(s => s.nama.toLowerCase() === student.nama.toLowerCase()) || {};
+    function title(t) {
+      return ["", "SURAT PERINGATAN I", "SURAT PERINGATAN II", "SURAT PERINGATAN III", "SURAT PERINGATAN IV (AKHIR)"][t];
+    }
 
-      let batasPoinRange = "20-30";
-      if (romanLevel === "II") batasPoinRange = "31-49";
-      else if (romanLevel === "III") batasPoinRange = "50-99";
-      else if (romanLevel === "IV" || romanLevel === "Akhir") batasPoinRange = "≥100";
+    function statement(t) {
+      return [
+        "",
+        "Dengan ini sekolah memberikan Surat Peringatan I kepada siswa tersebut sebagai pembinaan atas pelanggaran tata tertib sekolah.",
+        "Dengan ini sekolah memberikan Surat Peringatan II kepada siswa tersebut sebagai tindak lanjut pembinaan karena akumulasi poin pelanggaran telah mencapai batas Surat Peringatan II.",
+        "Dengan ini sekolah memberikan Surat Peringatan III kepada siswa tersebut sebagai tindak lanjut pembinaan atas akumulasi pelanggaran yang telah mencapai batas Surat Peringatan III.",
+        "Dengan ini sekolah memberikan Surat Peringatan IV (Akhir) kepada siswa tersebut karena akumulasi poin pelanggaran telah mencapai batas Surat Peringatan IV. Surat ini merupakan peringatan terakhir."
+      ][t];
+    }
 
-      const preview = document.getElementById("spPreviewContent");
-      preview.innerHTML = `
-        <div class="text-center font-bold pb-3 border-b-2 border-slate-800 space-y-0.5" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
-          <p class="uppercase tracking-wider">PEMERINTAH KABUPATEN MERANGIN</p>
-          <p class="uppercase tracking-wide">DINAS PENDIDIKAN DAN KEBUDAYAAN</p>
-          <p class="uppercase font-extrabold">SMP NEGERI 37 MERANGIN</p>
-          <p class="font-normal text-xs">Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351</p>
-        </div>
-
-        <div class="text-center py-2" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
-          <p class="font-bold underline tracking-wide">SURAT PERJANJIAN TINGKAT ${romanLevel}</p>
-        </div>
-
-        <div class="space-y-3" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
-          <p>Yang bertanda tangan di bawah ini:</p>
-          <table class="w-full ml-2 space-y-1" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
-            <tr><td class="w-48 font-medium py-0.5">Nama Siswa</td><td>: <b>${escapeHTML(student.nama)}</b></td></tr>
-            <tr><td class="font-medium py-0.5">NIS</td><td>: ${escapeHTML(fullStudentData.nis || '-')}</td></tr>
-            <tr><td class="font-medium py-0.5">NISN</td><td>: ${escapeHTML(fullStudentData.nisn || '-')}</td></tr>
-            <tr><td class="font-medium py-0.5">Kelas</td><td>: ${escapeHTML(student.kelas)}</td></tr>
-            <tr><td class="font-medium py-0.5">Total Poin Pelanggaran</td><td>: <span style="color: black !important; font-weight: bold;">${student.poin} Poin</span> (Batas SP: ${batasPoinRange})</td></tr>
-          </table>
-
-          <p class="font-medium pt-1">Rincian Pelanggaran:</p>
-          <ol class="list-decimal pl-5 space-y-0.5">
-            ${student.records.map(r => `<li>${escapeHTML(r.tanggal)} - ${escapeHTML(r.pelanggaran)} (${normalizePoints(r.poin)} poin)</li>`).join("")}
-          </ol>
-
-          <p class="pt-2">Dengan ini menyatakan dengan sesungguhnya bahwa:</p>
-          <ol class="list-decimal pl-5 space-y-1">
-            <li>Saya menyadari telah melakukan pelanggaran tata tertib sekolah.</li>
-            <li>Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran lainnya di kemudian hari.</li>
-            <li>Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan pada tingkat selanjutnya sesuai aturan sekolah.</li>
-          </ol>
-
-          <p class="pt-1">Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.</p>
-        </div>
-
-        <div class="pt-6 space-y-6" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
-          <div class="flex justify-between items-start pt-2">
-            <div>
-              <p>Mengetahui,</p>
-              <p class="font-semibold">Wali Kelas,</p>
-              <div class="h-16"></div>
-              <p class="underline font-bold">${escapeHTML(settings.wali)}</p>
-            </div>
-            <div class="text-right">
-              <p>Pulau Rengas, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</p>
-              <p class="font-semibold">Siswa yang bersangkutan,</p>
-              <div class="h-16"></div>
-              <p class="underline font-bold">( ${escapeHTML(student.nama)} )</p>
-            </div>
-          </div>
+    function signaturesHtml(d) {
+      const c = (role, name, nip, m = false) => `
+        <div style="text-align:center; min-height:105px;">
+          <div>${esc(role)}</div>
+          ${m ? `<div style="font-size:8pt; color:#64748b; margin-top:2px;">Materai Rp 10.000</div>` : `<div style="height:14px;"></div>`}
+          <div style="padding-top:${m ? '30px' : '55px'}; font-weight:bold; text-decoration:underline;">${esc(name || "................................")}</div>
+          <div>${nip ? "NIP. " + esc(nip) : ""}</div>
         </div>
       `;
 
-      document.getElementById("spModal").classList.remove("hidden");
-      document.getElementById("spModal").classList.add("flex");
+      if (d.type === 1) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:20px;">${c("Wali Kelas", d.wali, d.nipWali)}${c("Siswa", d.nama, "", true)}</div>`;
+      if (d.type === 2) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:15px;">${c("Guru BP/BK", d.bk, d.nipBk)}${c("Wali Kelas", d.wali, d.nipWali)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:10px;">${c("", "", "")}${c("Siswa", d.nama, "", true)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">${c("", "", "")}${c("Orang Tua/Wali", d.orangTua)}</div>`;
+      if (d.type === 3) return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:10px;">${c("Wali Kelas", d.wali, d.nipWali)}${c("Guru BP/BK", d.bk, d.nipBk)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Pembina OSIS", d.osis, d.nipOsis)}${c("Waka Kesiswaan", d.waka, d.nipWaka)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Orang Tua/Wali", d.orangTua)}${c("Siswa", d.nama, "", true)}</div>`;
+      return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">${c("Waka Kesiswaan", d.waka, d.nipWaka)}${c("Siswa", d.nama, "", true)}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">${c("Guru BP/BK", d.bk, d.nipBk)}${c("Orang Tua/Wali", d.orangTua)}</div><div>${c("Wali Kelas", d.wali, d.nipWali)}</div><div style="text-align:center; margin-top:0;">Mengetahui,<br>Kepala SMP Negeri 37 Merangin<div style="padding-top:45px; font-weight:bold; text-decoration:underline;">${esc(d.kepala || "................................")}</div><div>${d.nipKepala ? "NIP. " + esc(d.nipKepala) : ""}</div></div>`;
+    }
+
+    function esc(x) {
+      return String(x || "").replace(/[&<>"]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m]));
+    }
+
+    function openSpModal(namaSiswa, kelas) {
+      const allStudents = aggregateStudents("sp");
+      const student = allStudents.find(s => s.nama.toLowerCase() === namaSiswa.toLowerCase() && s.kelas.toLowerCase() === kelas.toLowerCase()) || {
+        nama: namaSiswa, kelas: kelas, poin: 0, records: records.filter(r => r.nama.toLowerCase() === namaSiswa.toLowerCase())
+      };
+      
+      currentSpStudent = student;
+      const fullStudentData = studentsList.find(s => s.nama.toLowerCase() === student.nama.toLowerCase()) || {};
+      const spType = getSpTypeFromPoints(student.poin);
+      const range = ranges[spType];
+
+      const d = {
+        type: spType,
+        nomor: `421.3/SP-${spType}/SMPN.37/2026`,
+        tanggal: new Date().toISOString().slice(0, 10),
+        nama: student.nama,
+        nis: fullStudentData.nis || "-",
+        nisn: fullStudentData.nisn || "-",
+        kelas: student.kelas,
+        poin: student.poin,
+        rincian: student.records.map(r => `${r.tanggal} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`),
+        keterangan: "",
+        kepala: settings.kepsek, nipKepala: settings.nipKepsek,
+        waka: settings.waka, nipWaka: settings.nipWaka,
+        bk: settings.bp, nipBk: settings.nipBp,
+        wali: settings.wali, nipWali: "",
+        osis: settings.osis, nipOsis: settings.nipOsis,
+        orangTua: fullStudentData.orangTua || "................................"
+      };
+
+      const titleEl = document.getElementById("spModalTitle"); if(titleEl) titleEl.textContent = title(spType);
+      const subEl = document.getElementById("spModalSubtitle"); if(subEl) subEl.textContent = `Siswa: ${student.nama} (${student.kelas}) - Total Poin: ${student.poin}`;
+
+      const lines = d.rincian.map((x, i) => `<div>${i + 1}. ${esc(x)}</div>`).join("") || "<div>-</div>";
+
+      const previewContent = document.getElementById("spPreviewContent");
+      if (previewContent) {
+        previewContent.innerHTML = `
+          <div style="text-align:center; line-height:1.15; font-family:'Times New Roman', Times, serif; color:black;">
+            <b>PEMERINTAH KABUPATEN MERANGIN</b><br>
+            <b>DINAS PENDIDIKAN DAN KEBUDAYAAN</b><br>
+            <b>SMP NEGERI 37 MERANGIN</b><br>
+            <span style="font-size:10pt;">Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351</span>
+            <hr style="border:0.5px solid black; margin-top:8px;">
+            <div style="margin-top:12px;"><b><u>${title(d.type)}</u></b><br>Nomor: ${esc(d.nomor)}</div>
+          </div>
+
+          <div style="margin-top:22px; line-height:1.55; font-family:'Times New Roman', Times, serif; font-size:12pt; color:black;">
+            <p>Yang bertanda tangan di bawah ini menerangkan bahwa:</p>
+            <div>Nama Siswa &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <b>${esc(d.nama)}</b></div>
+            <div>NIS &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(d.nis)}</div>
+            <div>NISN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(d.nisn)}</div>
+            <div>Kelas &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(d.kelas)}</div>
+            <div>Total Poin Pelanggaran &nbsp;: <span style="color:black; font-weight:bold;">${d.poin} Poin (Batas SP: ${range[1] === Infinity ? '≥100' : range[0] + '-' + range[1]})</span></div>
+            
+            <p style="margin-top:12px;"><b>Rincian Pelanggaran:</b></p>
+            ${lines}
+
+            <p style="margin-top:12px;">${statement(d.type)}</p>
+            <p>Demikian surat peringatan ini dibuat untuk dapat diperhatikan dan dilaksanakan sebagaimana mestinya.</p>
+          </div>
+
+          <div style="text-align:right; margin-top:15px; font-family:'Times New Roman', Times, serif; font-size:12pt; color:black;">
+            Pulau Rengas, ${new Date(d.tanggal+"T00:00:00").toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})}
+          </div>
+
+          <div style="font-family:'Times New Roman', Times, serif; font-size:12pt; color:black;">
+            ${signaturesHtml(d)}
+          </div>
+        `;
+      }
+
+      const modal = document.getElementById("spModal");
+      if (modal) {
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
     }
 
     function closeSpModal() {
-      document.getElementById("spModal").classList.remove("flex");
-      document.getElementById("spModal").classList.add("hidden");
+      const modal = document.getElementById("spModal");
+      if (modal) {
+        modal.classList.remove("flex");
+        modal.classList.add("hidden");
+      }
+    }
+
+    function textPdf(doc, s, x, y, w, bold = false) {
+      doc.setFont("times", bold ? "bold" : "normal");
+      doc.setFontSize(12);
+      let a = doc.splitTextToSize(String(s || ""), w);
+      doc.text(a, x, y);
+      return y + a.length * 5;
+    }
+
+    function sigPdf(doc, x, y, w, role, name, nip, m = false) {
+      doc.setFont("times", "normal");
+      doc.setFontSize(12);
+      doc.text(role, x + w / 2, y, { align: "center" });
+      if (m) {
+        doc.setFont("times", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text("Materai Rp 10.000", x + w / 2, y + 21, { align: "center" });
+        doc.setTextColor(0, 0, 0);
+      }
+      doc.setFont("times", "bold");
+      doc.setFontSize(12);
+      doc.text(name || "................................", x + w / 2, y + 28, { align: "center" });
+      doc.line(x + 10, y + 29, x + w - 10, y + 29);
+      doc.setFont("times", "normal");
+      if (nip) doc.text("NIP. " + nip, x + w / 2, y + 35, { align: "center" });
+    }
+
+    function buildPDF(d) {
+      let doc = new jsPDF({ unit: "mm", format: "a4" }), W = 210, m = 17, w = 176, y = 15;
+      doc.setFont("times", "bold");
+      doc.setFontSize(12);
+      ["PEMERINTAH KABUPATEN MERANGIN", "DINAS PENDIDIKAN DAN KEBUDAYAAN", "SMP NEGERI 37 MERANGIN"].forEach(s => {
+        doc.text(s, W / 2, y, { align: "center" });
+        y += 5;
+      });
+      doc.setFont("times", "normal");
+      doc.setFontSize(10);
+      doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", W / 2, y, { align: "center" });
+      y += 3;
+      doc.setLineWidth(0.5);
+      doc.line(m, y, W - m, y);
+      y += 7;
+
+      doc.setFont("times", "bold");
+      doc.setFontSize(12);
+      doc.text(title(d.type), W / 2, y, { align: "center" });
+      y += 5;
+      doc.setFont("times", "normal");
+      doc.text("Nomor: " + (d.nomor || "................................"), W / 2, y, { align: "center" });
+      y += 9;
+
+      y = textPdf(doc, "Yang bertanda tangan di bawah ini menerangkan bahwa:", m, y, w);
+      y += 2;
+      const range = ranges[d.type];
+      const rangeStr = range[1] === Infinity ? '≥100' : range[0] + '-' + range[1];
+      [
+        ["Nama Siswa", d.nama],
+        ["NIS", d.nis],
+        ["NISN", d.nisn],
+        ["Kelas", d.kelas],
+        ["Total Poin Pelanggaran", d.poin + " Poin (Batas SP: " + rangeStr + ")"]
+      ].forEach(a => {
+        doc.text(a[0], m, y);
+        doc.text(":", m + 50, y);
+        y = textPdf(doc, a[1] || "-", m + 55, y, w - 55) + 1;
+      });
+
+      y += 3;
+      doc.setFont("times", "bold");
+      doc.text("Rincian Pelanggaran:", m, y);
+      y += 6;
+      doc.setFont("times", "normal");
+      (d.rincian.length ? d.rincian : ["-"]).slice(0, 10).forEach((s, i) => {
+        y = textPdf(doc, (i + 1) + ". " + s, m + 3, y, w - 3) + 1;
+      });
+
+      y += 2;
+      y = textPdf(doc, statement(d.type), m, y, w) + 2;
+      if (d.keterangan) y = textPdf(doc, "Keterangan: " + d.keterangan, m, y, w) + 2;
+      y = textPdf(doc, "Demikian surat peringatan ini dibuat untuk dapat diperhatikan dan dilaksanakan sebagaimana mestinya.", m, y, w) + 3;
+
+      doc.text("Merangin, " + (d.tanggal ? new Date(d.tanggal + "T00:00:00").toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "........................"), W - m, y, { align: "right" });
+      y += 6;
+
+      let x1 = m, x2 = 112, cw = 81;
+      if (d.type === 1) {
+        sigPdf(doc, x1, y, cw, "Wali Kelas", d.wali, d.nipWali);
+        sigPdf(doc, x2, y, cw, "Siswa", d.nama, "", true);
+      } else if (d.type === 2) {
+        sigPdf(doc, x1, y, cw, "Guru BP/BK", d.bk, d.nipBk);
+        sigPdf(doc, x2, y, cw, "Wali Kelas", d.wali, d.nipWali);
+        y += 44;
+        sigPdf(doc, x1, y, cw, "", "", "");
+        sigPdf(doc, x2, y, cw, "Siswa", d.nama, "", true);
+        y += 40;
+        sigPdf(doc, x1, y, cw, "", "", "");
+        sigPdf(doc, x2, y, cw, "Orang Tua/Wali", d.orangTua, "");
+      } else if (d.type === 3) {
+        sigPdf(doc, x1, y, cw, "Wali Kelas", d.wali, d.nipWali);
+        sigPdf(doc, x2, y, cw, "Guru BP/BK", d.bk, d.nipBk);
+        y += 44;
+        sigPdf(doc, x1, y, cw, "Pembina OSIS", d.osis, d.nipOsis);
+        sigPdf(doc, x2, y, cw, "Waka Kesiswaan", d.waka, d.nipWaka);
+        y += 44;
+        sigPdf(doc, x1, y, cw, "Orang Tua/Wali", d.orangTua, "");
+        sigPdf(doc, x2, y, cw, "Siswa", d.nama, "", true);
+      } else if (d.type === 4) {
+        sigPdf(doc, x1, y, cw, "Waka Kesiswaan", d.waka, d.nipWaka);
+        sigPdf(doc, x2, y, cw, "Siswa", d.nama, "", true);
+        y += 40;
+        sigPdf(doc, x1, y, cw, "Guru BP/BK", d.bk, d.nipBk);
+        sigPdf(doc, x2, y, cw, "Orang Tua/Wali", d.orangTua, "");
+        y += 40;
+        sigPdf(doc, x1, y, cw, "Wali Kelas", d.wali, d.nipWali);
+        y += 2;
+        doc.text("Mengetahui,", W / 2, y, { align: "center" });
+        doc.text("Kepala SMP Negeri 37 Merangin", W / 2, y + 5, { align: "center" });
+        y += 37;
+        doc.setFont("times", "bold");
+        doc.text(d.kepala || "................................", W / 2, y, { align: "center" });
+        doc.line(W / 2 - 30, y + 1, W / 2 + 30, y + 1);
+        doc.setFont("times", "normal");
+        if (d.nipKepala) doc.text("NIP. " + d.nipKepala, W / 2, y + 7, { align: "center" });
+      }
+      return doc;
     }
 
     function downloadSpPdf() {
       if (!currentSpStudent) return;
       const student = currentSpStudent;
-      const st = statusFromPoints(student.poin);
-      const romanLevel = st.roman || "I";
-
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF("portrait", "mm", "a4");
-
-      doc.setFont("times", "bold");
-      doc.setFontSize(12);
-      doc.text("PEMERINTAH KABUPATEN MERANGIN", 105, 12, { align: "center" });
-      doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", 105, 17, { align: "center" });
-      doc.setFontSize(14);
-      doc.text("SMP NEGERI 37 MERANGIN", 105, 23, { align: "center" });
-      doc.setFont("times", "normal");
-      doc.setFontSize(10);
-      doc.text("Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351", 105, 28, { align: "center" });
-      
-      doc.setLineWidth(0.5);
-      doc.line(14, 32, 196, 32);
-
-      doc.setFont("times", "bold");
-      doc.setFontSize(12);
-      doc.text(`SURAT PERJANJIAN TINGKAT ${romanLevel}`, 105, 40, { align: "center" });
-
-      doc.setFont("times", "normal");
-      doc.setFontSize(12);
-      doc.text("Yang bertanda tangan di bawah ini:", 14, 48);
-
       const fullStudentData = studentsList.find(s => s.nama.toLowerCase() === student.nama.toLowerCase()) || {};
+      const spType = getSpTypeFromPoints(student.poin);
 
-      let startY = 54;
-      doc.text("Nama Siswa", 16, startY); doc.text(`: ${student.nama}`, 65, startY);
-      startY += 6;
-      doc.text("NIS", 16, startY); doc.text(`: ${fullStudentData.nis || '-'}`, 65, startY);
-      startY += 6;
-      doc.text("NISN", 16, startY); doc.text(`: ${fullStudentData.nisn || '-'}`, 65, startY);
-      startY += 6;
-      doc.text("Kelas", 16, startY); doc.text(`: ${student.kelas}`, 65, startY);
-      
-      startY += 6;
-      doc.text("Total Poin Pelanggaran", 16, startY);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`: ${student.poin} Poin`, 65, startY);
-      doc.setTextColor(0, 0, 0); // reset black
+      const d = {
+        type: spType,
+        nomor: `421.3/SP-${spType}/SMPN.37/2026`,
+        tanggal: new Date().toISOString().slice(0, 10),
+        nama: student.nama,
+        nis: fullStudentData.nis || "-",
+        nisn: fullStudentData.nisn || "-",
+        kelas: student.kelas,
+        poin: student.poin,
+        rincian: student.records.map(r => `${r.tanggal} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`),
+        kepala: settings.kepsek, nipKepala: settings.nipKepsek,
+        waka: settings.waka, nipWaka: settings.nipWaka,
+        bk: settings.bp, nipBk: settings.nipBp,
+        wali: settings.wali, nipWali: "",
+        osis: settings.osis, nipOsis: settings.nipOsis,
+        orangTua: fullStudentData.orangTua || "................................"
+      };
 
-      startY += 10;
-      doc.setFont("times", "bold");
-      doc.text("Rincian Pelanggaran:", 14, startY);
-      
-      startY += 4;
-      doc.setFont("times", "normal");
-      student.records.forEach((r, idx) => {
-        startY += 6;
-        doc.text(`${idx + 1}. ${r.tanggal} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`, 18, startY);
-      });
-
-      startY += 10;
-      doc.text("Dengan ini menyatakan dengan sesungguhnya bahwa:", 14, startY);
-
-      startY += 6;
-      doc.text("1. Saya menyadari telah melakukan pelanggaran tata tertib sekolah.", 18, startY);
-      startY += 6;
-      doc.text("2. Saya berjanji tidak akan mengulangi pelanggaran tersebut maupun pelanggaran", 18, startY);
-      startY += 5;
-      doc.text("    lainnya di kemudian hari.", 18, startY);
-      startY += 6;
-      doc.text("3. Apabila saya melanggar perjanjian ini, saya bersedia menerima sanksi atau tindakan", 18, startY);
-      startY += 5;
-      doc.text("    pada tingkat selanjutnya sesuai aturan sekolah.", 18, startY);
-
-      startY += 10;
-      doc.text("Demikian surat perjanjian ini dibuat dengan kesadaran tanpa paksaan.", 14, startY);
-
-      startY += 15;
-      doc.text("Mengetahui,", 16, startY);
-      doc.text(`Pulau Rengas, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`, 135, startY);
-
-      startY += 5;
-      doc.text("Wali Kelas,", 16, startY);
-      doc.text("Siswa yang bersangkutan,", 135, startY);
-
-      startY += 22;
-      doc.setFont("times", "bold");
-      doc.text(settings.wali, 16, startY);
-      doc.text(`(${student.nama})`, 135, startY);
-
-      doc.save(`Surat_Perjanjian_Tingkat_${romanLevel}_${student.nama.replace(/\s+/g, '_')}.pdf`);
+      buildPDF(d).save(`Surat_Perjanjian_Tingkat_${spType}_${currentSpStudent.nama.replace(/\s+/g, '_')}.pdf`);
       toast("File PDF Surat Perjanjian berhasil diunduh.");
     }
 
@@ -1305,12 +1485,29 @@
       }
       toast("Mengunggah Surat Perjanjian ke Google Drive...", "warning");
       
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF("portrait", "mm", "a4");
-      doc.text("SURAT PERJANJIAN SISWA - SMPN 37 MERANGIN", 14, 20);
-      doc.text(`Siswa: ${currentSpStudent.nama} (${currentSpStudent.kelas})`, 14, 30);
-      doc.text(`Total Poin: ${currentSpStudent.poin}`, 14, 40);
-      const pdfBase64 = doc.output('datauristring');
+      const student = currentSpStudent;
+      const fullStudentData = studentsList.find(s => s.nama.toLowerCase() === student.nama.toLowerCase()) || {};
+      const spType = getSpTypeFromPoints(student.poin);
+
+      const d = {
+        type: spType,
+        nomor: `421.3/SP-${spType}/SMPN.37/2026`,
+        tanggal: new Date().toISOString().slice(0, 10),
+        nama: student.nama,
+        nis: fullStudentData.nis || "-",
+        nisn: fullStudentData.nisn || "-",
+        kelas: student.kelas,
+        poin: student.poin,
+        rincian: student.records.map(r => `${r.tanggal} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`),
+        kepala: settings.kepsek, nipKepala: settings.nipKepsek,
+        waka: settings.waka, nipWaka: settings.nipWaka,
+        bk: settings.bp, nipBk: settings.nipBp,
+        wali: settings.wali, nipWali: "",
+        osis: settings.osis, nipOsis: settings.nipOsis,
+        orangTua: fullStudentData.orangTua || "................................"
+      };
+
+      const pdfBase64 = buildPDF(d).output('datauristring');
 
       try {
         const res = await fetch(settings.apiUrl, {
@@ -1369,7 +1566,8 @@
     }
 
     function saveApiUrlOnly() {
-      const url = document.getElementById("settingApiUrl").value.trim();
+      const urlInput = document.getElementById("settingApiUrl");
+      const url = urlInput ? urlInput.value.trim() : "";
       if (!url) {
         toast("URL Apps Script kosong.", "warning");
         return;
@@ -1381,14 +1579,27 @@
     }
 
     async function saveSettings() {
-      settings.apiUrl = document.getElementById("settingApiUrl").value.trim();
-      settings.kepsek = document.getElementById("settingKepsek").value.trim();
-      settings.nipKepsek = document.getElementById("settingNipKepsek").value.trim();
-      settings.waka = document.getElementById("settingWaka").value.trim();
-      settings.nipWaka = document.getElementById("settingNipWaka").value.trim();
-      settings.bp = document.getElementById("settingBp").value.trim();
-      settings.nipBp = document.getElementById("settingNipBp").value.trim();
-      settings.wali = document.getElementById("settingWali").value.trim();
+      const apiUrlEl = document.getElementById("settingApiUrl");
+      const kepsekEl = document.getElementById("settingKepsek");
+      const nipKepsekEl = document.getElementById("settingNipKepsek");
+      const wakaEl = document.getElementById("settingWaka");
+      const nipWakaEl = document.getElementById("settingNipWaka");
+      const bpEl = document.getElementById("settingBp");
+      const nipBpEl = document.getElementById("settingNipBp");
+      const waliEl = document.getElementById("settingWali");
+      const osisEl = document.getElementById("settingOsis");
+      const nipOsisEl = document.getElementById("settingNipOsis");
+
+      if (apiUrlEl) settings.apiUrl = apiUrlEl.value.trim();
+      if (kepsekEl) settings.kepsek = kepsekEl.value.trim();
+      if (nipKepsekEl) settings.nipKepsek = nipKepsekEl.value.trim();
+      if (wakaEl) settings.waka = wakaEl.value.trim();
+      if (nipWakaEl) settings.nipWaka = nipWakaEl.value.trim();
+      if (bpEl) settings.bp = bpEl.value.trim();
+      if (nipBpEl) settings.nipBp = nipBpEl.value.trim();
+      if (waliEl) settings.wali = waliEl.value.trim();
+      if (osisEl) settings.osis = osisEl.value.trim();
+      if (nipOsisEl) settings.nipOsis = nipOsisEl.value.trim();
 
       localStorage.setItem("smpn37_api_url", settings.apiUrl);
       localStorage.setItem("smpn37_kepsek", settings.kepsek);
@@ -1398,6 +1609,8 @@
       localStorage.setItem("smpn37_bp", settings.bp);
       localStorage.setItem("smpn37_nip_bp", settings.nipBp);
       localStorage.setItem("smpn37_wali", settings.wali);
+      localStorage.setItem("smpn37_osis", settings.osis);
+      localStorage.setItem("smpn37_nip_osis", settings.nipOsis);
 
       let syncedToSheet = false;
       if (settings.apiUrl) {
@@ -1413,7 +1626,9 @@
               nipWaka: settings.nipWaka,
               bp: settings.bp,
               nipBp: settings.nipBp,
-              wali: settings.wali
+              wali: settings.wali,
+              osis: settings.osis,
+              nipOsis: settings.nipOsis
             })
           });
           const json = await res.json();
@@ -1423,27 +1638,39 @@
         }
       }
 
-      toast(syncedToSheet ? "Data penandatangan berhasil disimpan & disinkronkan ke sheet Penanda_tangan!" : "Pengaturan disimpan secara lokal.");
+      toast(syncedToSheet ? "Pengaturan berhasil disimpan & disinkronkan ke Google Sheets!" : "Pengaturan disimpan secara lokal.");
       loadData();
     }
 
     function openAddStudentModal() {
-      document.getElementById("studentModal").classList.remove("hidden");
-      document.getElementById("studentModal").classList.add("flex");
+      const modal = document.getElementById("studentModal");
+      if (modal) {
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
     }
 
     function closeAddStudentModal() {
-      document.getElementById("studentModal").classList.remove("flex");
-      document.getElementById("studentModal").classList.add("hidden");
+      const modal = document.getElementById("studentModal");
+      if (modal) {
+        modal.classList.remove("flex");
+        modal.classList.add("hidden");
+      }
     }
 
     async function submitNewStudent(e) {
       e.preventDefault();
-      const nis = document.getElementById("newSiswaNis").value.trim();
-      const nisn = document.getElementById("newSiswaNisn").value.trim();
-      const nama = document.getElementById("newSiswaNama").value.trim();
-      const kelas = document.getElementById("newSiswaKelas").value;
-      const orangTua = document.getElementById("newSiswaOrangTua").value.trim();
+      const nisEl = document.getElementById("newSiswaNis");
+      const nisnEl = document.getElementById("newSiswaNisn");
+      const namaEl = document.getElementById("newSiswaNama");
+      const kelasEl = document.getElementById("newSiswaKelas");
+      const orangTuaEl = document.getElementById("newSiswaOrangTua");
+
+      const nis = nisEl ? nisEl.value.trim() : "";
+      const nisn = nisnEl ? nisnEl.value.trim() : "";
+      const nama = namaEl ? namaEl.value.trim() : "";
+      const kelas = kelasEl ? kelasEl.value : "";
+      const orangTua = orangTuaEl ? orangTuaEl.value.trim() : "";
 
       const newS = { id: "S-" + crypto.randomUUID().slice(0,6), nis, nisn, nama, kelas, orangTua };
       studentsList.push(newS);
@@ -1460,7 +1687,8 @@
       }
 
       closeAddStudentModal();
-      document.getElementById("studentForm").reset();
+      const form = document.getElementById("studentForm");
+      if (form) form.reset();
       toast("Siswa baru berhasil ditambahkan!");
       renderAll();
     }
@@ -1475,6 +1703,7 @@
 
     function toggleMobileSidebar() {
       const sb = document.getElementById("sidebarNav");
+      if (!sb) return;
       sb.classList.toggle("hidden");
       sb.classList.toggle("block");
       sb.classList.toggle("absolute");
@@ -1486,31 +1715,42 @@
 
     function showTab(tabId) {
       document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
-      document.getElementById(`tab-${tabId}`).classList.remove("hidden");
+      const tabEl = document.getElementById(`tab-${tabId}`);
+      if (tabEl) tabEl.classList.remove("hidden");
+      
       document.querySelectorAll(".nav-btn").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.tab === tabId);
       });
       if (window.innerWidth < 1024) {
         const sb = document.getElementById("sidebarNav");
-        sb.classList.add("hidden");
-        sb.classList.remove("block", "absolute", "left-4", "right-4");
+        if (sb) {
+          sb.classList.add("hidden");
+          sb.classList.remove("block", "absolute", "left-4", "right-4");
+        }
       }
     }
 
     document.addEventListener("DOMContentLoaded", () => {
       const now = new Date();
-      document.getElementById("currentDateBadge").textContent = now.toLocaleDateString("id-ID", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-      document.getElementById("violationDate").valueAsDate = now;
-      document.getElementById("semester").value = detectSemester(document.getElementById("violationDate").value);
+      const badge = document.getElementById("currentDateBadge");
+      if (badge) badge.textContent = now.toLocaleDateString("id-ID", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      
+      const vDate = document.getElementById("violationDate");
+      if (vDate) vDate.valueAsDate = now;
+      
+      const sem = document.getElementById("semester");
+      if (sem) sem.value = detectSemester(vDate ? vDate.value : "");
 
-      document.getElementById("settingApiUrl").value = settings.apiUrl;
-      document.getElementById("settingKepsek").value = settings.kepsek;
-      document.getElementById("settingNipKepsek").value = settings.nipKepsek;
-      document.getElementById("settingWaka").value = settings.waka;
-      document.getElementById("settingNipWaka").value = settings.nipWaka;
-      document.getElementById("settingBp").value = settings.bp;
-      document.getElementById("settingNipBp").value = settings.nipBp;
-      document.getElementById("settingWali").value = settings.wali;
+      const sApi = document.getElementById("settingApiUrl"); if (sApi) sApi.value = settings.apiUrl;
+      const sKep = document.getElementById("settingKepsek"); if (sKep) sKep.value = settings.kepsek;
+      const sNipK = document.getElementById("settingNipKepsek"); if (sNipK) sNipK.value = settings.nipKepsek;
+      const sWak = document.getElementById("settingWaka"); if (sWak) sWak.value = settings.waka;
+      const sNipW = document.getElementById("settingNipWaka"); if (sNipW) sNipW.value = settings.nipWaka;
+      const sBp = document.getElementById("settingBp"); if (sBp) sBp.value = settings.bp;
+      const sNipB = document.getElementById("settingNipBp"); if (sNipB) sNipB.value = settings.nipBp;
+      const sWal = document.getElementById("settingWali"); if (sWal) sWal.value = settings.wali;
+      const sOsi = document.getElementById("settingOsis"); if (sOsi) sOsi.value = settings.osis;
+      const sNipO = document.getElementById("settingNipOsis"); if (sNipO) sNipO.value = settings.nipOsis;
 
       populateCategories();
       loadData();
@@ -1519,10 +1759,15 @@
         btn.addEventListener("click", () => showTab(btn.dataset.tab));
       });
 
-      document.getElementById("violationForm").addEventListener("submit", submitViolation);
-      document.getElementById("violationDate").addEventListener("change", e => {
-        document.getElementById("semester").value = detectSemester(e.target.value);
-      });
+      const vForm = document.getElementById("violationForm");
+      if (vForm) vForm.addEventListener("submit", submitViolation);
+      
+      if (vDate) {
+        vDate.addEventListener("change", e => {
+          const s = document.getElementById("semester");
+          if (s) s.value = detectSemester(e.target.value);
+        });
+      }
     });
   </script>
 </body>
