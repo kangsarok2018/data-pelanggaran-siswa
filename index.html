@@ -316,7 +316,7 @@ button.bg-emerald-600 {
 </div></section><section class="tab-content hidden" id="tab-input">
 <div class="max-w-3xl mx-auto"><div class="mb-5"><h2 class="text-xl font-extrabold">Input Pelanggaran Siswa</h2><p class="text-sm text-slate-500 mt-1">Catat pelanggaran. Kelas dan poin akan terisi otomatis dari data siswa dan kategori.</p></div>
 <div class="card p-5 md:p-6"><form class="space-y-4" id="violationForm">
-<div class="grid md:grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-slate-600 mb-1.5">Nama Siswa *</label><input class="input" id="studentName" list="studentList" placeholder="Ketik / pilih nama siswa" required=""/><datalist id="studentList"></datalist></div><div><label class="block text-xs font-bold text-slate-600 mb-1.5">Kelas *</label><input class="input bg-slate-50" id="studentClass" placeholder="Otomatis dari data siswa" readonly="" required=""/></div></div>
+<div class="grid md:grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-slate-600 mb-1.5">Nama Siswa *</label><select class="input" id="studentName" required><option value="">Memuat daftar siswa...</option></select></div><div><label class="block text-xs font-bold text-slate-600 mb-1.5">Kelas *</label><input class="input bg-slate-50" id="studentClass" placeholder="Otomatis dari data siswa" readonly="" required=""/></div></div>
 <div class="grid md:grid-cols-3 gap-4"><div><label class="block text-xs font-bold text-slate-600 mb-1.5">Tanggal *</label><input class="input" id="violationDate" required="" type="date"/></div><div><label class="block text-xs font-bold text-slate-600 mb-1.5">Semester *</label><select class="input" id="semester" required=""><option value="1">Semester 1</option><option value="2">Semester 2</option></select></div><div><label class="block text-xs font-bold text-slate-600 mb-1.5">Kategori *</label><select class="input" id="category" required=""></select></div></div>
 <div><label class="block text-xs font-bold text-slate-600 mb-1.5">Jenis Pelanggaran *</label><select class="input" id="violationType" required=""></select></div>
 <div><label class="block text-xs font-bold text-slate-600 mb-1.5">Poin</label><input class="input bg-indigo-50 font-extrabold text-indigo-700" id="points" readonly="" type="number" value="0"/></div>
@@ -1653,11 +1653,34 @@ function renderHistory() {
 }
 
 function populateStudentList() {
-  const masterNames = students.map(s => s.nama).filter(Boolean);
-  const recordNames = records.map(r => r.nama).filter(Boolean);
-  const names = [...new Set([...masterNames, ...recordNames])].sort((a,b) => a.localeCompare(b, "id"));
-  document.getElementById("studentList").innerHTML =
-    names.map(n => `<option value="${escapeHTML(n)}">`).join("");
+  const select = document.getElementById("studentName");
+  if (!select) return;
+
+  // Ambil nama dari master Siswa. Jika master belum tersedia, gunakan nama
+  // yang sudah pernah muncul pada data pelanggaran sebagai fallback.
+  const masterStudents = Array.isArray(students) ? students.filter(s => String(s.nama || "").trim()) : [];
+  const recordNames = Array.isArray(records) ? records.map(r => String(r.nama || "").trim()).filter(Boolean) : [];
+
+  const unique = new Map();
+  masterStudents.forEach(s => {
+    const nama = String(s.nama).trim();
+    const key = nama.toLowerCase();
+    if (!unique.has(key)) unique.set(key, { nama, kelas: String(s.kelas || "").trim() });
+  });
+  recordNames.forEach(nama => {
+    const key = nama.toLowerCase();
+    if (!unique.has(key)) unique.set(key, { nama, kelas: "" });
+  });
+
+  const list = [...unique.values()].sort((a,b) => a.nama.localeCompare(b.nama, "id"));
+  const current = String(select.value || "");
+  select.innerHTML = '<option value="">Pilih nama siswa...</option>' +
+    list.map(s => `<option value="${escapeHTML(s.nama)}">${escapeHTML(s.nama)}${s.kelas ? ` — ${escapeHTML(s.kelas)}` : ""}</option>`).join("");
+
+  if (current && list.some(s => s.nama === current)) select.value = current;
+  else if (!list.length) select.innerHTML = '<option value="">Data siswa belum tersedia</option>';
+
+  updateStudentClass();
 }
 
 function renderAll() {
