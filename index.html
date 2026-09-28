@@ -423,10 +423,15 @@
           </div>
 
           <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Google Apps Script Web App URL</label>
-              <input id="settingApiUrl" class="input font-mono text-xs" placeholder="https://script.google.com/macros/s/.../exec">
-              <p class="text-[11px] text-slate-400 mt-1">Tempel URL deploy Google Apps Script Anda di sini agar sinkron otomatis.</p>
+            <div class="p-4 bg-indigo-50 border border-indigo-200 rounded-xl space-y-3">
+              <label class="block text-xs font-bold uppercase text-indigo-900">Google Apps Script Web App URL</label>
+              <div class="flex gap-2">
+                <input id="settingApiUrl" class="input font-mono text-xs bg-white" placeholder="https://script.google.com/macros/s/.../exec">
+                <button onclick="saveApiUrlOnly()" class="btn bg-indigo-600 hover:bg-indigo-700 text-white text-xs whitespace-nowrap px-4">
+                  Simpan URL
+                </button>
+              </div>
+              <p class="text-[11px] text-indigo-700">Simpan URL Web App Anda terlebih dahulu agar tombol test dan sinkronisasi tersambung sempurna.</p>
             </div>
 
             <hr class="border-slate-100 my-4">
@@ -469,8 +474,8 @@
               <input id="settingWali" class="input text-xs sm:text-sm" placeholder="Nama Wali Kelas & Gelar">
             </div>
 
-            <button onclick="saveSettings()" class="btn w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm shadow-md">
-              Simpan Pengaturan
+            <button onclick="saveSettings()" class="btn w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm shadow-md">
+              Simpan Data Penandatangan & Sinkron ke Sheet Penanda_tangan
             </button>
           </div>
         </div>
@@ -1387,6 +1392,18 @@
       reader.readAsText(file);
     }
 
+    function saveApiUrlOnly() {
+      const url = document.getElementById("settingApiUrl").value.trim();
+      if (!url) {
+        toast("URL Apps Script kosong.", "warning");
+        return;
+      }
+      settings.apiUrl = url;
+      localStorage.setItem("smpn37_api_url", url);
+      toast("Google Apps Script Web App URL berhasil disimpan!");
+      testConnection();
+    }
+
     async function saveSettings() {
       settings.apiUrl = document.getElementById("settingApiUrl").value.trim();
       settings.kepsek = document.getElementById("settingKepsek").value.trim();
@@ -1430,7 +1447,7 @@
         }
       }
 
-      toast(syncedToSheet ? "Pengaturan berhasil disimpan & disinkronkan ke Google Sheet!" : "Pengaturan disimpan secara lokal.");
+      toast(syncedToSheet ? "Data penandatangan berhasil disimpan & disinkronkan ke sheet Penanda_tangan!" : "Pengaturan disimpan secara lokal.");
       loadData();
     }
 
