@@ -522,8 +522,8 @@
         <button onclick="closeSpModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg px-2">✕</button>
       </div>
 
-      <!-- Kotak dengan sudut siku-siku (tanpa rounded) -->
-      <div id="spPreviewContent" class="p-6 bg-white border border-slate-200 space-y-4 text-xs sm:text-sm text-slate-800 leading-relaxed" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; color: black; border-radius: 0px !important;">
+      <!-- Siku-siku tanpa border radius -->
+      <div id="spPreviewContent" class="p-6 bg-white border border-slate-200 rounded-none space-y-4 text-xs sm:text-sm text-slate-800 leading-relaxed" style="font-family: 'Times New Roman', Times, serif; font-size: 11pt; color: black; border-radius: 0px !important;">
         <!-- Rendered official SP format -->
       </div>
 
@@ -1161,7 +1161,6 @@
       renderKategoriTable();
     }
 
-    // Exact official Surat Peringatan generation matching user template
     const ranges = { 1: [20, 30], 2: [31, 49], 3: [50, 99], 4: [100, Infinity] };
 
     function getSpTypeFromPoints(poin) {
@@ -1186,63 +1185,80 @@
       ][t];
     }
 
-    function signaturesHtml(d) {
-      const c = (role, name, nip, m = false) => `
-        <div style="text-align:center; min-height:105px;">
-          <div>${esc(role)}</div>
-          ${m ? `<div style="font-size:8pt; color:#64748b; margin-top:2px;">Materai Rp 10.000</div>` : `<div style="height:14px;"></div>`}
-          <div style="padding-top:${m ? '4px' : '40px'}; font-weight:bold; text-decoration:underline;">${esc(name || "................................")}</div>
-          <div>${nip ? "NIP. " + esc(nip) : ""}</div>
-        </div>
+    function signaturesTableHtml(d) {
+      const sigCell = (role, name, nip, m = false) => `
+        <td style="text-align:center; vertical-align:top; width:50%; padding:4px 15px;">
+          <div style="min-height:75px;">
+            <div style="font-size:10pt;">${esc(role)}</div>
+            ${m ? `<div style="font-size:7.5pt; color:#64748b; margin-top:1px;">Materai Rp 10.000</div>` : `<div style="height:10px;"></div>`}
+            <div style="padding-top:${m ? '2px' : '26px'}; font-weight:bold; text-decoration:underline; font-size:10.5pt;">${esc(name || "................................")}</div>
+            <div style="font-size:10pt;">${nip ? "NIP. " + esc(nip) : ""}</div>
+          </div>
+        </td>
       `;
 
-      if (d.type === 1) return `
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:20px;">
-          ${c("Wali Kelas", d.wali, d.nipWali)}
-          ${c("Siswa", d.nama, "", true)}
-        </div>
-      `;
-      if (d.type === 2) return `
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:15px;">
-          ${c("Guru BP/BK", d.bk, d.nipBk)}
-          ${c("Siswa", d.nama, "", true)}
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px;">
-          ${c("Wali Kelas", d.wali, d.nipWali)}
-          ${c("Orang Tua/Wali", d.orangTua, "", false)}
-        </div>
-      `;
-      if (d.type === 3) return `
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:10px;">
-          ${c("Wali Kelas", d.wali, d.nipWali)}
-          ${c("Guru BP/BK", d.bk, d.nipBk)}
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">
-          ${c("Pembina OSIS", d.osis, d.nipOsis)}
-          ${c("Waka Kesiswaan", d.waka, d.nipWaka)}
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">
-          ${c("Orang Tua/Wali", d.orangTua, "", false)}
-          ${c("Siswa", d.nama, "", true)}
-        </div>
-      `;
+      if (d.type === 1) {
+        return `
+          <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+            <tr>
+              ${sigCell("Wali Kelas", d.wali, d.nipWali)}
+              ${sigCell("Siswa", d.nama, "", true)}
+            </tr>
+          </table>
+        `;
+      }
+      if (d.type === 2) {
+        return `
+          <table style="width:100%; border-collapse:collapse; margin-top:8px;">
+            <tr>
+              ${sigCell("Guru BP/BK", d.bk, d.nipBk)}
+              ${sigCell("Siswa", d.nama, "", true)}
+            </tr>
+            <tr>
+              ${sigCell("Wali Kelas", d.wali, d.nipWali)}
+              ${sigCell("Orang Tua/Wali", d.orangTua, "", false)}
+            </tr>
+          </table>
+        `;
+      }
+      if (d.type === 3) {
+        return `
+          <table style="width:100%; border-collapse:collapse; margin-top:6px;">
+            <tr>
+              ${sigCell("Wali Kelas", d.wali, d.nipWali)}
+              ${sigCell("Guru BP/BK", d.bk, d.nipBk)}
+            </tr>
+            <tr>
+              ${sigCell("Pembina OSIS", d.osis, d.nipOsis)}
+              ${sigCell("Waka Kesiswaan", d.waka, d.nipWaka)}
+            </tr>
+            <tr>
+              ${sigCell("Orang Tua/Wali", d.orangTua, "", false)}
+              ${sigCell("Siswa", d.nama, "", true)}
+            </tr>
+          </table>
+        `;
+      }
+      // SP IV
       return `
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px; margin-top:5px; align-items:end;">
-          ${c("Waka Kesiswaan", d.waka, d.nipWaka)}
-          ${c("Siswa", d.nama, "", true)}
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">
-          ${c("Guru BP/BK", d.bk, d.nipBk)}
-          ${c("Orang Tua/Wali", d.orangTua, "", false)}
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:45px;">
-          ${c("Wali Kelas", d.wali, d.nipWali)}
-          <div></div>
-        </div>
-        <div style="text-align:center; margin-top:0;">
+        <table style="width:100%; border-collapse:collapse; margin-top:4px;">
+          <tr>
+            ${sigCell("Waka Kesiswaan", d.waka, d.nipWaka)}
+            ${sigCell("Siswa", d.nama, "", true)}
+          </tr>
+          <tr>
+            ${sigCell("Guru BP/BK", d.bk, d.nipBk)}
+            ${sigCell("Orang Tua/Wali", d.orangTua, "", false)}
+          </tr>
+          <tr>
+            ${sigCell("Wali Kelas", d.wali, d.nipWali)}
+            <td style="width:50%;"></td>
+          </tr>
+        </table>
+        <div style="text-align:center; margin-top:6px; font-size:10pt;">
           Mengetahui,<br>Kepala SMP Negeri 37 Merangin
-          <div style="padding-top:40px; font-weight:bold; text-decoration:underline;">${esc(d.kepala || "................................")}</div>
-          <div>${d.nipKepala ? "NIP. " + esc(d.nipKepala) : ""}</div>
+          <div style="padding-top:26px; font-weight:bold; text-decoration:underline; font-size:10.5pt;">${esc(d.kepala || "................................")}</div>
+          <div style="font-size:10pt;">${d.nipKepala ? "NIP. " + esc(d.nipKepala) : ""}</div>
         </div>
       `;
     }
@@ -1270,7 +1286,7 @@
         poin: student.poin,
         rincian: student.records.map(r => `${cleanDateStr(r.tanggal)} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`),
         keterangan: "",
-        kepala: settings.kepsek, nipKepala: settings.nipKepsek,
+        kepala: settings.kepsek, nipKepale: settings.nipKepsek, nipKepala: settings.nipKepsek,
         waka: settings.waka, nipWaka: settings.nipWaka,
         bk: settings.bp, nipBk: settings.nipBp,
         wali: settings.wali, nipWali: "",
@@ -1281,7 +1297,7 @@
       const titleEl = document.getElementById("spModalTitle"); if(titleEl) titleEl.textContent = title(spType);
       const subEl = document.getElementById("spModalSubtitle"); if(subEl) subEl.textContent = `Siswa: ${student.nama} (${student.kelas}) - Total Poin: ${student.poin}`;
 
-      const lines = d.rincian.map((x, i) => `<div>${i + 1}. ${esc(x)}</div>`).join("") || "<div>-</div>";
+      const lines = d.rincian.map((x, i) => `<div style="margin-bottom:2px;">${i + 1}. ${esc(x)}</div>`).join("") || "<div>-</div>";
 
       const previewContent = document.getElementById("spPreviewContent");
       if (previewContent) {
@@ -1290,54 +1306,34 @@
             <b>PEMERINTAH KABUPATEN MERANGIN</b><br>
             <b>DINAS PENDIDIKAN DAN KEBUDAYAAN</b><br>
             <b>SMP NEGERI 37 MERANGIN</b><br>
-            <span style="font-size:10pt;">Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351</span>
-            <hr style="border:0.5px solid black; margin-top:8px;">
-            <div style="margin-top:12px;"><b><u>${title(d.type)}</u></b><br>Nomor: ${esc(d.nomor)}</div>
+            <span style="font-size:9.5pt;">Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351</span>
+            <hr style="border:0.5px solid black; margin-top:6px;">
+            <div style="margin-top:8px;"><b><u>${title(d.type)}</u></b><br>Nomor: ${esc(d.nomor)}</div>
           </div>
 
-          <div style="margin-top:22px; line-height:1.55; font-family:'Times New Roman', Times, serif; font-size:12pt; color:black;">
+          <div style="margin-top:12px; line-height:1.45; font-family:'Times New Roman', Times, serif; font-size:11pt; color:black;">
             <p>Yang bertanda tangan di bawah ini menerangkan bahwa:</p>
-            <table style="width:100%; border-collapse:collapse; font-family:'Times New Roman', Times, serif; font-size:12pt;">
-              <tr>
-                <td style="width:180px; vertical-align:top;">Nama Siswa</td>
-                <td style="width:15px; vertical-align:top;">:</td>
-                <td style="vertical-align:top;"><b>${esc(d.nama)}</b></td>
-              </tr>
-              <tr>
-                <td style="vertical-align:top;">NIS</td>
-                <td style="vertical-align:top;">:</td>
-                <td style="vertical-align:top;">${esc(d.nis)}</td>
-              </tr>
-              <tr>
-                <td style="vertical-align:top;">NISN</td>
-                <td style="vertical-align:top;">:</td>
-                <td style="vertical-align:top;">${esc(d.nisn)}</td>
-              </tr>
-              <tr>
-                <td style="vertical-align:top;">Kelas</td>
-                <td style="vertical-align:top;">:</td>
-                <td style="vertical-align:top;">${esc(d.kelas)}</td>
-              </tr>
-              <tr>
-                <td style="vertical-align:top;">Total Poin Pelanggaran</td>
-                <td style="vertical-align:top;">:</td>
-                <td style="vertical-align:top;"><span style="color:black; font-weight:bold;">${d.poin} Poin (Batas SP: ${rangeStr})</span></td>
-              </tr>
+            <table style="width:100%; border-collapse:collapse; font-family:'Times New Roman', Times, serif; font-size:11pt; margin-top:4px;">
+              <tr><td style="width:160px; padding:1px 0;">Nama Siswa</td><td style="width:12px;">:</td><td><b>${esc(d.nama)}</b></td></tr>
+              <tr><td style="padding:1px 0;">NIS</td><td>:</td><td>${esc(d.nis)}</td></tr>
+              <tr><td style="padding:1px 0;">NISN</td><td>:</td><td>${esc(d.nisn)}</td></tr>
+              <tr><td style="padding:1px 0;">Kelas</td><td>:</td><td>${esc(d.kelas)}</td></tr>
+              <tr><td style="padding:1px 0;">Total Poin Pelanggaran</td><td>:</td><td><b>${d.poin} Poin (Batas SP: ${rangeStr})</b></td></tr>
             </table>
             
-            <p style="margin-top:12px;"><b>Rincian Pelanggaran:</b></p>
+            <p style="margin-top:8px; margin-bottom:2px;"><b>Rincian Pelanggaran:</b></p>
             ${lines}
 
-            <p style="margin-top:12px;">${statement(d.type)}</p>
-            <p>Demikian surat peringatan ini dibuat untuk dapat diperhatikan dan dilaksanakan sebagaimana mestinya.</p>
+            <p style="margin-top:8px;">${statement(d.type)}</p>
+            <p style="margin-top:4px;">Demikian surat peringatan ini dibuat untuk dapat diperhatikan dan dilaksanakan sebagaimana mestinya.</p>
           </div>
 
-          <div style="text-align:right; margin-top:15px; font-family:'Times New Roman', Times, serif; font-size:12pt; color:black;">
+          <div style="text-align:right; margin-top:10px; font-family:'Times New Roman', Times, serif; font-size:11pt; color:black;">
             Pulau Rengas, ${new Date(d.tanggal+"T00:00:00").toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})}
           </div>
 
-          <div style="font-family:'Times New Roman', Times, serif; font-size:12pt; color:black;">
-            ${signaturesHtml(d)}
+          <div style="font-family:'Times New Roman', Times, serif; font-size:11pt; color:black;">
+            ${signaturesTableHtml(d)}
           </div>
         `;
       }
@@ -1391,9 +1387,10 @@
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
         
-        const marginTop = 8;
-        const marginBottom = 8;
-        const marginHoriz = 10;
+        // Margin top diatur tepat 1.5 cm (15 mm), margin kiri/kanan 12 mm, margin bawah 10 mm
+        const marginTop = 15;
+        const marginBottom = 10;
+        const marginHoriz = 12;
         
         const printableWidth = pageWidth - (marginHoriz * 2);
         const printableHeight = pageHeight - marginTop - marginBottom;
@@ -1423,7 +1420,7 @@
         const safeName = currentSpStudent.nama.replace(/[^a-z0-9_-]+/gi, "_");
         const spType = getSpTypeFromPoints(currentSpStudent.poin);
         pdf.save(`Surat_Perjanjian_Tingkat_${spType}_${safeName}.pdf`);
-        toast("PDF berhasil diunduh sama persis dengan pratinjau!");
+        toast("PDF berhasil diunduh dengan margin top 1.5 cm tanpa terpotong!");
       } catch (error) {
         console.error("Gagal membuat PDF dari pratinjau:", error);
         toast("Gagal membuat PDF. Silakan coba kembali.", "error");
@@ -1447,8 +1444,12 @@
       const spType = getSpTypeFromPoints(student.poin);
       const spLabel = statusFromPoints(student.poin).label;
 
+      const preview = document.getElementById("spPreviewContent");
+      const canvas = await html2canvas(preview, { scale: 2, backgroundColor: "#ffffff" });
       const { jsPDF } = window.jspdf;
       let pdf = new jsPDF({ unit: "mm", format: "a4" });
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, 'PNG', 12, 15, 186, (canvas.height * 186) / canvas.width);
       const pdfBase64 = pdf.output('datauristring');
 
       try {
@@ -1710,6 +1711,7 @@
       if (vForm) vForm.addEventListener("submit", submitViolation);
       
       if (vDate) {
+        vDate.updatePoints = updatePoints;
         vDate.addEventListener("change", e => {
           const s = document.getElementById("semester");
           if (s) s.value = detectSemester(e.target.value);
