@@ -200,9 +200,9 @@
           <div class="flex flex-wrap gap-2">
             <select id="filterKelasSiswa" class="input !w-auto text-xs sm:text-sm" onchange="renderSiswa()">
               <option value="Semua">Semua Kelas</option>
-              <option value="VII">Kelas VII</option>
-              <option value="VIII">Kelas VIII</option>
-              <option value="IX">Kelas IX</option>
+              <option value="VII A">VII A</option><option value="VII B">VII B</option>
+              <option value="VIII A">VIII A</option><option value="VIII B">VIII B</option>
+              <option value="IX A">IX A</option><option value="IX B">IX B</option>
             </select>
             <input id="searchSiswa" oninput="renderSiswa()" class="input !w-full sm:!w-48 text-xs sm:text-sm" placeholder="Cari nama/NIS...">
             <button onclick="openAddStudentModal()" class="btn bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm w-full sm:w-auto">+ Tambah Siswa</button>
@@ -393,11 +393,20 @@
         </div>
       </section>
 
-      <!-- KATEGORI & POIN TAB (Grid Card Layout) -->
+      <!-- KATEGORI & POIN TAB (Card Grid Layout) -->
       <section id="tab-kategori" class="tab-content hidden space-y-6">
         <div class="card p-4 sm:p-5">
-          <h2 class="text-lg sm:text-xl font-bold">Daftar Kategori & Poin Pelanggaran</h2>
-          <p class="text-xs sm:text-sm text-slate-500">Daftar ini mengikuti konfigurasi aplikasi dan tata tertib SMP Negeri 37 Merangin.</p>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 class="text-lg sm:text-xl font-bold">Daftar Kategori & Poin Pelanggaran</h2>
+              <p class="text-xs sm:text-sm text-slate-500">Daftar ini mengikuti konfigurasi aplikasi dan tata tertib SMP Negeri 37 Merangin.</p>
+            </div>
+            <div>
+              <select id="filterCategoryCard" class="input text-xs sm:text-sm" onchange="renderKategoriTable()">
+                <option value="Semua">Semua Kategori</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div id="kategoriCardsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -460,7 +469,7 @@
               <input id="settingWali" class="input text-xs sm:text-sm" placeholder="Nama Wali Kelas & Gelar">
             </div>
 
-            <button onclick="saveSettings()" class="btn w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm">
+            <button onclick="saveSettings()" class="btn w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm shadow-md">
               Simpan Pengaturan
             </button>
           </div>
@@ -590,7 +599,7 @@
     let selectedStudentName = "";
 
     let settings = {
-      apiUrl: localStorage.getItem("smpn37_api_url") || "https://script.google.com/macros/s/AKfycbyDWofMzrXRsNWT4hAfa5V3rNOrhhgTAN632vxhfz8VegBgGJLg0qNG4JTf5iN_ZW_JGw/exec",
+      apiUrl: localStorage.getItem("smpn37_api_url") || "https://script.google.com/macros/s/AKfycbw7Cv0r3t1fGQvAgN13zIwsSa6GgDtx_5GU7CgwuMik8ehUTNFsqsF49kVXv8N-n5CJow/exec",
       kepsek: localStorage.getItem("smpn37_kepsek") || "Drs. H. Ahmad, M.Pd",
       nipKepsek: localStorage.getItem("smpn37_nip_kepsek") || "NIP. 196812311994031012",
       waka: localStorage.getItem("smpn37_waka") || "Drs. Joko Widodo, M.Pd",
@@ -690,6 +699,28 @@
               orangTua: s.orangTua || s["Nama Orang Tua"] || ""
             }));
           }
+
+          const resPenandatangan = await fetch(settings.apiUrl + "?action=penandatangan");
+          const jsonPenandatangan = await resPenandatangan.json();
+          if (jsonPenandatangan && jsonPenandatangan.success && jsonPenandatangan.data) {
+            const p = jsonPenandatangan.data;
+            if (p.kepsek) settings.kepsek = p.kepsek;
+            if (p.nipKepsek) settings.nipKepsek = p.nipKepsek;
+            if (p.waka) settings.waka = p.waka;
+            if (p.nipWaka) settings.nipWaka = p.nipWaka;
+            if (p.bp) settings.bp = p.bp;
+            if (p.nipBp) settings.nipBp = p.nipBp;
+            if (p.wali) settings.wali = p.wali;
+            
+            document.getElementById("settingKepsek").value = settings.kepsek;
+            document.getElementById("settingNipKepsek").value = settings.nipKepsek;
+            document.getElementById("settingWaka").value = settings.waka;
+            document.getElementById("settingNipWaka").value = settings.nipWaka;
+            document.getElementById("settingBp").value = settings.bp;
+            document.getElementById("settingNipBp").value = settings.nipBp;
+            document.getElementById("settingWali").value = settings.wali;
+          }
+
           saveLocal();
         } catch (e) {
           console.warn("Gagal terhubung ke Google Apps Script, menggunakan data lokal.", e);
@@ -722,6 +753,12 @@
       const cats = [...new Set(VIOLATIONS.map(v => v.category))];
       select.innerHTML = '<option value="">-- Pilih Kategori --</option>' +
         cats.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");
+
+      const filterCard = document.getElementById("filterCategoryCard");
+      if (filterCard) {
+        filterCard.innerHTML = '<option value="Semua">Semua Kategori</option>' +
+          cats.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");
+      }
     }
 
     function populateViolationTypes() {
@@ -1059,12 +1096,16 @@
 
     function renderKategoriTable() {
       const grid = document.getElementById("kategoriCardsGrid");
-      const cats = [...new Set(VIOLATIONS.map(v => v.category))];
+      const filterCat = document.getElementById("filterCategoryCard")?.value || "Semua";
+      let cats = [...new Set(VIOLATIONS.map(v => v.category))];
+
+      if (filterCat !== "Semua") {
+        cats = cats.filter(c => c === filterCat);
+      }
 
       grid.innerHTML = cats.map(cat => {
         const list = VIOLATIONS.filter(v => v.category === cat);
         const previewText = list.map(v => {
-          // Simplify violation name for summary preview
           const shortName = v.type.replace(/^\d+[\.\)]\s*/, "").split(" ")[0] + ` (${v.points})`;
           return shortName;
         }).join(" • ");
@@ -1346,7 +1387,7 @@
       reader.readAsText(file);
     }
 
-    function saveSettings() {
+    async function saveSettings() {
       settings.apiUrl = document.getElementById("settingApiUrl").value.trim();
       settings.kepsek = document.getElementById("settingKepsek").value.trim();
       settings.nipKepsek = document.getElementById("settingNipKepsek").value.trim();
@@ -1365,7 +1406,31 @@
       localStorage.setItem("smpn37_nip_bp", settings.nipBp);
       localStorage.setItem("smpn37_wali", settings.wali);
 
-      toast("Pengaturan berhasil disimpan.");
+      let syncedToSheet = false;
+      if (settings.apiUrl) {
+        try {
+          const res = await fetch(settings.apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              action: "savePenandatangan",
+              kepsek: settings.kepsek,
+              nipKepsek: settings.nipKepsek,
+              waka: settings.waka,
+              nipWaka: settings.nipWaka,
+              bp: settings.bp,
+              nipBp: settings.nipBp,
+              wali: settings.wali
+            })
+          });
+          const json = await res.json();
+          if (json && json.success) syncedToSheet = true;
+        } catch (e) {
+          console.warn("Gagal simpan ke Sheet Penandatangan", e);
+        }
+      }
+
+      toast(syncedToSheet ? "Pengaturan berhasil disimpan & disinkronkan ke Google Sheet!" : "Pengaturan disimpan secara lokal.");
       loadData();
     }
 
