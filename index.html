@@ -549,39 +549,65 @@ function detectSemester(dateString) {
 }
 
 /* ---------- Data ---------- */
+async function loadStudentsOnly_(showToast = false) {
+  if (!CONFIG.API_URL) return false;
+  try {
+    const response = await fetch(CONFIG.API_URL + "?action=siswa&_=" + Date.now(), {
+      method: "GET",
+      cache: "no-store"
+    });
+    if (!response.ok) throw new Error("Siswa HTTP " + response.status);
+    const json = await response.json();
+    if (json && json.success === false) throw new Error(json.message || "API siswa gagal");
+    const data = Array.isArray(json) ? json : (Array.isArray(json.data) ? json.data : []);
+    students = data.map(normalizeStudent).filter(s => String(s.nama || "").trim());
+    saveLocal();
+    populateStudentList();
+    if (showToast) toast(`Daftar siswa dimuat: ${students.length} siswa.`);
+    return students.length > 0;
+  } catch (err) {
+    console.error("Gagal memuat daftar siswa:", err);
+    return false;
+  }
+}
+
 async function loadData() {
   if (!CONFIG.API_URL) {
     loadLocal();
-    students = [];
     renderAll();
     return;
   }
 
+  // Muat Pelanggaran dan Siswa secara terpisah. Jika salah satu endpoint
+  // bermasalah, endpoint yang lain tetap dapat digunakan.
+  let recordsLoaded = false;
+  let studentsLoaded = false;
+
   try {
-    const [pelanggaranResponse, siswaResponse] = await Promise.all([
-      fetch(CONFIG.API_URL, { method:"GET" }),
-      fetch(CONFIG.API_URL + "?action=siswa", { method:"GET" })
-    ]);
-
-    if (!pelanggaranResponse.ok) throw new Error("Pelanggaran HTTP " + pelanggaranResponse.status);
-    if (!siswaResponse.ok) throw new Error("Siswa HTTP " + siswaResponse.status);
-
-    const pelanggaranJson = await pelanggaranResponse.json();
-    const siswaJson = await siswaResponse.json();
-
-    const data = Array.isArray(pelanggaranJson) ? pelanggaranJson : (pelanggaranJson.data || []);
-    const siswaData = Array.isArray(siswaJson) ? siswaJson : (siswaJson.data || []);
-
+    const response = await fetch(CONFIG.API_URL + "?_=" + Date.now(), { method:"GET", cache:"no-store" });
+    if (!response.ok) throw new Error("Pelanggaran HTTP " + response.status);
+    const json = await response.json();
+    if (json && json.success === false) throw new Error(json.message || "API pelanggaran gagal");
+    const data = Array.isArray(json) ? json : (Array.isArray(json.data) ? json.data : []);
     records = data.map(normalizeRecord);
-    students = siswaData.map(normalizeStudent).filter(s => s.nama);
-    saveLocal();
-    renderAll();
-    toast(`Data diperbarui: ${students.length} siswa, ${records.length} pelanggaran.`);
+    recordsLoaded = true;
   } catch (err) {
-    console.error(err);
+    console.error("Gagal memuat pelanggaran:", err);
+  }
+
+  studentsLoaded = await loadStudentsOnly_(false);
+
+  if (!recordsLoaded && !studentsLoaded) {
     loadLocal();
-    renderAll();
-    toast("Data server belum dapat dimuat. Periksa koneksi API/Siswa.", "warning");
+  } else {
+    saveLocal();
+  }
+
+  renderAll();
+  if (studentsLoaded) {
+    toast(`Data siswa tersedia: ${students.length} siswa.`);
+  } else if (!students.length) {
+    toast("Daftar siswa belum berhasil dimuat. Periksa sheet Siswa dan koneksi API.", "warning");
   }
 }
 
@@ -1698,6 +1724,12 @@ function showTab(tab) {
   document.querySelectorAll(".nav-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.tab === tab);
   });
+
+  // Pastikan dropdown Nama Siswa selalu diisi saat tab dibuka.
+  if (tab === "input") {
+    populateStudentList();
+    if (!students.length) loadStudentsOnly_(true);
+  }
 }
 
 /* ---------- PDF ---------- */
