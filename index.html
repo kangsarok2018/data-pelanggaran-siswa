@@ -399,73 +399,103 @@
       </section>
 
       <section id="tab-pengaturan" class="tab-content hidden space-y-6">
-        <div class="card p-4 sm:p-6 max-w-2xl mx-auto space-y-6">
-          <div>
-            <h2 class="text-lg sm:text-xl font-bold">Pengaturan Koneksi & Penandatangan</h2>
-            <p class="text-xs sm:text-sm text-slate-500">Konfigurasi Google Apps Script Web App URL dan pejabat sekolah untuk cetak surat.</p>
+        <div class="card p-5 sm:p-8 max-w-4xl mx-auto space-y-6">
+          <div class="border-b pb-4">
+            <h2 class="text-lg sm:text-xl font-bold text-slate-900">Pengaturan Koneksi & Penandatangan Surat</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">Konfigurasi URL Google Apps Script Web App serta nama dan NIP pejabat sekolah untuk keperluan cetak surat resmi.</p>
           </div>
 
-          <div class="space-y-4">
-            <div class="p-4 bg-indigo-50 border border-indigo-200 rounded-xl space-y-3">
-              <label class="block text-xs font-bold uppercase text-indigo-900">Google Apps Script Web App URL</label>
-              <div class="flex gap-2">
-                <input id="settingApiUrl" class="input font-mono text-xs bg-white" placeholder="https://script.google.com/macros/s/.../exec">
-                <button onclick="saveApiUrlOnly()" class="btn bg-indigo-600 hover:bg-indigo-700 text-white text-xs whitespace-nowrap px-4">
+          <div class="space-y-6">
+            <!-- Kartu Integrasi Google Sheets -->
+            <div class="p-5 bg-gradient-to-r from-indigo-50/80 to-blue-50/80 border border-indigo-200 rounded-2xl space-y-3 shadow-sm">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">☁️</span>
+                <label class="block text-xs font-bold uppercase tracking-wider text-indigo-900">Google Apps Script Web App URL (Database Sinkronisasi)</label>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input id="settingApiUrl" class="input font-mono text-xs bg-white flex-1" placeholder="https://script.google.com/macros/s/.../exec">
+                <button onclick="saveApiUrlOnly()" class="btn bg-indigo-600 hover:bg-indigo-700 text-white text-xs whitespace-nowrap px-5 py-2.5 shadow-sm">
                   Simpan URL
                 </button>
               </div>
-              <p class="text-[11px] text-indigo-700">Tempel URL deploy Google Apps Script Anda di sini agar sinkron otomatis.</p>
+              <p class="text-[11px] text-indigo-700 leading-relaxed">Tempel URL deploy Google Apps Script Anda di sini agar data pelanggaran, siswa, dan penandatangan tersinkronisasi otomatis dengan Google Sheets.</p>
             </div>
 
-            <hr class="border-slate-100 my-4">
+            <!-- Bagian Pejabat & Penandatangan Sekolah -->
+            <div class="space-y-4 pt-2">
+              <h3 class="font-bold text-sm sm:text-base text-slate-800 flex items-center gap-2">
+                <span>✍️</span> Pejabat & Guru Penandatangan Dokumen / Surat SP
+              </h3>
 
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Kepala Sekolah</label>
-                <input id="settingKepsek" class="input text-xs sm:text-sm" placeholder="Nama Kepala Sekolah & Gelar">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Kepala Sekolah -->
+                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                  <div class="font-semibold text-xs text-indigo-900 uppercase tracking-wide">1. Kepala Sekolah</div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">Nama Lengkap & Gelar</label>
+                    <input id="settingKepsek" class="input text-xs sm:text-sm bg-white" placeholder="Contoh: Drs. H. Ahmad, M.Pd">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">NIP</label>
+                    <input id="settingNipKepsek" class="input text-xs sm:text-sm bg-white" placeholder="Contoh: 196812311994031012">
+                  </div>
+                </div>
+
+                <!-- Waka Kesiswaan -->
+                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                  <div class="font-semibold text-xs text-indigo-900 uppercase tracking-wide">2. Wakil Kepala Sekolah Bidang Kesiswaan</div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">Nama Lengkap & Gelar</label>
+                    <input id="settingWaka" class="input text-xs sm:text-sm bg-white" placeholder="Contoh: Drs. Joko Widodo, M.Pd">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">NIP</label>
+                    <input id="settingNipWaka" class="input text-xs sm:text-sm bg-white" placeholder="Contoh: 197004121998031005">
+                  </div>
+                </div>
+
+                <!-- Guru BP / BK -->
+                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                  <div class="font-semibold text-xs text-indigo-900 uppercase tracking-wide">3. Guru Bimbingan Konseling (BP / BK)</div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">Nama Lengkap & Gelar</label>
+                    <input id="settingBp" class="input text-xs sm:text-sm bg-white" placeholder="Contoh: Siti Rahma, S.Pd">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">NIP</label>
+                    <input id="settingNipBp" class="input text-xs sm:text-sm bg-white" placeholder="Contoh: 197505122005012004">
+                  </div>
+                </div>
+
+                <!-- Pembina OSIS -->
+                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                  <div class="font-semibold text-xs text-indigo-900 uppercase tracking-wide">4. Pembina OSIS</div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">Nama Lengkap & Gelar</label>
+                    <input id="settingOsis" class="input text-xs sm:text-sm bg-white" placeholder="Contoh: Drs. H. M. Ali, M.Pd">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">NIP</label>
+                    <input id="settingNipOsis" class="input text-xs sm:text-sm bg-white" placeholder="Contoh: 197805122005011003">
+                  </div>
+                </div>
               </div>
-              <div>
-                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">NIP Kepala Sekolah</label>
-                <input id="settingNipKepsek" class="input text-xs sm:text-sm" placeholder="NIP. ...">
+
+              <!-- Wali Kelas Default -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3 mt-4">
+                <div class="font-semibold text-xs text-indigo-900 uppercase tracking-wide">5. Wali Kelas (Default Tanda Tangan)</div>
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600 mb-1">Nama Lengkap & Gelar Wali Kelas</label>
+                  <input id="settingWali" class="input text-xs sm:text-sm bg-white" placeholder="Contoh: Rahmat Hidayat, S.Pd">
+                </div>
               </div>
             </div>
 
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Waka Kesiswaan</label>
-                <input id="settingWaka" class="input text-xs sm:text-sm" placeholder="Nama Waka Kesiswaan & Gelar">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">NIP Waka Kesiswaan</label>
-                <input id="settingNipWaka" class="input text-xs sm:text-sm" placeholder="NIP. ...">
-              </div>
+            <div class="pt-4 border-t">
+              <button onclick="saveSettings()" class="btn w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-base py-3 shadow-md shadow-emerald-200 flex items-center justify-center gap-2">
+                <span>💾 Simpan Seluruh Pengaturan & Sinkronkan</span>
+              </button>
             </div>
-
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Guru BP / BK</label>
-                <input id="settingBp" class="input text-xs sm:text-sm" placeholder="Nama Guru BP/BK & Gelar">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">NIP Guru BP / BK</label>
-                <input id="settingNipBp" class="input text-xs sm:text-sm" placeholder="NIP. ...">
-              </div>
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Wali Kelas (Default)</label>
-                <input id="settingWali" class="input text-xs sm:text-sm" placeholder="Nama Wali Kelas & Gelar">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Pembina OSIS</label>
-                <input id="settingOsis" class="input text-xs sm:text-sm" placeholder="Nama Pembina OSIS & Gelar">
-              </div>
-            </div>
-
-            <button onclick="saveSettings()" class="btn w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm shadow-md">
-              Simpan Pengaturan
-            </button>
           </div>
         </div>
       </section>
@@ -522,8 +552,7 @@
         <button onclick="closeSpModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg px-2">✕</button>
       </div>
 
-      <!-- Siku-siku tanpa border radius -->
-      <div id="spPreviewContent" class="p-6 bg-white border border-slate-200 rounded-none space-y-4 text-xs sm:text-sm text-slate-800 leading-relaxed" style="font-family: 'Times New Roman', Times, serif; font-size: 11pt; color: black; border-radius: 0px !important;">
+      <div id="spPreviewContent" class="p-8 bg-white border border-slate-200 text-slate-900 leading-normal" style="font-family: 'Times New Roman', Times, serif; font-size: 11pt; color: black; border-radius: 0px !important;">
         <!-- Rendered official SP format -->
       </div>
 
@@ -1160,7 +1189,7 @@
       renderHistory();
       renderKategoriTable();
     }
-
+    // Exact official Surat Peringatan generation matching user template with refined formatting
     const ranges = { 1: [20, 30], 2: [31, 49], 3: [50, 99], 4: [100, Infinity] };
 
     function getSpTypeFromPoints(poin) {
@@ -1239,7 +1268,7 @@
           </table>
         `;
       }
-      // SP IV
+      // SP IV: Sejajarkan penandatangan dalam baris tabel yang rapi
       return `
         <table style="width:100%; border-collapse:collapse; margin-top:4px;">
           <tr>
@@ -1297,42 +1326,42 @@
       const titleEl = document.getElementById("spModalTitle"); if(titleEl) titleEl.textContent = title(spType);
       const subEl = document.getElementById("spModalSubtitle"); if(subEl) subEl.textContent = `Siswa: ${student.nama} (${student.kelas}) - Total Poin: ${student.poin}`;
 
-      const lines = d.rincian.map((x, i) => `<div style="margin-bottom:2px;">${i + 1}. ${esc(x)}</div>`).join("") || "<div>-</div>";
+      const lines = d.rincian.map((x, i) => `<div style="margin-bottom:3px; padding-left:10px;">${i + 1}. ${esc(x)}</div>`).join("") || "<div style='padding-left:10px;'>-</div>";
 
       const previewContent = document.getElementById("spPreviewContent");
       if (previewContent) {
         previewContent.innerHTML = `
-          <div style="text-align:center; line-height:1.15; font-family:'Times New Roman', Times, serif; color:black;">
-            <b>PEMERINTAH KABUPATEN MERANGIN</b><br>
-            <b>DINAS PENDIDIKAN DAN KEBUDAYAAN</b><br>
-            <b>SMP NEGERI 37 MERANGIN</b><br>
-            <span style="font-size:9.5pt;">Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351</span>
-            <hr style="border:0.5px solid black; margin-top:6px;">
-            <div style="margin-top:8px;"><b><u>${title(d.type)}</u></b><br>Nomor: ${esc(d.nomor)}</div>
+          <div style="text-align:center; line-height:1.2; font-family:'Times New Roman', Times, serif; color:black;">
+            <b style="font-size:12pt;">PEMERINTAH KABUPATEN MERANGIN</b><br>
+            <b style="font-size:12pt;">DINAS PENDIDIKAN DAN KEBUDAYAAN</b><br>
+            <b style="font-size:13pt;">SMP NEGERI 37 MERANGIN</b><br>
+            <span style="font-size:10pt;">Jln. Bangko - Kerinci KM 12 Desa Pulau Rengas Kode Pos 37351</span>
+            <hr style="border:1px solid black; margin-top:8px; margin-bottom:12px;">
+            <div style="font-size:11.5pt;"><b><u>${title(d.type)}</u></b><br>Nomor: ${esc(d.nomor)}</div>
           </div>
 
-          <div style="margin-top:12px; line-height:1.45; font-family:'Times New Roman', Times, serif; font-size:11pt; color:black;">
-            <p>Yang bertanda tangan di bawah ini menerangkan bahwa:</p>
-            <table style="width:100%; border-collapse:collapse; font-family:'Times New Roman', Times, serif; font-size:11pt; margin-top:4px;">
-              <tr><td style="width:160px; padding:1px 0;">Nama Siswa</td><td style="width:12px;">:</td><td><b>${esc(d.nama)}</b></td></tr>
-              <tr><td style="padding:1px 0;">NIS</td><td>:</td><td>${esc(d.nis)}</td></tr>
-              <tr><td style="padding:1px 0;">NISN</td><td>:</td><td>${esc(d.nisn)}</td></tr>
-              <tr><td style="padding:1px 0;">Kelas</td><td>:</td><td>${esc(d.kelas)}</td></tr>
-              <tr><td style="padding:1px 0;">Total Poin Pelanggaran</td><td>:</td><td><b>${d.poin} Poin (Batas SP: ${rangeStr})</b></td></tr>
+          <div style="margin-top:16px; line-height:1.5; font-family:'Times New Roman', Times, serif; font-size:11pt; color:black;">
+            <p style="margin-bottom:6px;">Yang bertanda tangan di bawah ini menerangkan bahwa:</p>
+            <table style="width:100%; border-collapse:collapse; font-family:'Times New Roman', Times, serif; font-size:11pt; margin-bottom:10px;">
+              <tr><td style="width:170px; padding:2px 0;">Nama Siswa</td><td style="width:12px;">:</td><td><b>${esc(d.nama)}</b></td></tr>
+              <tr><td style="padding:2px 0;">NIS</td><td>:</td><td>${esc(d.nis)}</td></tr>
+              <tr><td style="padding:2px 0;">NISN</td><td>:</td><td>${esc(d.nisn)}</td></tr>
+              <tr><td style="padding:2px 0;">Kelas</td><td>:</td><td>${esc(d.kelas)}</td></tr>
+              <tr><td style="padding:2px 0;">Total Poin Pelanggaran</td><td>:</td><td><b>${d.poin} Poin (Batas SP: ${rangeStr})</b></td></tr>
             </table>
             
-            <p style="margin-top:8px; margin-bottom:2px;"><b>Rincian Pelanggaran:</b></p>
+            <p style="margin-top:6px; margin-bottom:4px;"><b>Rincian Pelanggaran:</b></p>
             ${lines}
 
-            <p style="margin-top:8px;">${statement(d.type)}</p>
-            <p style="margin-top:4px;">Demikian surat peringatan ini dibuat untuk dapat diperhatikan dan dilaksanakan sebagaimana mestinya.</p>
+            <p style="margin-top:10px; margin-bottom:8px; text-align:justify;">${statement(d.type)}</p>
+            <p style="text-align:justify;">Demikian surat peringatan ini dibuat untuk dapat diperhatikan dan dilaksanakan sebagaimana mestinya.</p>
           </div>
 
-          <div style="text-align:right; margin-top:10px; font-family:'Times New Roman', Times, serif; font-size:11pt; color:black;">
+          <div style="text-align:right; margin-top:16px; font-family:'Times New Roman', Times, serif; font-size:11pt; color:black;">
             Pulau Rengas, ${new Date(d.tanggal+"T00:00:00").toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})}
           </div>
 
-          <div style="font-family:'Times New Roman', Times, serif; font-size:11pt; color:black;">
+          <div style="font-family:'Times New Roman', Times, serif; font-size:11pt; color:black; margin-top:6px;">
             ${signaturesTableHtml(d)}
           </div>
         `;
@@ -1387,9 +1416,9 @@
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
         
-        // Margin top diatur tepat 1.5 cm (15 mm), margin kiri/kanan 12 mm, margin bawah 10 mm
-        const marginTop = 15;
-        const marginBottom = 10;
+        // Margin stabil 12 mm atas, bawah, dan samping untuk hasil cetak rapi 1 halaman
+        const marginTop = 12;
+        const marginBottom = 12;
         const marginHoriz = 12;
         
         const printableWidth = pageWidth - (marginHoriz * 2);
@@ -1420,7 +1449,7 @@
         const safeName = currentSpStudent.nama.replace(/[^a-z0-9_-]+/gi, "_");
         const spType = getSpTypeFromPoints(currentSpStudent.poin);
         pdf.save(`Surat_Perjanjian_Tingkat_${spType}_${safeName}.pdf`);
-        toast("PDF berhasil diunduh dengan margin top 1.5 cm tanpa terpotong!");
+        toast("PDF berhasil diunduh dengan format rapi tanpa perubahan teks!");
       } catch (error) {
         console.error("Gagal membuat PDF dari pratinjau:", error);
         toast("Gagal membuat PDF. Silakan coba kembali.", "error");
