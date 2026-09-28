@@ -630,8 +630,15 @@
 
     function detectSemester(dateStr) {
       if (!dateStr) return "Semester 1 (Ganjil)";
-      const m = new Date(dateStr + "T00:00:00").getMonth() + 1;
+      const cleanDate = dateStr.split(" ")[0];
+      const m = new Date(cleanDate + "T00:00:00").getMonth() + 1;
       return (m >= 7 && m <= 12) ? "Semester 1 (Ganjil)" : "Semester 2 (Genap)";
+    }
+
+    function cleanDateStr(val) {
+      if (!val) return "";
+      const s = String(val).trim();
+      return s.split(" ")[0];
     }
 
     function saveLocal() {
@@ -669,7 +676,7 @@
               id: r.id || crypto.randomUUID(),
               nama: r.nama || r.Nama || "",
               kelas: r.kelas || r.Kelas || "",
-              tanggal: r.tanggal || r.Tanggal || "",
+              tanggal: cleanDateStr(r.tanggal || r.Tanggal || ""),
               semester: r.semester || r.Semester || "Semester 1 (Ganjil)",
               kategori: r.kategori || r.Kategori || "",
               pelanggaran: r.pelanggaran || r.Pelanggaran || "",
@@ -877,7 +884,7 @@
 
       const kelas = classSelect ? classSelect.value : "";
       const nama = selectedStudentName;
-      const tanggal = dateEl ? dateEl.value : "";
+      const tanggal = cleanDateStr(dateEl ? dateEl.value : "");
       const semester = semEl ? semEl.value : "";
       const kategori = catEl ? catEl.value : "";
       const pelanggaran = violEl ? violEl.value : "";
@@ -981,7 +988,7 @@
       const statSP = document.getElementById("statSP"); if (statSP) statSP.textContent = students.filter(s => normalizePoints(s.poin) >= 20).length;
 
       const nowMonth = new Date().toISOString().slice(0, 7);
-      const monthCount = filtered.filter(r => r.tanggal && r.tanggal.startsWith(nowMonth)).length;
+      const monthCount = filtered.filter(r => r.tanggal && cleanDateStr(r.tanggal).startsWith(nowMonth)).length;
       const statMonth = document.getElementById("statMonth"); if (statMonth) statMonth.textContent = monthCount;
 
       const recentBody = document.getElementById("recentViolationsBody");
@@ -992,7 +999,7 @@
         } else {
           recentBody.innerHTML = recent.map(r => `
             <tr class="border-b hover:bg-slate-50">
-              <td class="py-2.5 pr-3 font-medium">${escapeHTML(r.tanggal)}</td>
+              <td class="py-2.5 pr-3 font-medium">${escapeHTML(cleanDateStr(r.tanggal))}</td>
               <td class="py-2.5 pr-3 font-semibold text-slate-900">${escapeHTML(r.nama)}</td>
               <td class="py-2.5 pr-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-xs font-semibold">${escapeHTML(r.kelas)}</span></td>
               <td class="py-2.5 pr-3 text-slate-600">${escapeHTML(r.pelanggaran)}</td>
@@ -1127,7 +1134,7 @@
 
       tbody.innerHTML = list.map(r => `
         <tr class="border-b hover:bg-slate-50">
-          <td class="p-2 sm:p-3 text-xs font-medium">${escapeHTML(r.tanggal)}</td>
+          <td class="p-2 sm:p-3 text-xs font-medium">${escapeHTML(cleanDateStr(r.tanggal))}</td>
           <td class="p-2 sm:p-3 font-semibold text-slate-900">${escapeHTML(r.nama)}</td>
           <td class="p-2 sm:p-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-xs font-semibold">${escapeHTML(r.kelas)}</span></td>
           <td class="p-2 sm:p-3 text-slate-700">${escapeHTML(r.pelanggaran)}</td>
@@ -1170,7 +1177,7 @@
       renderKategoriTable();
     }
 
-    // Exact requested Surat Peringatan generation logic matching user's exact templates
+    // Official Surat Peringatan generation logic matching user's exact templates
     const ranges = { 1: [20, 30], 2: [31, 49], 3: [50, 99], 4: [100, Infinity] };
 
     function getSpTypeFromPoints(poin) {
@@ -1231,7 +1238,7 @@
         nisn: fullStudentData.nisn || "-",
         kelas: student.kelas,
         poin: student.poin,
-        rincian: student.records.map(r => `${r.tanggal} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`),
+        rincian: student.records.map(r => `${cleanDateStr(r.tanggal)} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`),
         keterangan: "",
         kepala: settings.kepsek, nipKepala: settings.nipKepsek,
         waka: settings.waka, nipWaka: settings.nipWaka,
@@ -1439,8 +1446,8 @@
         nisn: fullStudentData.nisn || "-",
         kelas: student.kelas,
         poin: student.poin,
-        rincian: student.records.map(r => `${r.tanggal} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`),
-        kepala: settings.kepsek, nipKepala: settings.nipKepsek,
+        rincian: student.records.map(r => `${cleanDateStr(r.tanggal)} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`),
+        kepala: settings.kepsek, nipKepsala: settings.nipKepsek,
         waka: settings.waka, nipWaka: settings.nipWaka,
         bk: settings.bp, nipBk: settings.nipBp,
         wali: settings.wali, nipWali: "",
@@ -1472,7 +1479,7 @@
         nisn: fullStudentData.nisn || "-",
         kelas: student.kelas,
         poin: student.poin,
-        rincian: student.records.map(r => `${r.tanggal} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`),
+        rincian: student.records.map(r => `${cleanDateStr(r.tanggal)} - ${r.pelanggaran} (${normalizePoints(r.poin)} poin)`),
         kepala: settings.kepsek, nipKepala: settings.nipKepsek,
         waka: settings.waka, nipWaka: settings.nipWaka,
         bk: settings.bp, nipBk: settings.nipBp,
@@ -1496,7 +1503,7 @@
             jenisSP: statusFromPoints(currentSpStudent.poin).label,
             totalPoin: currentSpStudent.poin,
             dasarPelanggaran: student.records[0]?.pelanggaran || "-",
-            rincianPelanggaran: student.records.map(r => r.pelanggaran).join("; "),
+            rincianPelanggaran: student.records.map(r => `${cleanDateStr(r.tanggal)} - ${r.pelanggaran}`).join("; "),
             petugas: settings.bp || "Guru BK",
             pdfBase64: pdfBase64,
             fileName: `SP_${currentSpStudent.nama}.pdf`
